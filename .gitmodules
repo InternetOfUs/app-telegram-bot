@@ -1,0 +1,3 @@
+[submodule "chatbot-core"]
+	path = chatbot-core
+	url = git@lab.u-hopper.com:chatbot/framework/chatbot-core.git
