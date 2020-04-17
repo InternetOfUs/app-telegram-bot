@@ -13,6 +13,7 @@ if __name__ == "__main__":
     publisher = MqttPublishHandler(os.getenv("MQTT_HOST"), os.getenv("MQTT_PUBLISHER_ID"), os.getenv("MQTT_USER"),
                                    os.getenv("MQTT_PASSWORD"))
     instance_namespace = os.getenv("INSTANCE_NAMESPACE")
+    publisher.connect()
     ws = MessageInterface(publisher, topic, instance_namespace, "wenet-eat-together")
 
     try:
