@@ -3,6 +3,7 @@ from typing import Optional, List
 
 from emoji import emojize
 
+from chatbot_core.model.details import TelegramDetails
 from chatbot_core.model.event import IncomingSocialEvent, IncomingCustomEvent
 from chatbot_core.model.message import IncomingTextMessage
 from chatbot_core.nlp.handler import NLPHandler
@@ -17,7 +18,7 @@ from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEven
 from eat_together_bot.models import Task
 from uhopper.utils.alert import AlertModule
 from wenet.common.messages.builder import MessageBuilder
-from wenet.common.messages.models import TaskNotification, TextualMessage
+from wenet.common.messages.models import TaskNotification, TextualMessage, TaskProposalNotification
 
 logger = logging.getLogger("uhopper.chatbot.wenet-eat-together-chatbot")
 
@@ -27,12 +28,15 @@ class EatTogetherHandler(EventHandler):
     # context keys
     CONTEXT_CURRENT_STATE = "current_state"
     CONTEXT_ORGANIZE_TASK_OBJECT = 'organize_task_object'
+    CONTEXT_PROPOSAL_TASK_OBJECT = 'proposal_task_object'
     # all the recognize intents
     INTENT_START = '/start'
     INTENT_CANCEL = '/cancel'
     INTENT_ORGANIZE = '/organize'
     INTENT_CONFIRM_TASK_CREATION = 'task_creation_confirm'
     INTENT_CANCEL_TASK_CREATION = 'task_creation_cancel'
+    INTENT_CONFIRM_TASK_PROPOSAL = 'task_creation_confirm'
+    INTENT_CANCEL_TASK_PROPOSAL = 'task_creation_cancel'
     # task creation states (/organize command)
     ORGANIZE_Q1 = 'organize_q1'
     ORGANIZE_Q2 = 'organize_q2'
@@ -41,6 +45,8 @@ class EatTogetherHandler(EventHandler):
     ORGANIZE_Q5 = 'organize_q5'
     ORGANIZE_Q6 = 'organize_q6'
     ORGANIZE_RECAP = 'organize_recap'
+    # task proposal state
+    PROPOSAL = 'send_proposal'
 
     def __init__(self, instance_namespace: str, bot_id: str, handler_id: str, alert_module: AlertModule,
                  connector: SocialConnector, nlp_handler: Optional[NLPHandler], translator: Optional[Translator],
@@ -49,7 +55,7 @@ class EatTogetherHandler(EventHandler):
         super().__init__(instance_namespace, bot_id, handler_id, alert_module, connector, nlp_handler, translator,
                          delay_between_messages_sec, delay_between_text_sec, logger_connectors)
         self.intent_manager = IntentManagerV3()
-        uhopper_logger_connector = UhopperLoggerConnector().with_handler("%s" % instance_namespace)
+        uhopper_logger_connector = UhopperLoggerConnector().with_handler(instance_namespace)
         self.with_logger_connector(uhopper_logger_connector)
         # redirecting the flow in the corresponding points
         self.intent_manager.with_fulfiller(
@@ -97,15 +103,24 @@ class EatTogetherHandler(EventHandler):
                 static_context=(self.CONTEXT_CURRENT_STATE, self.ORGANIZE_RECAP)
             )
         )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_CONFIRM_TASK_PROPOSAL, self.action_confirm_task_proposal).with_rule(
+                intent=self.INTENT_CONFIRM_TASK_PROPOSAL, static_context=(self.CONTEXT_CURRENT_STATE, self.PROPOSAL)
+            )
+        )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_CANCEL_TASK_PROPOSAL, self.action_delete_task_proposal).with_rule(
+                intent=self.INTENT_CANCEL_TASK_PROPOSAL, static_context=(self.CONTEXT_CURRENT_STATE, self.PROPOSAL)
+            )
+        )
 
     # handle messages coming from WeNet
     def _handle_custom_event(self, custom_event: IncomingCustomEvent):
-        print("Custom event " + str(custom_event.to_repr()))
         try:
             message = MessageBuilder.build(custom_event.payload)
             if isinstance(message, TaskNotification):
-                # self.send_notification(self.handle_wenet_notification_message(message))
-                pass
+                notification = self.handle_wenet_notification_message(message)
+                self.send_notification(notification)
             elif isinstance(message, TextualMessage):
                 # self.send_notification(self.handle_wenet_textual_message(message))
                 pass
@@ -118,7 +133,23 @@ class EatTogetherHandler(EventHandler):
         pass
 
     def handle_wenet_notification_message(self, message: TaskNotification) -> NotificationEvent:
-        pass
+        # TODO: use endpoint to get social details from the incoming notification
+        recipient_details = TelegramDetails(28368516, False, "Nicoló", 28368516, "private", "Pomini", "nicolopomini", "en", "nicolopomini")
+        context = self._interface_connector.get_user_context(recipient_details)
+        if isinstance(message, TaskProposalNotification):
+            # TODO: get taks details from task id
+            task = Task("Pinco pallino", "Never", "Nowhere", "Yesterday", "-1", "Mock task", "Nuntio vobis, gaudium magnum: habemus papam!")
+            context.context.with_static_state(self.CONTEXT_CURRENT_STATE, self.PROPOSAL)
+            context.context.with_static_state(self.CONTEXT_PROPOSAL_TASK_OBJECT, task.to_repr())
+            self._interface_connector.update_user_context(context)
+            response = RapidAnswerResponse(TelegramTextualResponse(emojize(task.recap_complete(), use_aliases=True)))
+            response.with_textual_option(emojize(":x: Not interested", use_aliases=True),
+                                         self.INTENT_CANCEL_TASK_PROPOSAL)
+            response.with_textual_option(emojize(":white_check_mark: I'm interested", use_aliases=True),
+                                         self.INTENT_CONFIRM_TASK_PROPOSAL)
+            return NotificationEvent(recipient_details, [response], context.context)
+        else:
+            pass
 
     def _create_response(self, incoming_event: IncomingSocialEvent) -> OutgoingEvent:
         context = incoming_event.context
@@ -138,7 +169,7 @@ class EatTogetherHandler(EventHandler):
         return response
 
     def cancel_action(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
-        to_remove = [self.CONTEXT_CURRENT_STATE, self.CONTEXT_ORGANIZE_TASK_OBJECT]
+        to_remove = [self.CONTEXT_CURRENT_STATE, self.CONTEXT_ORGANIZE_TASK_OBJECT, self.CONTEXT_PROPOSAL_TASK_OBJECT]
         context = incoming_event.context
         for context_key in to_remove:
             if context.has_static_state(context_key):
@@ -270,3 +301,25 @@ class EatTogetherHandler(EventHandler):
         response.with_message(TextualResponse(emojize("Your event has been saved successfully :tada:", use_aliases=True)))
         response.with_context(context)
         return response
+
+    def action_confirm_task_proposal(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+        context = incoming_event.context
+        context.delete_static_state(self.CONTEXT_PROPOSAL_TASK_OBJECT)
+        context.delete_static_state(self.CONTEXT_CURRENT_STATE)
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        response.with_message(TextualResponse(emojize("Great! I immediately send a notification to the task creator! "
+                                                      "I'll let you know if you are selected to participate :wink:",
+                                                      use_aliases=True)))
+        response.with_context(context)
+        # TODO create transaction and send it to Wenet!
+        return response
+
+    def action_delete_task_proposal(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+        context = incoming_event.context
+        context.delete_static_state(self.CONTEXT_PROPOSAL_TASK_OBJECT)
+        context.delete_static_state(self.CONTEXT_CURRENT_STATE)
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        response.with_message(TextualResponse(emojize("All right :+1:", use_aliases=True)))
+        response.with_context(context)
+        return response
+

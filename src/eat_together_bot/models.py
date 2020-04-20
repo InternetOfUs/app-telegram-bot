@@ -49,3 +49,9 @@ class Task:
         return "*%s*\n%s\n:round_pushpin: *Where:* %s\n:calendar: *When:* %s\n" \
                ":alarm_clock: *Deadline:* %s\n:couple: *Guests:* %s" \
                % (self.name, self.description, self.where, self.when, self.application_deadline, self.max_people)
+
+    def recap_complete(self) -> str:
+        return "*%s*\n%s\n:round_pushpin: *Where:* %s\n:calendar: *When:* %s\n" \
+               ":alarm_clock: *Deadline:* %s\n:couple: *Guests:* %s\n:girl: *Creator* %s" \
+               % (self.name, self.description, self.where, self.when, self.application_deadline, self.max_people,
+                  self.creator)
