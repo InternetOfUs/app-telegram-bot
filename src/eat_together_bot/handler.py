@@ -3,7 +3,7 @@ from typing import Optional, List
 
 from emoji import emojize
 
-from chatbot_core.model.event import IncomingEvent
+from chatbot_core.model.event import IncomingSocialEvent, IncomingCustomEvent
 from chatbot_core.model.message import IncomingTextMessage
 from chatbot_core.nlp.handler import NLPHandler
 from chatbot_core.translator.translator import Translator
@@ -13,10 +13,11 @@ from chatbot_core.v3.handler.helpers.intent_manager import IntentManagerV3, Inte
 from chatbot_core.v3.logger.connectors.uhopper_connector import UhopperLoggerConnector
 from chatbot_core.v3.logger.event_logger import LoggerConnector
 from chatbot_core.v3.model.messages import TextualResponse, RapidAnswerResponse, TelegramTextualResponse
-from chatbot_core.v3.model.outgoing_event import OutgoingEvent
+from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEvent
 from eat_together_bot.models import Task
 from uhopper.utils.alert import AlertModule
-
+from wenet.common.messages.builder import MessageBuilder
+from wenet.common.messages.models import TaskNotification, TextualMessage
 
 logger = logging.getLogger("uhopper.chatbot.wenet-eat-together-chatbot")
 
@@ -97,7 +98,29 @@ class EatTogetherHandler(EventHandler):
             )
         )
 
-    def _create_response(self, incoming_event: IncomingEvent) -> OutgoingEvent:
+    # handle messages coming from WeNet
+    def _handle_custom_event(self, custom_event: IncomingCustomEvent):
+        print("Custom event " + str(custom_event.to_repr()))
+        try:
+            message = MessageBuilder.build(custom_event.payload)
+            if isinstance(message, TaskNotification):
+                # self.send_notification(self.handle_wenet_notification_message(message))
+                pass
+            elif isinstance(message, TextualMessage):
+                # self.send_notification(self.handle_wenet_textual_message(message))
+                pass
+        except (KeyError, ValueError) as e:
+            logger.error("Malformed message from WeNet, the parser raised the following exception: %s" % e)
+            self._alert_module.alert("Malformed message from WeNet, the parser raised the following exception", e,
+                                     "WeNet eat-together telegram bot")
+
+    def handle_wenet_textual_message(self, message: TextualMessage) -> NotificationEvent:
+        pass
+
+    def handle_wenet_notification_message(self, message: TaskNotification) -> NotificationEvent:
+        pass
+
+    def _create_response(self, incoming_event: IncomingSocialEvent) -> OutgoingEvent:
         context = incoming_event.context
         try:
             outgoing_event, fulfiller, satisfying_rule = self.intent_manager.manage(incoming_event)
@@ -108,13 +131,13 @@ class EatTogetherHandler(EventHandler):
             outgoing_event = self._action_error(incoming_event, "error")
         return outgoing_event
 
-    def _action_error(self, incoming_event: IncomingEvent, _: str) -> OutgoingEvent:
+    def _action_error(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_message(TextualResponse(emojize("I'm very sorry but I didn't understand :pensive:",
                                                       use_aliases=True)))
         return response
 
-    def cancel_action(self, incoming_event: IncomingEvent, _: str) -> OutgoingEvent:
+    def cancel_action(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         to_remove = [self.CONTEXT_CURRENT_STATE, self.CONTEXT_ORGANIZE_TASK_OBJECT]
         context = incoming_event.context
         for context_key in to_remove:
@@ -125,12 +148,12 @@ class EatTogetherHandler(EventHandler):
         response.with_message(TextualResponse("Default text"))
         return response
 
-    def action_start(self, incoming_event: IncomingEvent, _: str) -> OutgoingEvent:
+    def action_start(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_message(TextualResponse("Try /organize"))
         return response
 
-    def _ask_question(self, incoming_event: IncomingEvent, message: str, state: str) -> OutgoingEvent:
+    def _ask_question(self, incoming_event: IncomingSocialEvent, message: str, state: str) -> OutgoingEvent:
         context = incoming_event.context
         context.with_static_state(self.CONTEXT_CURRENT_STATE, state)
         response = OutgoingEvent(social_details=incoming_event.social_details)
@@ -138,12 +161,12 @@ class EatTogetherHandler(EventHandler):
         response.with_message(TextualResponse(emojize(message, use_aliases=True)))
         return response
 
-    def organize_q1(self, incoming_event: IncomingEvent, _: str) -> OutgoingEvent:
+    def organize_q1(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         message = ("Q1: :calendar: When do you want to organize the social meal?"
                    "(remember to specify both the date and time)")
         return self._ask_question(incoming_event, message, self.ORGANIZE_Q1)
 
-    def organize_q2(self, incoming_event: IncomingEvent, _: str) -> OutgoingEvent:
+    def organize_q2(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         if isinstance(incoming_event.incoming_message, IncomingTextMessage):
             text = incoming_event.incoming_message.text
             task = Task(when=text)
@@ -155,7 +178,7 @@ class EatTogetherHandler(EventHandler):
                        "or type /cancel to cancel the current operation")
             return self._ask_question(incoming_event, message, self.ORGANIZE_Q1)
 
-    def organize_q3(self, incoming_event: IncomingEvent, _: str) -> OutgoingEvent:
+    def organize_q3(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         if isinstance(incoming_event.incoming_message, IncomingTextMessage):
             text = incoming_event.incoming_message.text
             task = Task.from_repr(incoming_event.context.get_static_state(self.CONTEXT_ORGANIZE_TASK_OBJECT))
@@ -168,7 +191,7 @@ class EatTogetherHandler(EventHandler):
                        "or type /cancel to cancel the current operation")
             return self._ask_question(incoming_event, message, self.ORGANIZE_Q2)
 
-    def organize_q4(self, incoming_event: IncomingEvent, _: str) -> OutgoingEvent:
+    def organize_q4(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         if isinstance(incoming_event.incoming_message, IncomingTextMessage):
             text = incoming_event.incoming_message.text
             task = Task.from_repr(incoming_event.context.get_static_state(self.CONTEXT_ORGANIZE_TASK_OBJECT))
@@ -181,7 +204,7 @@ class EatTogetherHandler(EventHandler):
                        "or type /cancel to cancel the current operation")
             return self._ask_question(incoming_event, message, self.ORGANIZE_Q3)
 
-    def organize_q5(self, incoming_event: IncomingEvent, _: str) -> OutgoingEvent:
+    def organize_q5(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         if isinstance(incoming_event.incoming_message, IncomingTextMessage):
             text = incoming_event.incoming_message.text
             task = Task.from_repr(incoming_event.context.get_static_state(self.CONTEXT_ORGANIZE_TASK_OBJECT))
@@ -194,7 +217,7 @@ class EatTogetherHandler(EventHandler):
                        "or type /cancel to cancel the current operation")
             return self._ask_question(incoming_event, message, self.ORGANIZE_Q4)
 
-    def organize_q6(self, incoming_event: IncomingEvent, _: str) -> OutgoingEvent:
+    def organize_q6(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         if isinstance(incoming_event.incoming_message, IncomingTextMessage):
             text = incoming_event.incoming_message.text
             task = Task.from_repr(incoming_event.context.get_static_state(self.CONTEXT_ORGANIZE_TASK_OBJECT))
@@ -207,7 +230,7 @@ class EatTogetherHandler(EventHandler):
                        "or type /cancel to cancel the current operation")
             return self._ask_question(incoming_event, message, self.ORGANIZE_Q5)
 
-    def organize_recap_message(self, incoming_event: IncomingEvent, _: str) -> OutgoingEvent:
+    def organize_recap_message(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         if isinstance(incoming_event.incoming_message, IncomingTextMessage):
             context = incoming_event.context
             description = incoming_event.incoming_message.text
@@ -230,7 +253,7 @@ class EatTogetherHandler(EventHandler):
                        "or type /cancel to cancel the current operation")
             return self._ask_question(incoming_event, message, self.ORGANIZE_Q6)
 
-    def action_cancel_task_creation(self, incoming_event: IncomingEvent, _: str) -> OutgoingEvent:
+    def action_cancel_task_creation(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         context = incoming_event.context
         context.delete_static_state(self.CONTEXT_ORGANIZE_TASK_OBJECT)
         context.delete_static_state(self.CONTEXT_CURRENT_STATE)
@@ -239,7 +262,7 @@ class EatTogetherHandler(EventHandler):
         response.with_context(context)
         return response
 
-    def action_confirm_task_creation(self, incoming_event: IncomingEvent, _: str) -> OutgoingEvent:
+    def action_confirm_task_creation(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         context = incoming_event.context
         context.delete_static_state(self.CONTEXT_ORGANIZE_TASK_OBJECT)
         context.delete_static_state(self.CONTEXT_CURRENT_STATE)
