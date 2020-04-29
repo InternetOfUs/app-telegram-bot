@@ -18,5 +18,3 @@ WORKDIR /scripts
 ADD test/ test/
 
 ENV PYTHONPATH /scripts
-
-CMD ["./run.sh"]
