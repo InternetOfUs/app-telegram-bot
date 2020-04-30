@@ -1,0 +1,73 @@
+image: docker:19.03.1
+
+services:
+  - docker:19.03.1-dind
+
+before_script:
+  - apk add --update bash wget ca-certificates openssl git tar openssh-client
+  - apk add ansible ansible-lint
+  - mkdir /secret
+  - echo "$GITLAB_SSH_KEY" > /secret/ansible.key
+  - echo "[deploy_target]" > /secret/inventory
+  - echo "${DEPLOYMENT_SERVER_IP} ansible_ssh_private_key_file=/secret/ansible.key ansible_user=gitlab" >> /secret/inventory
+  - chmod 400 /secret/ansible.key
+  - export ANSIBLE_HOST_KEY_CHECKING=False
+
+  - docker login registry.u-hopper.com -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD
+
+variables:
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_HOST: "tcp://docker:2375"
+  GIT_SUBMODULE_STRATEGY: recursive
+
+
+stages:
+  - build
+  - test
+  - push
+  - deploy
+
+build_dev:
+  stage: build
+  script:
+    - ./docker-support/runner.sh -bs latest
+  artifacts:
+    paths:
+      - bots_image.tar.gz
+    expire_in: 1 day
+  only:
+    - develop
+
+test_dev:
+    stage: test
+    script:
+        - docker load -i bots_image.tar.gz
+        - ./docker-support/runner.sh -t latest
+    dependencies:
+        - build_dev
+    only:
+      - develop
+
+push_dev:
+  stage: push
+  script:
+    - docker load -i bots_image.tar.gz
+    - ./docker-support/runner.sh -p latest
+  dependencies:
+    - build_dev
+    - test_dev
+  only:
+    - develop
+
+deploy_dev:
+   stage: deploy
+   script:
+     - ansible-playbook --user gitlab --inventory /secret/inventory ansible/deploy-test.yml
+   dependencies:
+     - push_dev
+     - build_dev
+     - test_dev
+   environment:
+     name: testing
+   only:
+      - develop

@@ -1,0 +1,62 @@
+- hosts: deploy_target
+  vars:
+    dir: "{{ lookup('env','DEPLOYMENT_TEST_DIR') }}"
+  tasks:
+
+  - name: reset env file
+    shell: git checkout .env
+    args:
+        chdir: "{{ dir }}"
+  - name: "git pull"
+    git:
+        repo: "git@lab.u-hopper.com:wenet/bots-deployment.git"
+        dest: "{{ dir }}"
+        version: "master"
+        accept_hostkey: yes
+        key_file: /home/gitlab/.ssh/id_rsa
+
+  - name: check env
+    shell: python3 check_env.py -t templates -e .
+    args:
+        chdir: "{{ dir }}"
+
+  - name: rewrite service-api version
+    lineinfile:
+        path: "{{ dir }}/.env"
+        line: BOT_VERSION=latest
+        regexp: "^BOT_VERSION=[a-zA-Z0-9.]*$"
+  - name: rewrite hub version
+    lineinfile:
+        path: "{{ dir }}/.env"
+        line: BOT_BACKEND_VERSION=latest
+        regexp: "^BOT_BACKEND_VERSION=[a-zA-Z0-9.]*$"
+  - name: rewrite dev env
+    lineinfile:
+        path: "{{ dir }}/.env"
+        line: DEV_ENV=dev
+        regexp: "^DEV_ENV=[a-zA-Z0-9.]*$"
+
+  - name: "pull"
+    shell: docker-compose pull
+    args:
+      chdir: "{{ dir }}"
+  - name: "stop backend"
+    shell: docker-compose stop backend
+    args:
+      chdir: "{{ dir }}"
+  - name: "remove backend"
+    shell: docker-compose rm -vf backend
+    args:
+      chdir: "{{ dir }}"
+  - name: "stop bot"
+    shell: docker-compose stop bot
+    args:
+      chdir: "{{ dir }}"
+  - name: "remove bot"
+    shell: docker-compose rm -vf bot
+    args:
+      chdir: "{{ dir }}"
+  - name: "up"
+    shell: docker-compose up -d
+    args:
+      chdir: "{{ dir }}"
