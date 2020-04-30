@@ -68,7 +68,7 @@ if [ $BUILD == 1 ]; then
   fi
 
   if [ $SAVE_IMAGE_TO_TARGZ == 1 ]; then
-    echo "Saving image to service_api_image.tar.gz"
+    echo "Saving image to bots_image.tar.gz"
     docker save ${REGISTRY}/${IMAGE_NAME} | gzip > bots_image.tar.gz
   fi
 fi

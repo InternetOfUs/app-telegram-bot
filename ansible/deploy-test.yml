@@ -49,9 +49,9 @@
     args:
       chdir: "{{ dir }}"
   - name: "stop bot"
-      shell: docker-compose stop bot
-      args:
-        chdir: "{{ dir }}"
+    shell: docker-compose stop bot
+    args:
+      chdir: "{{ dir }}"
   - name: "remove bot"
     shell: docker-compose rm -vf bot
     args:
