@@ -35,8 +35,8 @@ build_dev:
     paths:
       - bots_image.tar.gz
     expire_in: 1 day
-#  only:
-#    - develop
+  only:
+    - develop
 
 test_dev:
     stage: test
@@ -45,8 +45,8 @@ test_dev:
         - ./docker-support/runner.sh -t latest
     dependencies:
         - build_dev
-#    only:
-#      - develop
+    only:
+      - develop
 
 push_dev:
   stage: push
@@ -56,8 +56,8 @@ push_dev:
   dependencies:
     - build_dev
     - test_dev
-#  only:
-#    - develop
+  only:
+    - develop
 
 deploy_dev:
    stage: deploy
@@ -69,5 +69,5 @@ deploy_dev:
      - test_dev
    environment:
      name: testing
-#   only:
-#      - develop
+   only:
+      - develop
