@@ -12,12 +12,12 @@ class TestEndpoint(CommonTestCase):
         self.mqtt_publisher.publish_data = mock_publish
         raw_input = {
             "type": "taskNotification",
-            "recipient_id": "qwerty",
+            "recipientId": "qwerty",
             "title": "qwerty",
             "text": "qwerty",
-            "notification_type": "taskProposal",
+            "notificationType": "taskProposal",
             "description": "qwerty",
-            "task_id": "puppa"
+            "taskId": "puppa"
         }
         result = self.client.post('/message', data=json.dumps(raw_input), content_type='application/json')
         self.assertEqual(result.status_code, 200)
@@ -29,12 +29,12 @@ class TestEndpoint(CommonTestCase):
         self.mqtt_publisher.publish_data = mock_publish
         raw_input = {
             "type": "randomType",
-            "recipient_id": "qwerty",
+            "recipientId": "qwerty",
             "title": "qwerty",
             "text": "qwerty",
-            "notification_type": "taskProposal",
+            "notificationType": "taskProposal",
             "description": "qwerty",
-            "task_id": "puppa"
+            "taskId": "puppa"
         }
         result = self.client.post('/message', data=json.dumps(raw_input), content_type='application/json')
         self.assertEqual(result.status_code, 400)
@@ -46,12 +46,12 @@ class TestEndpoint(CommonTestCase):
         self.mqtt_publisher.publish_data = mock_publish
         raw_input = {
             "type": Message.TYPE_TASK_NOTIFICATION,
-            "recipient_id": "qwerty",
+            "recipientId": "qwerty",
             "title": "qwerty",
             "text": "qwerty",
-            "notification_type": "random",
+            "notificationType": "random",
             "description": "qwerty",
-            "task_id": "puppa"
+            "taskId": "puppa"
         }
         result = self.client.post('/message', data=json.dumps(raw_input), content_type='application/json')
         self.assertEqual(result.status_code, 400)
@@ -63,7 +63,7 @@ class TestEndpoint(CommonTestCase):
         self.mqtt_publisher.publish_data = mock_publish
         raw_input = {
             "type": Message.TYPE_TEXTUAL_MESSAGE,
-            "recipient_id": "qwerty",
+            "recipientId": "qwerty",
             "title": "qwerty",
             "text": "qwerty"
         }

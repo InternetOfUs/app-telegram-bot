@@ -22,7 +22,7 @@ from eat_together_bot.models import Task
 from eat_together_bot.utils import Utils
 from uhopper.utils.alert import AlertModule
 from wenet.common.messages.builder import MessageBuilder
-from wenet.common.messages.models import TaskNotification, TextualMessage, TaskProposalNotification
+from wenet.common.messages.models import TaskNotification, TextualMessage, TaskProposalNotification, NewUserForPlatform
 from wenet.service_api.api_interface import ApiInterface
 from wenet.service_api.task_transaction import TaskTransaction
 
@@ -41,6 +41,7 @@ class EatTogetherHandler(EventHandler):
     # all the recognize intents
     INTENT_START = '/start'
     INTENT_CANCEL = '/cancel'
+    INTENT_HELP = '/help'
     INTENT_ORGANIZE = '/organize'
     INTENT_CONFIRM_TASK_CREATION = 'task_creation_confirm'
     INTENT_CANCEL_TASK_CREATION = 'task_creation_cancel'
@@ -90,6 +91,9 @@ class EatTogetherHandler(EventHandler):
         # redirecting the flow in the corresponding points
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_START, self.action_start).with_rule(intent=self.INTENT_START)
+        )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_HELP, self.handle_help).with_rule(intent=self.INTENT_HELP)
         )
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_CANCEL, self.cancel_action).with_rule(intent=self.INTENT_CANCEL)
@@ -148,12 +152,15 @@ class EatTogetherHandler(EventHandler):
     def _handle_custom_event(self, custom_event: IncomingCustomEvent):
         try:
             message = MessageBuilder.build(custom_event.payload)
+            print(message.to_repr())
             if isinstance(message, TaskNotification):
                 notification = self.handle_wenet_notification_message(message)
                 self.send_notification(notification)
             elif isinstance(message, TextualMessage):
                 self.handle_wenet_textual_message(message)
-            # self.send_notification(self.handle_wenet_textual_message(message))
+                # self.send_notification(self.handle_wenet_textual_message(message))
+            elif isinstance(message, NewUserForPlatform):
+                self.send_notification(self._handle_new_user_message(message))
         except (KeyError, ValueError) as e:
             logger.error("Malformed message from WeNet, the parser raised the following exception: %s" % e)
             self._alert_module.alert("Malformed message from WeNet, the parser raised the following exception", e,
@@ -202,6 +209,30 @@ class EatTogetherHandler(EventHandler):
         except KeyError as e:
             logger.error("Telegram profile has not an associated chat id")
             self._alert_module.alert("Telegram profile has not an associated chat id", e)
+
+    def _handle_new_user_message(self, message: NewUserForPlatform) -> NotificationEvent:
+        user_account = self.service_api.get_user_accounts(message.user_id)
+        print(user_account)
+        try:
+            user_telegram_profile = Utils.extract_telegram_account(user_account)
+            social_details = TelegramDetails(user_telegram_profile.telegram_id, user_telegram_profile.telegram_id)
+            # asking the username to Telegram
+            user_name_req = requests.get("https://api.telegram.org/bot%s/getChat" % self.telegram_id,
+                                         params={"chat_id": user_telegram_profile.telegram_id}).json()
+            user_name = ""
+            if user_name_req["ok"] and "first_name" in user_name_req["result"]:
+                user_name = user_name_req["result"]["first_name"]
+            response = [
+                TextualResponse(emojize("Hello %s, welcome to the Wenet _eat together_ chatbot :hugging_face:"
+                                        % user_name.replace("_", ""), use_aliases=True)),
+                TextualResponse(emojize("Try to use one of the following commmands:\n"
+                                        "`/organize` to start organizing a shared meal", use_aliases=True))
+            ]
+            return NotificationEvent(social_details, response)
+        except AttributeError as e:
+            print(e)
+            logger.error(f"WeNet user {message.user_id} has not an associated Telegram account")
+            self._alert_module.alert(f"WeNet user {message.user_id} has not an associated Telegram account", e)
 
     def _create_response(self, incoming_event: IncomingSocialEvent) -> OutgoingEvent:
         context = incoming_event.context
@@ -422,4 +453,14 @@ class EatTogetherHandler(EventHandler):
                                                   "I need you to login or register to WeNet"))
         url.with_option(UrlButton("Go to the WeNet Hub", self.wenet_hub_url))
         response.with_message(url)
+        return response
+
+    def handle_help(self, message: IncomingSocialEvent, _: str) -> OutgoingEvent:
+        response = OutgoingEvent(social_details=message.social_details)
+        help_text = (
+            "These are the commands you can use with this chatbot:\n"
+            "`/organize` to start organizing a shared meal\n"
+            "`/cancel` to delete any operation you are currently doing"
+        )
+        response.with_message(TextualResponse(help_text))
         return response
