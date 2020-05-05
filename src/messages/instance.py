@@ -5,9 +5,8 @@ from flask_restful import Resource
 
 from chatbot_core.model.event import IncomingCustomEvent
 from uhopper.utils.mqtt import MqttPublishHandler
-from wenet.common.messages.builder import MessageBuilder
-from wenet.common.messages.exceptions import MessageTypeError, NotificationTypeError
-
+from wenet.common.model.message.builder import MessageBuilder
+from wenet.common.model.message.exception import MessageTypeError, NotificationTypeError
 
 logger = logging.getLogger("uhopper.chatbot.wenet.eattogether.messages")
 

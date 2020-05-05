@@ -21,10 +21,11 @@ from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEven
 from eat_together_bot.models import Task
 from eat_together_bot.utils import Utils
 from uhopper.utils.alert import AlertModule
-from wenet.common.messages.builder import MessageBuilder
-from wenet.common.messages.models import TaskNotification, TextualMessage, TaskProposalNotification, NewUserForPlatform
-from wenet.service_api.api_interface import ApiInterface
-from wenet.service_api.task_transaction import TaskTransaction
+from wenet.common.interface.service_api import ServiceApiInterface
+from wenet.common.model.message.builder import MessageBuilder
+from wenet.common.model.message.message import TaskNotification, TextualMessage, NewUserForPlatform, \
+    TaskProposalNotification
+from wenet.common.model.task.transaction import TaskTransaction
 
 logger = logging.getLogger("uhopper.chatbot.wenet-eat-together-chatbot")
 
@@ -84,7 +85,7 @@ class EatTogetherHandler(EventHandler):
         self.bot_name = info["result"]["first_name"]
         self.app_id = app_id
         self.wenet_hub_url = wenet_hub_url
-        self.service_api = ApiInterface(wenet_backend_url, app_id)
+        self.service_api = ServiceApiInterface(wenet_backend_url, app_id)
         self.intent_manager = IntentManagerV3()
         uhopper_logger_connector = UhopperLoggerConnector().with_handler(instance_namespace)
         self.with_logger_connector(uhopper_logger_connector)
@@ -402,7 +403,7 @@ class EatTogetherHandler(EventHandler):
         return response
 
     def action_confirm_task_creation(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
-        from wenet.service_api.task import Task as WenetTask
+        from wenet.common.model.task.task import Task as WenetTask
         context = incoming_event.context
         task = Task.from_repr(context.get_static_state(self.CONTEXT_ORGANIZE_TASK_OBJECT))
         context.delete_static_state(self.CONTEXT_ORGANIZE_TASK_OBJECT)

@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 from typing import Optional
 
-from wenet.service_api.authentication_account import WeNetUserWithAccounts, TelegramAuthenticationAccount
+from wenet.common.model.user.authentication_account import WeNetUserWithAccounts, TelegramAuthenticationAccount
 
 
 class Utils:

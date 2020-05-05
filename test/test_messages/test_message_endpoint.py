@@ -2,7 +2,7 @@ import json
 from unittest.mock import Mock
 
 from test.test_messages.common import CommonTestCase
-from wenet.common.messages.models import Message
+from wenet.common.model.message.message import TaskNotification, TextualMessage
 
 
 class TestEndpoint(CommonTestCase):
@@ -45,7 +45,7 @@ class TestEndpoint(CommonTestCase):
         mock_publish = Mock()
         self.mqtt_publisher.publish_data = mock_publish
         raw_input = {
-            "type": Message.TYPE_TASK_NOTIFICATION,
+            "type": TaskNotification.TYPE,
             "recipientId": "qwerty",
             "title": "qwerty",
             "text": "qwerty",
@@ -62,7 +62,7 @@ class TestEndpoint(CommonTestCase):
         mock_publish = Mock()
         self.mqtt_publisher.publish_data = mock_publish
         raw_input = {
-            "type": Message.TYPE_TEXTUAL_MESSAGE,
+            "type": TextualMessage.TYPE,
             "recipientId": "qwerty",
             "title": "qwerty",
             "text": "qwerty"

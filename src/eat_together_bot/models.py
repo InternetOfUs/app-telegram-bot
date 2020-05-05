@@ -1,6 +1,6 @@
 from __future__ import absolute_import, annotations
 
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 
@@ -21,9 +21,9 @@ class Task:
     def to_repr(self) -> dict:
         return {
             "creator": self.creator,
-            "when": self.when.timestamp() * 1000 if self.when is not None else None,
+            "when": self.when.timestamp() if self.when is not None else None,
             "where": self.where,
-            "application_deadline": self.application_deadline.timestamp() * 1000
+            "application_deadline": self.application_deadline.timestamp()
             if self.application_deadline is not None else None,
             "max_people": self.max_people,
             "name": self.name,
@@ -36,9 +36,9 @@ class Task:
         return Task(
             raw["id"],
             raw["creator"],
-            datetime.fromtimestamp(raw["when"] / 1000) if raw["when"] is not None else None,
+            datetime.fromtimestamp(raw["when"]) if raw["when"] is not None else None,
             raw["where"],
-            datetime.fromtimestamp(raw["application_deadline"] / 1000)
+            datetime.fromtimestamp(raw["application_deadline"])
             if raw["application_deadline"] is not None else None,
             raw["max_people"],
             raw["name"],
@@ -71,19 +71,20 @@ class Task:
         return Task(
             raw["taskId"],
             raw["requesterId"],
-            datetime.fromtimestamp(raw["startTs"] / 1000),
+            datetime.fromtimestamp(raw["startTs"]),
             "Trento",
-            datetime.fromtimestamp(raw["deadlineTs"] / 1000),
+            datetime.fromtimestamp(raw["deadlineTs"]),
             "100",
             raw["goal"]["name"],
             raw["goal"]["description"]
         )
 
     def to_service_api_repr(self, app_id: str) -> dict:
+        end_ts = self.when + timedelta(hours=1)
         return {
             "taskId": self.id,
-            "_creationTs": int(datetime.now().timestamp() * 1000),
-            "_lastUpdateTs": int(datetime.now().timestamp() * 1000),
+            "_creationTs": int(datetime.now().timestamp()),
+            "_lastUpdateTs": int(datetime.now().timestamp()),
             "taskTypeId": "task_type_id",
             "requesterId": str(self.creator),
             "appId": app_id,
@@ -91,9 +92,9 @@ class Task:
                 "name": self.name,
                 "description": self.description
             },
-            "startTs": int(self.when.timestamp() * 1000),
-            "endTs": int(self.when.timestamp() * 1000),
-            "deadlineTs": int(self.application_deadline.timestamp() * 1000),
+            "startTs": int(self.when.timestamp()),
+            "endTs": int(end_ts.timestamp()),
+            "deadlineTs": int(self.application_deadline.timestamp()),
             "norms": [],
             "attributes": []
         }
