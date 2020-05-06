@@ -16,15 +16,17 @@ from chatbot_core.v3.handler.helpers.intent_manager import IntentManagerV3, Inte
 from chatbot_core.v3.logger.connectors.uhopper_connector import UhopperLoggerConnector
 from chatbot_core.v3.logger.event_logger import LoggerConnector
 from chatbot_core.v3.model.actions import UrlButton
-from chatbot_core.v3.model.messages import TextualResponse, RapidAnswerResponse, TelegramTextualResponse
+from chatbot_core.v3.model.messages import TextualResponse, RapidAnswerResponse, TelegramTextualResponse, \
+    TelegramRapidAnswerResponse
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEvent
 from eat_together_bot.models import Task
 from eat_together_bot.utils import Utils
 from uhopper.utils.alert import AlertModule
+from wenet.common.interface.exceptions import TaskNotFound
 from wenet.common.interface.service_api import ServiceApiInterface
 from wenet.common.model.message.builder import MessageBuilder
 from wenet.common.model.message.message import TaskNotification, TextualMessage, NewUserForPlatform, \
-    TaskProposalNotification
+    TaskProposalNotification, TaskVolunteerNotification, TaskSelectionNotification
 from wenet.common.model.task.transaction import TaskTransaction
 
 logger = logging.getLogger("uhopper.chatbot.wenet-eat-together-chatbot")
@@ -38,7 +40,9 @@ class EatTogetherHandler(EventHandler):
     CONTEXT_CURRENT_STATE = "current_state"
     CONTEXT_ORGANIZE_TASK_OBJECT = 'organize_task_object'
     CONTEXT_PROPOSAL_TASK_OBJECT = 'proposal_task_object'
+    CONTEXT_VOLUNTEER_CANDIDATURE_TASK_ID = 'volunteer_candidature_task_id'
     CONTEXT_WENET_USER_ID = 'wenet_user_id'
+    CONTEXT_VOLUNTEER_INFO = 'volunteer_info'
     # all the recognize intents
     INTENT_START = '/start'
     INTENT_CANCEL = '/cancel'
@@ -48,6 +52,9 @@ class EatTogetherHandler(EventHandler):
     INTENT_CANCEL_TASK_CREATION = 'task_creation_cancel'
     INTENT_CONFIRM_TASK_PROPOSAL = 'task_creation_confirm'
     INTENT_CANCEL_TASK_PROPOSAL = 'task_creation_cancel'
+    INTENT_VOLUNTEER_INFO = 'volunteer_info'
+    INTENT_CONFIRM_VOLUNTEER_PROPOSAL = 'task_volunteer_confirm'
+    INTENT_CANCEL_VOLUNTEER_PROPOSAL = 'task_volunteer_cancel'
     # task creation states (/organize command)
     ORGANIZE_Q1 = 'organize_q1'
     ORGANIZE_Q2 = 'organize_q2'
@@ -58,6 +65,8 @@ class EatTogetherHandler(EventHandler):
     ORGANIZE_RECAP = 'organize_recap'
     # task proposal state
     PROPOSAL = 'send_proposal'
+    # volunteer candidature approval state
+    VOLUNTEER_CANDIDATURE = 'volunteer_candidature'
 
     def __init__(self, instance_namespace: str,
                  bot_id: str,
@@ -148,12 +157,29 @@ class EatTogetherHandler(EventHandler):
                 intent=self.INTENT_CANCEL_TASK_PROPOSAL, static_context=(self.CONTEXT_CURRENT_STATE, self.PROPOSAL)
             )
         )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_VOLUNTEER_INFO, self.handle_volunteer_info).with_rule(
+                intent=self.INTENT_VOLUNTEER_INFO,
+                static_context=(self.CONTEXT_CURRENT_STATE, self.VOLUNTEER_CANDIDATURE)
+            )
+        )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_CONFIRM_VOLUNTEER_PROPOSAL, self.handle_confirm_candidature).with_rule(
+                intent=self.INTENT_CONFIRM_VOLUNTEER_PROPOSAL,
+                static_context=(self.CONTEXT_CURRENT_STATE, self.VOLUNTEER_CANDIDATURE)
+            )
+        )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_CANCEL_VOLUNTEER_PROPOSAL, self.handle_reject_candidature).with_rule(
+                intent=self.INTENT_CANCEL_VOLUNTEER_PROPOSAL,
+                static_context=(self.CONTEXT_CURRENT_STATE, self.VOLUNTEER_CANDIDATURE)
+            )
+        )
 
     # handle messages coming from WeNet
     def _handle_custom_event(self, custom_event: IncomingCustomEvent):
         try:
             message = MessageBuilder.build(custom_event.payload)
-            print(message.to_repr())
             if isinstance(message, TaskNotification):
                 notification = self.handle_wenet_notification_message(message)
                 self.send_notification(notification)
@@ -178,30 +204,61 @@ class EatTogetherHandler(EventHandler):
             recipient_details = TelegramDetails(user_telegram_profile.telegram_id,
                                                 user_telegram_profile.metadata["chat_id"])
             context = self._interface_connector.get_user_context(recipient_details)
+            service_api_task = self.service_api.get_task(str(message.task_id))
             if isinstance(message, TaskProposalNotification):
-                try:
-                    service_api_task = self.service_api.get_task(str(message.task_id))
-                    if service_api_task is None:
-                        logger.error(f"No task associated with id [{message.task_id}]")
-                        self._alert_module.alert(f"No task associated with id [{message.task_id}]")
-                    else:
-                        task = Task.from_service_api_task_repr(service_api_task.to_repr())
-                        context.context.with_static_state(self.CONTEXT_CURRENT_STATE, self.PROPOSAL)
-                        context.context.with_static_state(self.CONTEXT_PROPOSAL_TASK_OBJECT, task.to_repr())
-                        self._interface_connector.update_user_context(context)
-                        message = TextualResponse("There's a task that might interest you:")
-                        response = RapidAnswerResponse(
-                            TelegramTextualResponse(emojize(task.recap_complete(), use_aliases=True)))
-                        response.with_textual_option(emojize(":x: Not interested", use_aliases=True),
-                                                     self.INTENT_CANCEL_TASK_PROPOSAL)
-                        response.with_textual_option(emojize(":white_check_mark: I'm interested", use_aliases=True),
-                                                     self.INTENT_CONFIRM_TASK_PROPOSAL)
-                        return NotificationEvent(recipient_details, [message, response], context.context)
-                except ValueError as e:
-                    logger.error(f"Requested task [{message.task_id}] does not exist")
-                    self._alert_module.alert(f"Requested task [{message.task_id}] does not exist", e)
+                # the system wants to propose a task to an user
+                task = Task.from_service_api_task_repr(service_api_task.to_repr())
+                context.context.with_static_state(self.CONTEXT_CURRENT_STATE, self.PROPOSAL)
+                context.context.with_static_state(self.CONTEXT_PROPOSAL_TASK_OBJECT, task.to_repr())
+                self._interface_connector.update_user_context(context)
+                response_message = TextualResponse("There's a task that might interest you:")
+                response = RapidAnswerResponse(
+                    TelegramTextualResponse(emojize(task.recap_complete(), use_aliases=True)))
+                response.with_textual_option(emojize(":x: Not interested", use_aliases=True),
+                                             self.INTENT_CANCEL_TASK_PROPOSAL)
+                response.with_textual_option(emojize(":white_check_mark: I'm interested", use_aliases=True),
+                                             self.INTENT_CONFIRM_TASK_PROPOSAL)
+                return NotificationEvent(recipient_details, [response_message, response], context.context)
+            elif isinstance(message, TaskVolunteerNotification):
+                # a volunteer has applied to a task, and the task creator is notified
+                user_object = self.service_api.get_user_profile(str(message.volunteer_id))
+                if user_object is None:
+                    error_message = "Error, userId [%s] does not give any user profile" % str(message.volunteer_id)
+                    logger.error(error_message)
+                    self._alert_module.alert(error_message)
+                    raise ValueError(error_message)
+                user_name = "%s %s" % (user_object.name.first, user_object.name.last)
+                message_text = "%s is interested in your event: *%s*! Do you want to accept his application" \
+                               % (user_name, service_api_task.goal.name)
+                response = TelegramRapidAnswerResponse(TextualResponse(message_text), row_displacement=[1, 2])
+                response.with_textual_option(emojize(":question: More about the volunteer", use_aliases=True),
+                                             self.INTENT_VOLUNTEER_INFO)
+                response.with_textual_option(emojize(":x: Not accept", use_aliases=True),
+                                             self.INTENT_CANCEL_VOLUNTEER_PROPOSAL)
+                response.with_textual_option(emojize(":white_check_mark: Yes, why not!?!", use_aliases=True),
+                                             self.INTENT_CONFIRM_VOLUNTEER_PROPOSAL)
+                context.context.with_static_state(self.CONTEXT_CURRENT_STATE, self.VOLUNTEER_CANDIDATURE)
+                context.context.with_static_state(self.CONTEXT_VOLUNTEER_INFO, message.volunteer_id)
+                context.context.with_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_TASK_ID, message.task_id)
+                return NotificationEvent(recipient_details, [response], context.context)
+            elif isinstance(message, TaskSelectionNotification):
+                if message.outcome == TaskSelectionNotification.OUTCOME_ACCEPTED:
+                    text = ":tada: I'm happy to announce that the creator accepted you for the event: *%s*" \
+                           % service_api_task.goal.name
+                elif message.outcome == TaskSelectionNotification.OUTCOME_REFUSED:
+                    text = "I'm very sorry :pensive:, the creator didn't accept you for the event: *%s*" \
+                           % service_api_task.goal.name
+                else:
+                    logger.error("Outcome [%s] unrecognized" % message.outcome)
+                    self._alert_module.alert("Outcome [%s] unrecognized" % message.outcome)
+                    raise Exception("Outcome [%s] unrecognized" % message.outcome)
+                response = TextualResponse(emojize(text, use_aliases=True))
+                return NotificationEvent(recipient_details, [response])
             else:
                 pass
+        except TaskNotFound:
+            logger.error(f"No task associated with id [{message.task_id}]")
+            self._alert_module.alert(f"No task associated with id [{message.task_id}]")
         except AttributeError as e:
             logger.error("Null pointer exception. Either not able to extract a user account from Wenet id, "
                          "or no Telegram account associated")
@@ -213,7 +270,6 @@ class EatTogetherHandler(EventHandler):
 
     def _handle_new_user_message(self, message: NewUserForPlatform) -> NotificationEvent:
         user_account = self.service_api.get_user_accounts(message.user_id)
-        print(user_account)
         try:
             user_telegram_profile = Utils.extract_telegram_account(user_account)
             social_details = TelegramDetails(user_telegram_profile.telegram_id, user_telegram_profile.telegram_id)
@@ -231,7 +287,6 @@ class EatTogetherHandler(EventHandler):
             ]
             return NotificationEvent(social_details, response)
         except AttributeError as e:
-            print(e)
             logger.error(f"WeNet user {message.user_id} has not an associated Telegram account")
             self._alert_module.alert(f"WeNet user {message.user_id} has not an associated Telegram account", e)
 
@@ -464,4 +519,64 @@ class EatTogetherHandler(EventHandler):
             "`/cancel` to delete any operation you are currently doing"
         )
         response.with_message(TextualResponse(help_text))
+        return response
+
+    def handle_volunteer_info(self, message: IncomingSocialEvent, _: str) -> OutgoingEvent:
+        if not message.context.has_static_state(self.CONTEXT_VOLUNTEER_INFO):
+            error_message = "Illegal state: no info about the volunteer in the static context when asking for " \
+                            "volunteer info during a candidature approval"
+            logger.error(error_message)
+            self._alert_module.alert(error_message)
+            raise ValueError(error_message)
+        user_id = message.context.get_static_state(self.CONTEXT_VOLUNTEER_INFO)
+        response = OutgoingEvent(social_details=message.social_details)
+        user_object = self.service_api.get_user_profile(str(user_id))
+        if user_object is None:
+            error_message = "Error, userId [%s] does not give any user profile" % str(user_id)
+            logger.error(error_message)
+            self._alert_module.alert(error_message)
+            raise ValueError(error_message)
+        response.with_message(TextualResponse("%s %s" % (user_object.name.first, user_object.name.last)))
+        menu = RapidAnswerResponse(TextualResponse("So, what do you want to do?"))
+        menu.with_textual_option(emojize(":x: Not accept", use_aliases=True),
+                                 self.INTENT_CANCEL_VOLUNTEER_PROPOSAL)
+        menu.with_textual_option(emojize(":white_check_mark: Yes, of course!", use_aliases=True),
+                                 self.INTENT_CONFIRM_VOLUNTEER_PROPOSAL)
+        response.with_message(menu)
+        response.with_context(message.context)
+        return response
+
+    def _handle_volunteer_proposal(self, message: IncomingSocialEvent, decision: bool):
+        if not message.context.has_static_state(self.CONTEXT_VOLUNTEER_INFO):
+            error_message = "Illegal state: no info about the volunteer in the static context when handling" \
+                            " a candidature approval"
+            logger.error(error_message)
+            self._alert_module.alert(error_message)
+            raise ValueError(error_message)
+        if not message.context.has_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_TASK_ID):
+            error_message = "Illegal state: no info about the task in the static context when handling" \
+                            " a candidature approval"
+            logger.error(error_message)
+            self._alert_module.alert(error_message)
+            raise ValueError(error_message)
+        volunteer_id = message.context.get_static_state(self.CONTEXT_VOLUNTEER_INFO)
+        task_id = message.context.get_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_TASK_ID)
+        # TODO create the task transaction!
+        message.context.delete_static_state(self.CONTEXT_VOLUNTEER_INFO)
+        message.context.delete_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_TASK_ID)
+
+    def handle_confirm_candidature(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        response.with_message(TextualResponse("Great, you have accepted the volunteer!"))
+        self._handle_volunteer_proposal(incoming_event, True)
+        incoming_event.context.delete_static_state(self.CONTEXT_CURRENT_STATE)
+        response.with_context(incoming_event.context)
+        return response
+
+    def handle_reject_candidature(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        response.with_message(TextualResponse("Ok, you have rejected the volunteer!"))
+        self._handle_volunteer_proposal(incoming_event, False)
+        incoming_event.context.delete_static_state(self.CONTEXT_CURRENT_STATE)
+        response.with_context(incoming_event.context)
         return response
