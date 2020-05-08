@@ -22,11 +22,12 @@ from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEven
 from eat_together_bot.models import Task
 from eat_together_bot.utils import Utils
 from uhopper.utils.alert import AlertModule
-from wenet.common.interface.exceptions import TaskNotFound
+from wenet.common.interface.exceptions import TaskNotFound, TaskCreationError, TaskTransactionCreationError
 from wenet.common.interface.service_api import ServiceApiInterface
 from wenet.common.model.message.builder import MessageBuilder
 from wenet.common.model.message.message import TaskNotification, TextualMessage, NewUserForPlatform, \
     TaskProposalNotification, TaskVolunteerNotification, TaskSelectionNotification
+from wenet.common.model.task.task import TaskAttribute, TaskGoal
 from wenet.common.model.task.transaction import TaskTransaction
 
 logger = logging.getLogger("uhopper.chatbot.wenet-eat-together-chatbot")
@@ -41,6 +42,7 @@ class EatTogetherHandler(EventHandler):
     CONTEXT_ORGANIZE_TASK_OBJECT = 'organize_task_object'
     CONTEXT_PROPOSAL_TASK_OBJECT = 'proposal_task_object'
     CONTEXT_VOLUNTEER_CANDIDATURE_TASK_ID = 'volunteer_candidature_task_id'
+    CONTEXT_PROPOSAL_USER_ID = 'proposal_user_id'
     CONTEXT_WENET_USER_ID = 'wenet_user_id'
     CONTEXT_VOLUNTEER_INFO = 'volunteer_info'
     # all the recognize intents
@@ -204,12 +206,16 @@ class EatTogetherHandler(EventHandler):
             recipient_details = TelegramDetails(user_telegram_profile.telegram_id,
                                                 user_telegram_profile.metadata["chat_id"])
             context = self._interface_connector.get_user_context(recipient_details)
-            service_api_task = self.service_api.get_task(str(message.task_id))
+            # service_api_task = self.service_api.get_task(str(message.task_id))
+            # TODO ripristinare
+            from wenet.common.model.task.task import Task as WenetTask
+            service_api_task = WenetTask("pippo", 123456, 123456, "tasktype", "4", "1", TaskGoal("name", "descr"), 123455, 123456, 123456, [], [])
             if isinstance(message, TaskProposalNotification):
                 # the system wants to propose a task to an user
                 task = Task.from_service_api_task_repr(service_api_task.to_repr())
                 context.context.with_static_state(self.CONTEXT_CURRENT_STATE, self.PROPOSAL)
                 context.context.with_static_state(self.CONTEXT_PROPOSAL_TASK_OBJECT, task.to_repr())
+                context.context.with_static_state(self.CONTEXT_PROPOSAL_USER_ID, message.recipient_id)
                 self._interface_connector.update_user_context(context)
                 response_message = TextualResponse("There's a task that might interest you:")
                 response = RapidAnswerResponse(
@@ -240,6 +246,7 @@ class EatTogetherHandler(EventHandler):
                 context.context.with_static_state(self.CONTEXT_CURRENT_STATE, self.VOLUNTEER_CANDIDATURE)
                 context.context.with_static_state(self.CONTEXT_VOLUNTEER_INFO, message.volunteer_id)
                 context.context.with_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_TASK_ID, message.task_id)
+                self._interface_connector.update_user_context(context)
                 return NotificationEvent(recipient_details, [response], context.context)
             elif isinstance(message, TaskSelectionNotification):
                 if message.outcome == TaskSelectionNotification.OUTCOME_ACCEPTED:
@@ -464,24 +471,44 @@ class EatTogetherHandler(EventHandler):
         context.delete_static_state(self.CONTEXT_ORGANIZE_TASK_OBJECT)
         context.delete_static_state(self.CONTEXT_CURRENT_STATE)
         response = OutgoingEvent(social_details=incoming_event.social_details)
-        response.with_message(TextualResponse(emojize("Your event has been saved successfully :tada:",
-                                                      use_aliases=True)))
-        response.with_context(context)
-        self.service_api.create_task(WenetTask.from_repr(task.to_service_api_repr(self.app_id)))
-        return response
+        try:
+            # TODO capire se gli attributi vanno ad oggetto o lista
+            self.service_api.create_task(WenetTask.from_repr(task.to_service_api_repr(self.app_id)))
+            response.with_message(TextualResponse(emojize("Your event has been saved successfully :tada:",
+                                                          use_aliases=True)))
+        except TaskCreationError as e:
+            logger.error("Error, unable to create a new task")
+            self._alert_module.alert("Error, unable to create a new task", e)
+            response.with_message(TextualResponse("I'm sorry, but something went wrong with the creation of your task."
+                                                  " Try again later"))
+        finally:
+            response.with_context(context)
+            return response
 
     def action_confirm_task_proposal(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         context = incoming_event.context
+        if not context.has_static_state(self.CONTEXT_PROPOSAL_TASK_OBJECT):
+            error_message = "Illegal state: no task object in the context when the user confirms its proposal"
+            logger.error(error_message)
+            self._alert_module.alert(error_message)
+            raise ValueError(error_message)
+        if not context.has_static_state(self.CONTEXT_PROPOSAL_USER_ID):
+            error_message = "Illegal state: no volunteer id in the context when the user confirms its proposal"
+            logger.error(error_message)
+            self._alert_module.alert(error_message)
+            raise ValueError(error_message)
         task = Task.from_repr(context.get_static_state(self.CONTEXT_PROPOSAL_TASK_OBJECT))
+        volunteer_id = context.get_static_state(self.CONTEXT_PROPOSAL_USER_ID)
         context.delete_static_state(self.CONTEXT_PROPOSAL_TASK_OBJECT)
+        context.delete_static_state(self.CONTEXT_PROPOSAL_USER_ID)
         context.delete_static_state(self.CONTEXT_CURRENT_STATE)
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_message(TextualResponse(emojize("Great! I immediately send a notification to the task creator! "
                                                       "I'll let you know if you are selected to participate :wink:",
                                                       use_aliases=True)))
         response.with_context(context)
-        # TODO task transaction is empty now!
-        transaction = TaskTransaction(task.id, "volunteer_proposal", [])
+        transaction = TaskTransaction(task.id, TaskTransaction.LABEL_VOLUNTEER_FOR_TASK,
+                                      [TaskAttribute("volunteerId", volunteer_id)])
         self.service_api.create_task_transaction(transaction)
         return response
 
@@ -546,7 +573,7 @@ class EatTogetherHandler(EventHandler):
         response.with_context(message.context)
         return response
 
-    def _handle_volunteer_proposal(self, message: IncomingSocialEvent, decision: bool):
+    def _handle_volunteer_proposal(self, message: IncomingSocialEvent, decision: bool) -> bool:
         if not message.context.has_static_state(self.CONTEXT_VOLUNTEER_INFO):
             error_message = "Illegal state: no info about the volunteer in the static context when handling" \
                             " a candidature approval"
@@ -561,22 +588,36 @@ class EatTogetherHandler(EventHandler):
             raise ValueError(error_message)
         volunteer_id = message.context.get_static_state(self.CONTEXT_VOLUNTEER_INFO)
         task_id = message.context.get_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_TASK_ID)
-        # TODO create the task transaction!
-        message.context.delete_static_state(self.CONTEXT_VOLUNTEER_INFO)
-        message.context.delete_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_TASK_ID)
+        task_label = TaskTransaction.LABEL_ACCEPT_VOLUNTEER if decision else TaskTransaction.LABEL_REFUSE_VOLUNTEER
+        transaction = TaskTransaction(task_id, task_label, [TaskAttribute("volunteerId", volunteer_id)])
+        try:
+            self.service_api.create_task_transaction(transaction)
+            outcome = True
+        except TaskTransactionCreationError:
+            logger.error("Error during the creation of the task transaction")
+            self._alert_module.alert("Error during the creation of the task transaction")
+            outcome = False
+        finally:
+            message.context.delete_static_state(self.CONTEXT_VOLUNTEER_INFO)
+            message.context.delete_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_TASK_ID)
+        return outcome
 
     def handle_confirm_candidature(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
-        response.with_message(TextualResponse("Great, you have accepted the volunteer!"))
-        self._handle_volunteer_proposal(incoming_event, True)
+        if self._handle_volunteer_proposal(incoming_event, True):
+            response.with_message(TextualResponse("Great, you have accepted the volunteer!"))
+        else:
+            response.with_message(TextualResponse("I'm sorry, but something went wrong"))
         incoming_event.context.delete_static_state(self.CONTEXT_CURRENT_STATE)
         response.with_context(incoming_event.context)
         return response
 
     def handle_reject_candidature(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
-        response.with_message(TextualResponse("Ok, you have rejected the volunteer!"))
-        self._handle_volunteer_proposal(incoming_event, False)
+        if self._handle_volunteer_proposal(incoming_event, False):
+            response.with_message(TextualResponse("Ok, you have rejected the volunteer!"))
+        else:
+            response.with_message(TextualResponse("I'm sorry, but something went wrong"))
         incoming_event.context.delete_static_state(self.CONTEXT_CURRENT_STATE)
         response.with_context(incoming_event.context)
         return response
