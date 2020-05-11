@@ -42,7 +42,10 @@ class TestTask(TestCase):
             "endTs": 1577833300,
             "deadlineTs": 1577833350,
             "norms": [],
-            "attributes": []
+            "attributes": {
+                "where": "Trento",
+                "maxPeople": 11
+            }
         }
         task = Task.from_service_api_task_repr(raw)
         self.assertIsInstance(task, Task)

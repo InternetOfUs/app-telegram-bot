@@ -58,34 +58,33 @@ class Task:
                % (self.name, self.description, self.where, self.when.strftime("%d/%m/%Y, %H:%M:%S"),
                   self.application_deadline.strftime("%d/%m/%Y, %H:%M:%S"), self.max_people)
 
-    def recap_complete(self) -> str:
+    def recap_complete(self, creator_name: str) -> str:
         return "*%s*\n%s\n:round_pushpin: *Where:* %s\n:calendar: *When:* %s\n" \
                ":alarm_clock: *Deadline:* %s\n:couple: *Guests:* %s\n:girl: *Creator:* %s" \
                % (self.name, self.description, self.where, self.when.strftime("%d/%m/%Y, %H:%M:%S"),
                   self.application_deadline.strftime("%d/%m/%Y, %H:%M:%S"), self.max_people,
-                  self.creator.replace('_', ''))
+                  creator_name.replace('_', ''))
 
     @staticmethod
     def from_service_api_task_repr(raw: dict) -> Task:
-        # TODO some values are just mocks! When service API will change, this function must change too!
         return Task(
             raw["taskId"],
             raw["requesterId"],
             datetime.fromtimestamp(raw["startTs"]),
-            "Trento",
+            raw["attributes"]["where"],
             datetime.fromtimestamp(raw["deadlineTs"]),
-            "100",
+            raw["attributes"]["maxPeople"],
             raw["goal"]["name"],
             raw["goal"]["description"]
         )
 
-    def to_service_api_repr(self, app_id: str) -> dict:
+    def to_service_api_repr(self, app_id: str, task_type: str) -> dict:
         end_ts = self.when + timedelta(hours=1)
         return {
             "taskId": self.id,
             "_creationTs": int(datetime.now().timestamp()),
             "_lastUpdateTs": int(datetime.now().timestamp()),
-            "taskTypeId": "task_type_id",
+            "taskTypeId": task_type,
             "requesterId": str(self.creator),
             "appId": app_id,
             "goal": {
@@ -96,5 +95,8 @@ class Task:
             "endTs": int(end_ts.timestamp()),
             "deadlineTs": int(self.application_deadline.timestamp()),
             "norms": [],
-            "attributes": []
+            "attributes": {
+                "where": self.where,
+                "maxPeople": self.max_people
+            }
         }

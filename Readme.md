@@ -15,6 +15,7 @@ This chatbot is created in the context of `WeNet: the Internet of us`. It will b
 * `WENET_BACKEND_URL`: the url to the WeNet Service APIs
 * `WENET_APP_ID`: WeNet App ID used by the bot
 * `WENET_HUB_URL`: url of the WeNet hub
+* `TASK_TYPE_ID`: the type ID of the tasks Eat Together
 
 ## Endpoint env variables
 
