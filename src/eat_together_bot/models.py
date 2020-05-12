@@ -68,7 +68,7 @@ class Task:
     @staticmethod
     def from_service_api_task_repr(raw: dict) -> Task:
         return Task(
-            raw["taskId"],
+            raw["id"],
             raw["requesterId"],
             datetime.fromtimestamp(raw["startTs"]),
             raw["attributes"]["where"],

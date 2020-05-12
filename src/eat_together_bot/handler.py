@@ -49,6 +49,7 @@ class EatTogetherHandler(EventHandler):
     INTENT_CANCEL = '/cancel'
     INTENT_HELP = '/help'
     INTENT_ORGANIZE = '/organize'
+    INTENT_INFO = '/info'
     INTENT_CONFIRM_TASK_CREATION = 'task_creation_confirm'
     INTENT_CANCEL_TASK_CREATION = 'task_creation_cancel'
     INTENT_CONFIRM_TASK_PROPOSAL = 'task_creation_confirm'
@@ -69,6 +70,12 @@ class EatTogetherHandler(EventHandler):
     PROPOSAL = 'send_proposal'
     # volunteer candidature approval state
     VOLUNTEER_CANDIDATURE = 'volunteer_candidature'
+    # transaction labels
+    LABEL_VOLUNTEER_FOR_TASK = 'volunteerForTask'
+    LABEL_REFUSE_TASK = 'refuseTask'
+    LABEL_ACCEPT_VOLUNTEER = 'acceptVolunteer'
+    LABEL_REFUSE_VOLUNTEER = 'refuseVolunteer'
+    LABEL_TASK_COMPLETED = 'taskCompleted'
 
     def __init__(self, instance_namespace: str,
                  bot_id: str,
@@ -78,6 +85,7 @@ class EatTogetherHandler(EventHandler):
                  app_id: str,
                  wenet_hub_url: str,
                  task_type_id: str,
+                 api_key: str,
                  alert_module: AlertModule,
                  connector: SocialConnector,
                  nlp_handler: Optional[NLPHandler],
@@ -95,6 +103,7 @@ class EatTogetherHandler(EventHandler):
         :param app_id: WeNet app id with which the bot works
         :param wenet_hub_url: url of the hub, where to redirect not authenticated users
         :param task_type_id: the ID of the type of the tasks the bot will create
+        :param api_key: the API key to authenticate requests to the service API
         :param alert_module:
         :param connector:
         :param nlp_handler:
@@ -116,13 +125,13 @@ class EatTogetherHandler(EventHandler):
         self.app_id = app_id
         self.wenet_hub_url = wenet_hub_url
         self.task_type_id = task_type_id
-        self.service_api = ServiceApiInterface(wenet_backend_url, app_id)
+        self.service_api = ServiceApiInterface(wenet_backend_url, app_id, api_key)
         self.intent_manager = IntentManagerV3()
         uhopper_logger_connector = UhopperLoggerConnector().with_handler(instance_namespace)
         self.with_logger_connector(uhopper_logger_connector)
         # redirecting the flow in the corresponding points
         self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_START, self.action_start).with_rule(intent=self.INTENT_START)
+            IntentFulfillerV3(self.INTENT_START, self.action_info).with_rule(intent=self.INTENT_START)
         )
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_HELP, self.handle_help).with_rule(intent=self.INTENT_HELP)
@@ -202,6 +211,9 @@ class EatTogetherHandler(EventHandler):
                 intent=self.INTENT_CREATOR_INFO,
                 static_context=(self.CONTEXT_CURRENT_STATE, self.PROPOSAL)
             )
+        )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_INFO, self.action_info).with_rule(intent=self.INTENT_INFO)
         )
 
     # handle messages coming from WeNet
@@ -342,11 +354,25 @@ class EatTogetherHandler(EventHandler):
             user_name = ""
             if user_name_req["ok"] and "first_name" in user_name_req["result"]:
                 user_name = user_name_req["result"]["first_name"]
+            text_1 = (
+                "Now you are part of the community! "
+                "Are you curious to join new experiences "
+                "and make your social network even more "
+                "diverse and exciting?\n"
+                "Well, here is how I can help you!"
+            )
+            text_2 = (
+                "Type one the following commands to start chatting with me:\n"
+                "*/info* for receiving informations on this bot\n"
+                "*/organize* to organize a social meal\n"
+                # "*/find* to search for an already created social meal to attend"
+                "To interrupt an ongoing procedure at any time, type */cancel*"
+            )
             response = [
                 TextualResponse(emojize("Hello %s, welcome to the Wenet _eat together_ chatbot :hugging_face:"
                                         % user_name.replace("_", ""), use_aliases=True)),
-                TextualResponse(emojize("Try to use one of the following commmands:\n"
-                                        "`/organize` to start organizing a shared meal", use_aliases=True))
+                TextualResponse(text_1),
+                TextualResponse(text_2)
             ]
             return NotificationEvent(social_details, response)
         except AttributeError as e:
@@ -399,12 +425,19 @@ class EatTogetherHandler(EventHandler):
         response.with_message(TextualResponse("Default text"))
         return response
 
-    def action_start(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+    def action_info(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         """
-        Handle the initial 'start' button
+        Handle the info message, showing the list of available commands
         """
+        text_1 = (
+            "Type one the following commands to start chatting with me:\n"
+            "*/info* for receiving informations on this bot\n"
+            "*/organize* to organize a social meal\n"
+            # "*/find* to search for an already created social meal to attend"
+            "To interrupt an ongoing procedure at any time, type */cancel*"
+        )
         response = OutgoingEvent(social_details=incoming_event.social_details)
-        response.with_message(TextualResponse("Try /organize"))
+        response.with_message(TextualResponse(text_1))
         return response
 
     def _ask_question(self, incoming_event: IncomingSocialEvent, message: str, state: str) -> OutgoingEvent:
@@ -606,8 +639,7 @@ class EatTogetherHandler(EventHandler):
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_context(context)
         try:
-            transaction = TaskTransaction(task.id, TaskTransaction.LABEL_VOLUNTEER_FOR_TASK,
-                                          {"volunteerId": volunteer_id})
+            transaction = TaskTransaction(task.id, self.LABEL_VOLUNTEER_FOR_TASK, {"volunteerId": volunteer_id})
             self.service_api.create_task_transaction(transaction)
             response.with_message(TextualResponse(emojize("Great! I immediately send a notification to the task creator! "
                                                           "I'll let you know if you are selected to participate :wink:",
@@ -716,7 +748,7 @@ class EatTogetherHandler(EventHandler):
             raise ValueError(error_message)
         volunteer_id = message.context.get_static_state(self.CONTEXT_VOLUNTEER_INFO)
         task_id = message.context.get_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_TASK_ID)
-        task_label = TaskTransaction.LABEL_ACCEPT_VOLUNTEER if decision else TaskTransaction.LABEL_REFUSE_VOLUNTEER
+        task_label = self.LABEL_ACCEPT_VOLUNTEER if decision else self.LABEL_REFUSE_VOLUNTEER
         transaction = TaskTransaction(task_id, task_label, {"volunteerId": volunteer_id})
         try:
             self.service_api.create_task_transaction(transaction)

@@ -28,7 +28,7 @@ class TestTask(TestCase):
         description = "pluto"
         app_id = "appId"
         raw = {
-            "taskId": "task-id",
+            "id": "task-id",
             "_creationTs": 1577833200,
             "_lastUpdateTs": 1577833200,
             "taskTypeId": "task_type_id",
