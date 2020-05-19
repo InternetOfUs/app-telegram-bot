@@ -7,7 +7,7 @@ from emoji import emojize
 
 from chatbot_core.model.details import TelegramDetails
 from chatbot_core.model.event import IncomingSocialEvent, IncomingCustomEvent
-from chatbot_core.model.message import IncomingTextMessage
+from chatbot_core.model.message import IncomingTextMessage, IncomingTelegramCarouselCommand
 from chatbot_core.nlp.handler import NLPHandler
 from chatbot_core.translator.translator import Translator
 from chatbot_core.v3.connector.social_connector import SocialConnector
@@ -15,9 +15,9 @@ from chatbot_core.v3.handler.event_handler import EventHandler
 from chatbot_core.v3.handler.helpers.intent_manager import IntentManagerV3, IntentFulfillerV3
 from chatbot_core.v3.logger.connectors.uhopper_connector import UhopperLoggerConnector
 from chatbot_core.v3.logger.event_logger import LoggerConnector
-from chatbot_core.v3.model.actions import UrlButton
+from chatbot_core.v3.model.actions import UrlButton, TelegramCallbackButton
 from chatbot_core.v3.model.messages import TextualResponse, RapidAnswerResponse, TelegramTextualResponse, \
-    TelegramRapidAnswerResponse
+    TelegramRapidAnswerResponse, TelegramCarouselResponse
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEvent
 from eat_together_bot.utils import Utils
 from uhopper.utils.alert import AlertModule
@@ -44,6 +44,10 @@ class EatTogetherHandler(EventHandler):
     CONTEXT_PROPOSAL_USER_ID = 'proposal_user_id'
     CONTEXT_WENET_USER_ID = 'wenet_user_id'
     CONTEXT_VOLUNTEER_INFO = 'volunteer_info'
+    CONTEXT_USER_TASK_LIST = 'task_list'
+    CONTEXT_USER_TASK_INDEX = 'task_index'
+    CONTEXT_USER_TASK_ACTION = 'task_action'
+    TASK_ACTION_CONCLUDE = 'conclude'
     # all the recognize intents
     INTENT_START = '/start'
     INTENT_CANCEL = '/cancel'
@@ -58,6 +62,14 @@ class EatTogetherHandler(EventHandler):
     INTENT_CREATOR_INFO = 'creator_info'
     INTENT_CONFIRM_VOLUNTEER_PROPOSAL = 'task_volunteer_confirm'
     INTENT_CANCEL_VOLUNTEER_PROPOSAL = 'task_volunteer_cancel'
+    INTENT_TASK_LIST_PREVIOUS = 'task_list_previous'
+    INTENT_TASK_LIST_NEXT = 'task_list_next'
+    INTENT_TASK_LIST_CONFIRM = 'task_list_confirm'
+    INTENT_TASK_LIST_CANCEL = 'task_list_cancel'
+    INTENT_CONCLUDE = '/conclude'
+    INTENT_OUTCOME_COMPLETED = 'task_outcome_concluded'
+    INTENT_OUTCOME_CANCELLED = 'task_outcome_cancelled'
+    INTENT_OUTCOME_FAILED = 'task_outcome_failed'
     # task creation states (/organize command)
     ORGANIZE_Q1 = 'organize_q1'
     ORGANIZE_Q2 = 'organize_q2'
@@ -215,6 +227,36 @@ class EatTogetherHandler(EventHandler):
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_INFO, self.action_info).with_rule(intent=self.INTENT_INFO)
         )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_CONCLUDE, self.action_conclude_select_task).with_rule(intent=self.INTENT_CONCLUDE)
+        )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_TASK_LIST_CANCEL, self.action_task_conclusion_cancel).with_rule(
+                intent=self.INTENT_TASK_LIST_CANCEL, static_context=(self.CONTEXT_CURRENT_STATE, self.TASK_ACTION_CONCLUDE)
+            )
+        )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_TASK_LIST_CONFIRM, self.action_conclude_task).with_rule(
+                intent=self.INTENT_TASK_LIST_CONFIRM, static_context=(self.CONTEXT_CURRENT_STATE, self.TASK_ACTION_CONCLUDE)
+            )
+        )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_OUTCOME_COMPLETED, self.action_conclude_task_send_transaction).with_rule(
+                intent=self.INTENT_OUTCOME_COMPLETED, static_context=(self.CONTEXT_CURRENT_STATE, self.TASK_ACTION_CONCLUDE)
+            )
+        )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_OUTCOME_CANCELLED, self.action_conclude_task_send_transaction).with_rule(
+                intent=self.INTENT_OUTCOME_CANCELLED,
+                static_context=(self.CONTEXT_CURRENT_STATE, self.TASK_ACTION_CONCLUDE)
+            )
+        )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_OUTCOME_FAILED, self.action_conclude_task_send_transaction).with_rule(
+                intent=self.INTENT_OUTCOME_FAILED,
+                static_context=(self.CONTEXT_CURRENT_STATE, self.TASK_ACTION_CONCLUDE)
+            )
+        )
 
     # handle messages coming from WeNet
     def _handle_custom_event(self, custom_event: IncomingCustomEvent):
@@ -362,7 +404,7 @@ class EatTogetherHandler(EventHandler):
             )
             text_2 = (
                 "Type one the following commands to start chatting with me:\n"
-                "*/info* for receiving informations on this bot\n"
+                "*/info* for receiving information on this bot\n"
                 "*/organize* to organize a social meal\n"
                 # "*/find* to search for an already created social meal to attend"
                 "To interrupt an ongoing procedure at any time, type */cancel*"
@@ -430,7 +472,7 @@ class EatTogetherHandler(EventHandler):
         """
         text_1 = (
             "Type one the following commands to start chatting with me:\n"
-            "*/info* for receiving informations on this bot\n"
+            "*/info* for receiving information on this bot\n"
             "*/organize* to organize a social meal\n"
             # "*/find* to search for an already created social meal to attend"
             "To interrupt an ongoing procedure at any time, type */cancel*"
@@ -817,4 +859,187 @@ class EatTogetherHandler(EventHandler):
         creator_info_message.with_textual_option(emojize(":white_check_mark: I'm interested", use_aliases=True),
                                                  self.INTENT_CONFIRM_TASK_PROPOSAL)
         response.with_message(creator_info_message)
+        return response
+
+    def _select_task(self, incoming_event: IncomingSocialEvent, initial_message: str, action: str) -> OutgoingEvent:
+        """
+        Create a carousel that allows a user to select one task among those created by herself
+        :param incoming_event: original message
+        :param initial_message: starting message to be displayed
+        :param action: action performed by the user (e.g. concluding a task)
+        """
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        context = incoming_event.context
+        # TODO get task list from API
+        task_list = [Task("a", 1111, 1113, "type_id", "4", "1", TaskGoal("x", "y"), 1589294028, 1589294028, 1589294028, [], {"maxPeople": 12, "where": "Trento"}),
+                     Task("b", 1111, 1113, "type_id", "4", "1", TaskGoal("n", "m"), 1589294028, 1589294028, 1589294028, [], {"maxPeople": 12, "where": "Trento"})]
+        if len(task_list) > 0:
+            context.with_static_state(self.CONTEXT_USER_TASK_LIST, [t.to_repr() for t in task_list])
+            context.with_static_state(self.CONTEXT_USER_TASK_INDEX, 0)
+            context.with_static_state(self.CONTEXT_USER_TASK_ACTION, action)
+            response.with_context(context)
+            response.with_message(TelegramTextualResponse(emojize(initial_message, use_aliases=True)))
+            carousel = TelegramCarouselResponse(TelegramTextualResponse(emojize(Utils.task_recap_without_creator(task_list[0]), use_aliases=True)),
+                                                None,
+                                                TelegramCallbackButton.build_for_carousel("Next", self.INTENT_TASK_LIST_NEXT),
+                                                [TelegramCallbackButton.build_for_carousel(emojize(":x: Cancel", use_aliases=True), self.INTENT_TASK_LIST_CANCEL),
+                                                 TelegramCallbackButton.build_for_carousel(emojize(":white_check_mark: Select", use_aliases=True), self.INTENT_TASK_LIST_CONFIRM)],
+                                                [2])
+            response.with_message(carousel)
+        else:
+            response.with_message(TextualResponse("There are no tasks created by you"))
+        return response
+
+    def action_conclude_select_task(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+        """
+        Give the user the list of the tasks she opened, using a carousel
+        """
+        inital_message = "Select the task you want to conclude :point_down:. Use the buttons _Previous_ and _Next_ to navigate through your open tasks"
+        incoming_event.context.with_static_state(self.CONTEXT_CURRENT_STATE, self.TASK_ACTION_CONCLUDE)
+        return self._select_task(incoming_event, inital_message, self.TASK_ACTION_CONCLUDE)
+
+    def _handle_telegram_carousel_response(self, message: IncomingTelegramCarouselCommand) -> Optional[TelegramCarouselResponse]:
+        """
+        Handle the carousel usage, in this case used to navigate through the tasks created by a user and to select one
+        """
+        recipient_details = TelegramDetails(message.user_id, message.chat_id)
+        context = self._interface_connector.get_user_context(recipient_details)
+        if not context.context.has_static_state(self.CONTEXT_USER_TASK_LIST):
+            error_message = "Illegal state: no list of tasks of a user when trying to select one"
+            logger.error(error_message)
+            self._alert_module.alert(error_message)
+            raise ValueError(error_message)
+        if not context.context.has_static_state(self.CONTEXT_USER_TASK_INDEX):
+            error_message = "Illegal state: no index of the list of tasks of a user when trying to select one"
+            logger.error(error_message)
+            self._alert_module.alert(error_message)
+            raise ValueError(error_message)
+        if not context.context.has_static_state(self.CONTEXT_USER_TASK_ACTION):
+            error_message = "Illegal state: no user action when the user is trying to select a task"
+            logger.error(error_message)
+            self._alert_module.alert(error_message)
+            raise ValueError(error_message)
+        task_list = [Task.from_repr(task) for task in context.context.get_static_state(self.CONTEXT_USER_TASK_LIST, [])]
+        current_index = context.context.get_static_state(self.CONTEXT_USER_TASK_INDEX)
+        user_action = context.context.get_static_state(self.CONTEXT_USER_TASK_ACTION)
+        if user_action == self.TASK_ACTION_CONCLUDE:
+            # the user is concluding a task
+            if message.command == self.INTENT_TASK_LIST_NEXT:
+                # the user clicked on the next button to navigate the list of its tasks
+                current_index += 1
+                carousel_update = TelegramCarouselResponse(
+                    TelegramTextualResponse(emojize(Utils.task_recap_without_creator(task_list[current_index]), use_aliases=True)),
+                    TelegramCallbackButton.build_for_carousel("Previous", self.INTENT_TASK_LIST_PREVIOUS),
+                    TelegramCallbackButton.build_for_carousel("Next", self.INTENT_TASK_LIST_NEXT) if current_index + 1 < len(task_list) else None,
+                    [TelegramCallbackButton.build_for_carousel(emojize(":x: Cancel", use_aliases=True),
+                                                               self.INTENT_TASK_LIST_CANCEL),
+                     TelegramCallbackButton.build_for_carousel(emojize(":white_check_mark: Select", use_aliases=True),
+                                                               self.INTENT_TASK_LIST_CONFIRM)],
+                    [2]
+                )
+                context.context.with_static_state(self.CONTEXT_USER_TASK_INDEX, current_index)
+            elif message.command == self.INTENT_TASK_LIST_PREVIOUS:
+                # the user clicked on the previous button to navigate the list of its tasks
+                current_index -= 1
+                carousel_update = TelegramCarouselResponse(
+                    TelegramTextualResponse(
+                        emojize(Utils.task_recap_without_creator(task_list[current_index]), use_aliases=True)),
+                    TelegramCallbackButton.build_for_carousel("Previous", self.INTENT_TASK_LIST_PREVIOUS) if current_index - 1 > 0 else None,
+                    TelegramCallbackButton.build_for_carousel("Next", self.INTENT_TASK_LIST_NEXT),
+                    [TelegramCallbackButton.build_for_carousel(emojize(":x: Cancel", use_aliases=True),
+                                                               self.INTENT_TASK_LIST_CANCEL),
+                     TelegramCallbackButton.build_for_carousel(emojize(":white_check_mark: Select", use_aliases=True),
+                                                               self.INTENT_TASK_LIST_CONFIRM)],
+                    [2]
+                )
+                context.context.with_static_state(self.CONTEXT_USER_TASK_INDEX, current_index)
+            elif message.command == self.INTENT_TASK_LIST_CANCEL:
+                # the user wants to cancel the current operation. This intent will be handled also externally by a custom function
+                carousel_update = None
+                context.context.delete_static_state(self.CONTEXT_USER_TASK_LIST)
+                context.context.delete_static_state(self.CONTEXT_USER_TASK_INDEX)
+                context.context.delete_static_state(self.CONTEXT_USER_TASK_ACTION)
+            elif message.command == self.INTENT_TASK_LIST_CONFIRM:
+                # the user has selected a task. This intent will be handled also externally by a custom function
+                carousel_update = None
+                context.context.delete_static_state(self.CONTEXT_USER_TASK_ACTION)
+            else:
+                error_message = "Error, unrecognize command [%s] of the task selection carousel" % message.command
+                logger.error(error_message)
+                self._alert_module.alert(error_message)
+                raise ValueError(error_message)
+        else:
+            error_message = "Error, user action [%s] unrecognized" % user_action
+            logger.error(error_message)
+            self._alert_module.alert(error_message)
+            raise ValueError(error_message)
+        self._interface_connector.update_user_context(context)
+        return carousel_update
+
+    def action_task_conclusion_cancel(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+        """
+        The user deleted the operation of closing a task
+        """
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        response.with_message(TextualResponse(emojize("The operation has been cancelled :+1:", use_aliases=True)))
+        incoming_event.context.delete_static_state(self.CONTEXT_CURRENT_STATE)
+        response.with_context(incoming_event.context)
+        return response
+
+    def action_conclude_task(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+        """
+        The user has selected a task to be concluded, and she is asked how to close it
+        """
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        question = TelegramRapidAnswerResponse(TextualResponse("What is the outcome of the task?"), row_displacement=[1, 1, 1])
+        question.with_textual_option("Completed", self.INTENT_OUTCOME_COMPLETED)
+        question.with_textual_option("Cancelled", self.INTENT_OUTCOME_CANCELLED)
+        question.with_textual_option("Failed", self.INTENT_OUTCOME_FAILED)
+        response.with_message(question)
+        return response
+
+    def action_conclude_task_send_transaction(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+        """
+        Create a transaction with the outcome of the task
+        """
+        context = incoming_event.context
+        if not context.has_static_state(self.CONTEXT_USER_TASK_LIST):
+            error_message = "Illegal state: no list of tasks of a user when trying to close one"
+            logger.error(error_message)
+            self._alert_module.alert(error_message)
+            raise ValueError(error_message)
+        if not context.has_static_state(self.CONTEXT_USER_TASK_INDEX):
+            error_message = "Illegal state: no index of the list of tasks of a user when trying to close one"
+            logger.error(error_message)
+            self._alert_module.alert(error_message)
+            raise ValueError(error_message)
+        task_list = [Task.from_repr(task) for task in context.get_static_state(self.CONTEXT_USER_TASK_LIST, [])]
+        current_index = context.get_static_state(self.CONTEXT_USER_TASK_INDEX)
+        if intent == self.INTENT_OUTCOME_FAILED:
+            outcome = "failed"
+        elif intent == self.INTENT_OUTCOME_CANCELLED:
+            outcome = "cancelled"
+        elif intent == self.INTENT_OUTCOME_COMPLETED:
+            outcome = "completed"
+        else:
+            error_message = f"Unrecognize outcome [{intent}] of a task"
+            logger.error(error_message)
+            self._alert_module.alert(error_message)
+            raise ValueError(error_message)
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        try:
+            transaction = TaskTransaction(task_list[current_index].task_id, self.LABEL_TASK_COMPLETED, {"outcome": outcome})
+            # TODO uncomment
+            # self.service_api.create_task_transaction(transaction)
+            logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
+            response.with_message(TextualResponse("Your task has been closed successfully"))
+            context.delete_static_state(self.CONTEXT_USER_TASK_LIST)
+            context.delete_static_state(self.CONTEXT_USER_TASK_INDEX)
+            context.delete_static_state(self.CONTEXT_CURRENT_STATE)
+        except TaskTransactionCreationError:
+            response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
+            error_message = "Error in the creation of the transaction for concluding the task [%s]" % task_list[current_index].task_id
+            logger.error(error_message)
+            self._alert_module.alert(error_message)
+        response.with_context(context)
         return response
