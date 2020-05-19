@@ -1,6 +1,6 @@
 import logging
+from datetime import datetime, timedelta
 from typing import Optional, List
-from uuid import uuid4
 
 import requests
 from emoji import emojize
@@ -19,7 +19,6 @@ from chatbot_core.v3.model.actions import UrlButton
 from chatbot_core.v3.model.messages import TextualResponse, RapidAnswerResponse, TelegramTextualResponse, \
     TelegramRapidAnswerResponse
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEvent
-from eat_together_bot.models import Task
 from eat_together_bot.utils import Utils
 from uhopper.utils.alert import AlertModule
 from wenet.common.interface.exceptions import TaskNotFound, TaskCreationError, TaskTransactionCreationError
@@ -27,6 +26,7 @@ from wenet.common.interface.service_api import ServiceApiInterface
 from wenet.common.model.message.builder import MessageBuilder
 from wenet.common.model.message.message import TaskNotification, TextualMessage, NewUserForPlatform, \
     TaskProposalNotification, TaskVolunteerNotification, TaskSelectionNotification
+from wenet.common.model.task.task import Task, TaskGoal
 from wenet.common.model.task.transaction import TaskTransaction
 
 logger = logging.getLogger("uhopper.chatbot.wenet-eat-together-chatbot")
@@ -256,19 +256,18 @@ class EatTogetherHandler(EventHandler):
             recipient_details = TelegramDetails(user_telegram_profile.telegram_id,
                                                 user_telegram_profile.metadata["chat_id"])
             context = self._interface_connector.get_user_context(recipient_details)
-            service_api_task = self.service_api.get_task(str(message.task_id))
+            task = self.service_api.get_task(str(message.task_id))
             if isinstance(message, TaskProposalNotification):
                 # the system wants to propose a task to an user
                 try:
-                    task = Task.from_service_api_task_repr(service_api_task.to_repr())
                     context.context.with_static_state(self.CONTEXT_CURRENT_STATE, self.PROPOSAL)
                     context.context.with_static_state(self.CONTEXT_PROPOSAL_TASK_OBJECT, task.to_repr())
                     context.context.with_static_state(self.CONTEXT_PROPOSAL_USER_ID, message.recipient_id)
                     self._interface_connector.update_user_context(context)
-                    task_creator = self.service_api.get_user_profile(task.creator)
+                    task_creator = self.service_api.get_user_profile(task.requester_id)
                     if task_creator is None:
                         error_message = "Error: Creator of task [%s] with id [%s] not found by the API" \
-                                        % (task.id, task.creator)
+                                        % (task.task_id, task.requester_id)
                         logger.error(error_message)
                         self._alert_module.alert(error_message)
                         creator_name = ""
@@ -276,7 +275,7 @@ class EatTogetherHandler(EventHandler):
                         creator_name = task_creator.name.first + " " + task_creator.name.last
                     response_message = TextualResponse("There's a task that might interest you:")
                     response = TelegramRapidAnswerResponse(
-                        TelegramTextualResponse(emojize(task.recap_complete(creator_name), use_aliases=True)),
+                        TelegramTextualResponse(emojize(Utils.task_recap_complete(task, creator_name), use_aliases=True)),
                         row_displacement=[1, 2])
                     response.with_textual_option(emojize(":question: More about the volunteer", use_aliases=True),
                                                  self.INTENT_CREATOR_INFO)
@@ -287,7 +286,7 @@ class EatTogetherHandler(EventHandler):
                     return NotificationEvent(recipient_details, [response_message, response], context.context)
                 except KeyError as e:
                     error_message = "Wrong parsing of the task representation. Not able to find either the location" \
-                                    " or the max people that can attend. Got %s" % str(service_api_task.to_repr())
+                                    " or the max people that can attend. Got %s" % str(task.to_repr())
                     logger.error(error_message)
                     self._alert_module.alert(error_message, e)
             elif isinstance(message, TaskVolunteerNotification):
@@ -299,8 +298,8 @@ class EatTogetherHandler(EventHandler):
                     self._alert_module.alert(error_message)
                     raise ValueError(error_message)
                 user_name = "%s %s" % (user_object.name.first, user_object.name.last)
-                message_text = "%s is interested in your event: *%s*! Do you want to accept his application" \
-                               % (user_name, service_api_task.goal.name)
+                message_text = "%s is interested in your event: *%s*! Do you want to accept his application?" \
+                               % (user_name, task.goal.name)
                 response = TelegramRapidAnswerResponse(TextualResponse(message_text), row_displacement=[1, 2])
                 response.with_textual_option(emojize(":question: More about the volunteer", use_aliases=True),
                                              self.INTENT_VOLUNTEER_INFO)
@@ -316,10 +315,10 @@ class EatTogetherHandler(EventHandler):
             elif isinstance(message, TaskSelectionNotification):
                 if message.outcome == TaskSelectionNotification.OUTCOME_ACCEPTED:
                     text = ":tada: I'm happy to announce that the creator accepted you for the event: *%s*" \
-                           % service_api_task.goal.name
+                           % task.goal.name
                 elif message.outcome == TaskSelectionNotification.OUTCOME_REFUSED:
                     text = "I'm very sorry :pensive:, the creator didn't accept you for the event: *%s*" \
-                           % service_api_task.goal.name
+                           % task.goal.name
                 else:
                     logger.error("Outcome [%s] unrecognized" % message.outcome)
                     self._alert_module.alert("Outcome [%s] unrecognized" % message.outcome)
@@ -462,14 +461,17 @@ class EatTogetherHandler(EventHandler):
 
     def organize_q2(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         """
-        Step 2 of task creation
+        Step 2 of task creation [timestamp]
         """
         if isinstance(incoming_event.incoming_message, IncomingTextMessage):
             text = incoming_event.incoming_message.text
             timestamp = Utils.parse_datetime(text)
             wenet_id = incoming_event.context.get_static_state(self.CONTEXT_WENET_USER_ID)
             if timestamp is not None:
-                task = Task(str(uuid4()), wenet_id, when=timestamp)
+                end_ts = timestamp + timedelta(hours=1)
+                task = Task(None, int(datetime.now().timestamp()), int(datetime.now().timestamp()),
+                            str(self.task_type_id), str(wenet_id), self.app_id, TaskGoal("", ""), int(timestamp.timestamp()),
+                            int(end_ts.timestamp()), 0, [], {})
                 incoming_event.context.with_static_state(self.CONTEXT_ORGANIZE_TASK_OBJECT, task.to_repr())
                 message = "Q2: :round_pushpin: Where will it take place?"
                 return self._ask_question(incoming_event, message, self.ORGANIZE_Q2)
@@ -484,12 +486,12 @@ class EatTogetherHandler(EventHandler):
 
     def organize_q3(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         """
-        Step 3 of task creation
+        Step 3 of task creation [where]
         """
         if isinstance(incoming_event.incoming_message, IncomingTextMessage):
             text = incoming_event.incoming_message.text
             task = Task.from_repr(incoming_event.context.get_static_state(self.CONTEXT_ORGANIZE_TASK_OBJECT))
-            task.where = text
+            task.attributes["where"] = text
             incoming_event.context.with_static_state(self.CONTEXT_ORGANIZE_TASK_OBJECT, task.to_repr())
             message = ("Q3: :alarm_clock: By when do you want to receive applications? "
                        "Please use the following format: "
@@ -502,14 +504,14 @@ class EatTogetherHandler(EventHandler):
 
     def organize_q4(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         """
-        Step 4 of task creation
+        Step 4 of task creation [subscription deadline]
         """
         if isinstance(incoming_event.incoming_message, IncomingTextMessage):
             text = incoming_event.incoming_message.text
             timestamp = Utils.parse_datetime(text)
             if timestamp is not None:
                 task = Task.from_repr(incoming_event.context.get_static_state(self.CONTEXT_ORGANIZE_TASK_OBJECT))
-                task.application_deadline = timestamp
+                task.deadline_ts = int(timestamp.timestamp())
                 incoming_event.context.with_static_state(self.CONTEXT_ORGANIZE_TASK_OBJECT, task.to_repr())
                 message = "Q4: :couple: How many people can attend?"
                 return self._ask_question(incoming_event, message, self.ORGANIZE_Q4)
@@ -524,12 +526,12 @@ class EatTogetherHandler(EventHandler):
 
     def organize_q5(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         """
-        Step 5 of task creation
+        Step 5 of task creation [maxPeople]
         """
         if isinstance(incoming_event.incoming_message, IncomingTextMessage):
             text = incoming_event.incoming_message.text
             task = Task.from_repr(incoming_event.context.get_static_state(self.CONTEXT_ORGANIZE_TASK_OBJECT))
-            task.max_people = text
+            task.attributes["maxPeople"] = text
             incoming_event.context.with_static_state(self.CONTEXT_ORGANIZE_TASK_OBJECT, task.to_repr())
             message = "Q5: Name of your event:"
             return self._ask_question(incoming_event, message, self.ORGANIZE_Q5)
@@ -540,12 +542,12 @@ class EatTogetherHandler(EventHandler):
 
     def organize_q6(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         """
-        Step 6 of task creation
+        Step 6 of task creation [task name]
         """
         if isinstance(incoming_event.incoming_message, IncomingTextMessage):
             text = incoming_event.incoming_message.text
             task = Task.from_repr(incoming_event.context.get_static_state(self.CONTEXT_ORGANIZE_TASK_OBJECT))
-            task.name = text
+            task.goal.name = text
             incoming_event.context.with_static_state(self.CONTEXT_ORGANIZE_TASK_OBJECT, task.to_repr())
             message = "Q6: Set a description to share some more details!"
             return self._ask_question(incoming_event, message, self.ORGANIZE_Q6)
@@ -556,19 +558,19 @@ class EatTogetherHandler(EventHandler):
 
     def organize_recap_message(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         """
-        Final recap of the task created
+        Final recap of the task created [description]
         """
         if isinstance(incoming_event.incoming_message, IncomingTextMessage):
             context = incoming_event.context
             description = incoming_event.incoming_message.text
             task = Task.from_repr(context.get_static_state(self.CONTEXT_ORGANIZE_TASK_OBJECT))
-            task.description = description
+            task.goal.description = description
             context.with_static_state(self.CONTEXT_ORGANIZE_TASK_OBJECT, task.to_repr())
             context.with_static_state(self.CONTEXT_CURRENT_STATE, self.ORGANIZE_RECAP)
             response = OutgoingEvent(social_details=incoming_event.social_details)
             response.with_context(context)
             response.with_message(TextualResponse("Super! Your event is ready, let's have a check:"))
-            recap = RapidAnswerResponse(TelegramTextualResponse(emojize(task.recap_without_creator(),
+            recap = RapidAnswerResponse(TelegramTextualResponse(emojize(Utils.task_recap_without_creator(task),
                                                                         use_aliases=True)))
             recap.with_textual_option(emojize(":x: Cancel", use_aliases=True), self.INTENT_CANCEL_TASK_CREATION)
             recap.with_textual_option(emojize(":white_check_mark: Confirm", use_aliases=True),
@@ -596,15 +598,14 @@ class EatTogetherHandler(EventHandler):
         """
         The task creation is confirmed. The task is created
         """
-        from wenet.common.model.task.task import Task as WenetTask
         context = incoming_event.context
         task = Task.from_repr(context.get_static_state(self.CONTEXT_ORGANIZE_TASK_OBJECT))
         context.delete_static_state(self.CONTEXT_ORGANIZE_TASK_OBJECT)
         context.delete_static_state(self.CONTEXT_CURRENT_STATE)
         response = OutgoingEvent(social_details=incoming_event.social_details)
         try:
-            wenet_task = WenetTask.from_repr(task.to_service_api_repr(self.app_id, self.task_type_id))
-            self.service_api.create_task(wenet_task)
+            self.service_api.create_task(task)
+            logger.info("Task [%s] created successfully by user [%s]" % (task.goal.name, str(task.requester_id)))
             response.with_message(TextualResponse(emojize("Your event has been saved successfully :tada:",
                                                           use_aliases=True)))
         except TaskCreationError as e:
@@ -639,15 +640,16 @@ class EatTogetherHandler(EventHandler):
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_context(context)
         try:
-            transaction = TaskTransaction(task.id, self.LABEL_VOLUNTEER_FOR_TASK, {"volunteerId": volunteer_id})
+            transaction = TaskTransaction(task.task_id, self.LABEL_VOLUNTEER_FOR_TASK, {"volunteerId": volunteer_id})
             self.service_api.create_task_transaction(transaction)
+            logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
             response.with_message(TextualResponse(emojize("Great! I immediately send a notification to the task creator! "
                                                           "I'll let you know if you are selected to participate :wink:",
                                                           use_aliases=True)))
         except TaskTransactionCreationError:
             response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
             error_message = "Error in the creation of the transaction for confirming the partecipation of user" \
-                            " [%s] to task [%s]" % (volunteer_id, task.id)
+                            " [%s] to task [%s]" % (volunteer_id, task.task_id)
             logger.error(error_message)
             self._alert_module.alert(error_message)
         return response
@@ -752,6 +754,7 @@ class EatTogetherHandler(EventHandler):
         transaction = TaskTransaction(task_id, task_label, {"volunteerId": volunteer_id})
         try:
             self.service_api.create_task_transaction(transaction)
+            logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
             outcome = True
         except TaskTransactionCreationError:
             logger.error("Error during the creation of the task transaction")
@@ -800,9 +803,9 @@ class EatTogetherHandler(EventHandler):
             raise ValueError(error_message)
         task = Task.from_repr(context.get_static_state(self.CONTEXT_PROPOSAL_TASK_OBJECT))
         # getting user information
-        creator = self.service_api.get_user_profile(task.creator)
+        creator = self.service_api.get_user_profile(task.requester_id)
         if creator is None:
-            error_message = "Illegal state: task [%s] creator is None" % task.id
+            error_message = "Illegal state: task [%s] creator is None" % task.task_id
             logger.error(error_message)
             self._alert_module.alert(error_message)
             raise ValueError(error_message)

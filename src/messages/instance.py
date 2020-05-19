@@ -23,6 +23,7 @@ class WeNetMessageInterface(Resource):
         data = request.get_json()
         try:
             message = MessageBuilder.build(data)
+            logger.info("Message received: [%s] %s" % (type(message), str(message.to_repr())))
             event = IncomingCustomEvent(self.instance_namespace, message.to_repr(), self.bot_id)
             self.mqtt_publisher.publish_data(self.mqtt_topic, event.to_repr())
             return {}, 200
