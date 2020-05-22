@@ -391,14 +391,7 @@ class EatTogetherHandler(EventHandler):
                 "diverse and exciting?\n"
                 "Well, here is how I can help you!"
             )
-            text_2 = (
-                "Type one the following commands to start chatting with me:\n"
-                "*/info* for receiving information on this bot\n"
-                "*/organize* to organize a social meal\n"
-                "*/conclude* to close an existing social meal\n"
-                # "*/find* to search for an already created social meal to attend"
-                "To interrupt an ongoing procedure at any time, type */cancel*"
-            )
+            text_2 = "Type one the following commands to start chatting with me:\n" + self._get_command_list()
             response = [
                 TextualResponse(emojize("Hello %s, welcome to the Wenet _eat together_ chatbot :hugging_face:"
                                         % user_name.replace("_", ""), use_aliases=True)),
@@ -460,14 +453,7 @@ class EatTogetherHandler(EventHandler):
         """
         Handle the info message, showing the list of available commands
         """
-        text_1 = (
-            "Type one the following commands to start chatting with me:\n"
-            "*/info* for receiving information on this bot\n"
-            "*/organize* to organize a social meal\n"
-            "*/conclude* to close an existing social meal\n"
-            # "*/find* to search for an already created social meal to attend"
-            "To interrupt an ongoing procedure at any time, type */cancel*"
-        )
+        text_1 = "Type one the following commands to start chatting with me:\n" + self._get_command_list()
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_message(TextualResponse(text_1))
         return response
@@ -726,11 +712,7 @@ class EatTogetherHandler(EventHandler):
         General help message
         """
         response = OutgoingEvent(social_details=message.social_details)
-        help_text = (
-            "These are the commands you can use with this chatbot:\n"
-            "`/organize` to start organizing a shared meal\n"
-            "`/cancel` to delete any operation you are currently doing"
-        )
+        help_text = "These are the commands you can use with this chatbot:\n" + self._get_command_list()
         response.with_message(TextualResponse(help_text))
         return response
 
@@ -1033,3 +1015,16 @@ class EatTogetherHandler(EventHandler):
             logger.error(error_message)
         response.with_context(context)
         return response
+
+    @staticmethod
+    def _get_command_list() -> str:
+        """
+        :return: a markdown string with all the commands available in the chatbot
+        """
+        return (
+            "*/info* for receiving information on this bot\n"
+            "*/organize* to organize a social meal\n"
+            "*/conclude* to close an existing social meal\n"
+            # "*/find* to search for an already created social meal to attend"
+            "To interrupt an ongoing procedure at any time, type */cancel*"
+        )
