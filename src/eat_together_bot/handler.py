@@ -275,8 +275,6 @@ class EatTogetherHandler(EventHandler):
                 self.send_notification(self._handle_new_user_message(message))
         except (KeyError, ValueError) as e:
             logger.error("Malformed message from WeNet, the parser raised the following exception: %s" % e)
-            self._alert_module.alert("Malformed message from WeNet, the parser raised the following exception", e,
-                                     "WeNet eat-together telegram bot")
 
     def handle_wenet_textual_message(self, message: TextualMessage):  # -> NotificationEvent:
         """
@@ -311,7 +309,6 @@ class EatTogetherHandler(EventHandler):
                         error_message = "Error: Creator of task [%s] with id [%s] not found by the API" \
                                         % (task.task_id, task.requester_id)
                         logger.error(error_message)
-                        self._alert_module.alert(error_message)
                         creator_name = ""
                     else:
                         creator_name = task_creator.name.first + " " + task_creator.name.last
@@ -326,18 +323,16 @@ class EatTogetherHandler(EventHandler):
                     response.with_textual_option(emojize(":white_check_mark: I'm interested", use_aliases=True),
                                                  self.INTENT_CONFIRM_TASK_PROPOSAL)
                     return NotificationEvent(recipient_details, [response_message, response], context.context)
-                except KeyError as e:
+                except KeyError:
                     error_message = "Wrong parsing of the task representation. Not able to find either the location" \
                                     " or the max people that can attend. Got %s" % str(task.to_repr())
                     logger.error(error_message)
-                    self._alert_module.alert(error_message, e)
             elif isinstance(message, TaskVolunteerNotification):
                 # a volunteer has applied to a task, and the task creator is notified
                 user_object = self.service_api.get_user_profile(str(message.volunteer_id))
                 if user_object is None:
                     error_message = "Error, userId [%s] does not give any user profile" % str(message.volunteer_id)
                     logger.error(error_message)
-                    self._alert_module.alert(error_message)
                     raise ValueError(error_message)
                 user_name = "%s %s" % (user_object.name.first, user_object.name.last)
                 message_text = "%s is interested in your event: *%s*! Do you want to accept his application?" \
@@ -363,7 +358,6 @@ class EatTogetherHandler(EventHandler):
                            % task.goal.name
                 else:
                     logger.error("Outcome [%s] unrecognized" % message.outcome)
-                    self._alert_module.alert("Outcome [%s] unrecognized" % message.outcome)
                     raise Exception("Outcome [%s] unrecognized" % message.outcome)
                 response = TextualResponse(emojize(text, use_aliases=True))
                 return NotificationEvent(recipient_details, [response])
@@ -371,15 +365,10 @@ class EatTogetherHandler(EventHandler):
                 pass
         except TaskNotFound:
             logger.error(f"No task associated with id [{message.task_id}]")
-            self._alert_module.alert(f"No task associated with id [{message.task_id}]")
-        except AttributeError as e:
-            logger.error("Null pointer exception. Either not able to extract a user account from Wenet id, "
-                         "or no Telegram account associated")
-            self._alert_module.alert("Null pointer exception. Either not able to extract a user account from Wenet id, "
-                                     "or no Telegram account associated", e)
-        except KeyError as e:
-            logger.error("Telegram profile has not an associated chat id")
-            self._alert_module.alert("Telegram profile has not an associated chat id", e)
+        except AttributeError:
+            logger.error("Null pointer exception. Either not able to extract a user account from Wenet id, or no Telegram account associated. User account returned: %s" % user_account.to_repr())
+        except KeyError:
+            logger.error("WeNet profile [%s] has not an associated Telegram chat id. It must authenticate before using the bot" % user_account.to_repr())
 
     def _handle_new_user_message(self, message: NewUserForPlatform) -> NotificationEvent:
         """
@@ -406,6 +395,7 @@ class EatTogetherHandler(EventHandler):
                 "Type one the following commands to start chatting with me:\n"
                 "*/info* for receiving information on this bot\n"
                 "*/organize* to organize a social meal\n"
+                "*/conclude* to close an existing social meal\n"
                 # "*/find* to search for an already created social meal to attend"
                 "To interrupt an ongoing procedure at any time, type */cancel*"
             )
@@ -416,9 +406,8 @@ class EatTogetherHandler(EventHandler):
                 TextualResponse(text_2)
             ]
             return NotificationEvent(social_details, response)
-        except AttributeError as e:
+        except AttributeError:
             logger.error(f"WeNet user {message.user_id} has not an associated Telegram account")
-            self._alert_module.alert(f"WeNet user {message.user_id} has not an associated Telegram account", e)
 
     def _create_response(self, incoming_event: IncomingSocialEvent) -> OutgoingEvent:
         """
@@ -456,14 +445,15 @@ class EatTogetherHandler(EventHandler):
         """
         Cancel the current operation - e.g. the ongoing creation of a task
         """
-        to_remove = [self.CONTEXT_CURRENT_STATE, self.CONTEXT_ORGANIZE_TASK_OBJECT, self.CONTEXT_PROPOSAL_TASK_OBJECT]
+        to_remove = [self.CONTEXT_CURRENT_STATE, self.CONTEXT_ORGANIZE_TASK_OBJECT, self.CONTEXT_PROPOSAL_TASK_OBJECT,
+                     self.CONTEXT_USER_TASK_LIST, self.CONTEXT_USER_TASK_INDEX, self.CONTEXT_USER_TASK_ACTION]
         context = incoming_event.context
         for context_key in to_remove:
             if context.has_static_state(context_key):
                 context.delete_static_state(context_key)
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_context(context)
-        response.with_message(TextualResponse("Default text"))
+        response.with_message(TextualResponse("The current operation has been cancelled successfully"))
         return response
 
     def action_info(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
@@ -474,6 +464,7 @@ class EatTogetherHandler(EventHandler):
             "Type one the following commands to start chatting with me:\n"
             "*/info* for receiving information on this bot\n"
             "*/organize* to organize a social meal\n"
+            "*/conclude* to close an existing social meal\n"
             # "*/find* to search for an already created social meal to attend"
             "To interrupt an ongoing procedure at any time, type */cancel*"
         )
@@ -650,9 +641,8 @@ class EatTogetherHandler(EventHandler):
             logger.info("Task [%s] created successfully by user [%s]" % (task.goal.name, str(task.requester_id)))
             response.with_message(TextualResponse(emojize("Your event has been saved successfully :tada:",
                                                           use_aliases=True)))
-        except TaskCreationError as e:
+        except TaskCreationError:
             logger.error("Error, unable to create a new task")
-            self._alert_module.alert("Error, unable to create a new task", e)
             response.with_message(TextualResponse("I'm sorry, but something went wrong with the creation of your task."
                                                   " Try again later"))
         finally:
@@ -693,7 +683,6 @@ class EatTogetherHandler(EventHandler):
             error_message = "Error in the creation of the transaction for confirming the partecipation of user" \
                             " [%s] to task [%s]" % (volunteer_id, task.task_id)
             logger.error(error_message)
-            self._alert_module.alert(error_message)
         return response
 
     def action_delete_task_proposal(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
@@ -761,7 +750,6 @@ class EatTogetherHandler(EventHandler):
         if user_object is None:
             error_message = "Error, userId [%s] does not give any user profile" % str(user_id)
             logger.error(error_message)
-            self._alert_module.alert(error_message)
             raise ValueError(error_message)
         response.with_message(TextualResponse("%s %s" % (user_object.name.first, user_object.name.last)))
         menu = RapidAnswerResponse(TextualResponse("So, what do you want to do?"))
@@ -800,7 +788,6 @@ class EatTogetherHandler(EventHandler):
             outcome = True
         except TaskTransactionCreationError:
             logger.error("Error during the creation of the task transaction")
-            self._alert_module.alert("Error during the creation of the task transaction")
             outcome = False
         finally:
             message.context.delete_static_state(self.CONTEXT_VOLUNTEER_INFO)
@@ -870,9 +857,15 @@ class EatTogetherHandler(EventHandler):
         """
         response = OutgoingEvent(social_details=incoming_event.social_details)
         context = incoming_event.context
-        # TODO get task list from API
-        task_list = [Task("a", 1111, 1113, "type_id", "4", "1", TaskGoal("x", "y"), 1589294028, 1589294028, 1589294028, [], {"maxPeople": 12, "where": "Trento"}),
-                     Task("b", 1111, 1113, "type_id", "4", "1", TaskGoal("n", "m"), 1589294028, 1589294028, 1589294028, [], {"maxPeople": 12, "where": "Trento"})]
+        if not context.has_static_state(self.CONTEXT_WENET_USER_ID):
+            error_message = "WeNet User ID not saved in the context for user [%d]" % incoming_event.social_details.get_user_id()
+            logger.error(error_message)
+            self._alert_module.alert(error_message)
+            raise ValueError(error_message)
+        wenet_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
+        task_list = self.service_api.get_tasks_of_user(str(wenet_id))
+        # filter on the malformed tasks (those without "where" and "maxPeople" attributes)
+        task_list = [x for x in task_list if "where" in x.attributes and "maxPeople" in x.attributes]
         if len(task_list) > 0:
             context.with_static_state(self.CONTEXT_USER_TASK_LIST, [t.to_repr() for t in task_list])
             context.with_static_state(self.CONTEXT_USER_TASK_INDEX, 0)
@@ -944,7 +937,7 @@ class EatTogetherHandler(EventHandler):
                 carousel_update = TelegramCarouselResponse(
                     TelegramTextualResponse(
                         emojize(Utils.task_recap_without_creator(task_list[current_index]), use_aliases=True)),
-                    TelegramCallbackButton.build_for_carousel("Previous", self.INTENT_TASK_LIST_PREVIOUS) if current_index - 1 > 0 else None,
+                    TelegramCallbackButton.build_for_carousel("Previous", self.INTENT_TASK_LIST_PREVIOUS) if current_index > 0 else None,
                     TelegramCallbackButton.build_for_carousel("Next", self.INTENT_TASK_LIST_NEXT),
                     [TelegramCallbackButton.build_for_carousel(emojize(":x: Cancel", use_aliases=True),
                                                                self.INTENT_TASK_LIST_CANCEL),
@@ -1024,13 +1017,11 @@ class EatTogetherHandler(EventHandler):
         else:
             error_message = f"Unrecognize outcome [{intent}] of a task"
             logger.error(error_message)
-            self._alert_module.alert(error_message)
             raise ValueError(error_message)
         response = OutgoingEvent(social_details=incoming_event.social_details)
         try:
             transaction = TaskTransaction(task_list[current_index].task_id, self.LABEL_TASK_COMPLETED, {"outcome": outcome})
-            # TODO uncomment
-            # self.service_api.create_task_transaction(transaction)
+            self.service_api.create_task_transaction(transaction)
             logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
             response.with_message(TextualResponse("Your task has been closed successfully"))
             context.delete_static_state(self.CONTEXT_USER_TASK_LIST)
@@ -1040,6 +1031,5 @@ class EatTogetherHandler(EventHandler):
             response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
             error_message = "Error in the creation of the transaction for concluding the task [%s]" % task_list[current_index].task_id
             logger.error(error_message)
-            self._alert_module.alert(error_message)
         response.with_context(context)
         return response

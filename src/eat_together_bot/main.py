@@ -26,7 +26,7 @@ if __name__ == "__main__":
     wenet_hub_url = os.getenv("WENET_HUB_URL")
     app_id = os.getenv("WENET_APP_ID")
     task_type_id = os.getenv("TASK_TYPE_ID")
-    api_key = os.getenv("API_KEY", "")
+    api_key = os.getenv("API_TOKEN", "")
     handler = EatTogetherHandler(instance_namespace, "wenet-eat-together", "wenet-eat-together-handler", bot_token,
                                  wenet_backend_url, app_id, wenet_hub_url, task_type_id, api_key, alert_module, connector, None, None)
     instance_manager = InstanceManager(instance_namespace, subscriber, MultiThreadEventDispatcher())
