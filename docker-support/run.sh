@@ -21,8 +21,7 @@ if [ $1 == "bots" ]; then
 else
   if [ $1 == "ws" ]; then
     echo "Running ws"
-    # exec gunicorn -w "${WORKERS}" -b 0.0.0.0:80 "" # TODO gunicorn
-    exec python -m messages.main
+    exec gunicorn -w "${WORKERS}" -b 0.0.0.0:80 "messages.main:bot_messages_app"
 
   else
     echo "Missing argument, use:"

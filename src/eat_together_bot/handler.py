@@ -1,3 +1,4 @@
+import json
 import logging
 from datetime import datetime, timedelta
 from typing import Optional, List
@@ -7,7 +8,7 @@ from emoji import emojize
 
 from chatbot_core.model.details import TelegramDetails
 from chatbot_core.model.event import IncomingSocialEvent, IncomingCustomEvent
-from chatbot_core.model.message import IncomingTextMessage, IncomingTelegramCarouselCommand
+from chatbot_core.model.message import IncomingTextMessage, IncomingTelegramCarouselCommand, IncomingCommand
 from chatbot_core.nlp.handler import NLPHandler
 from chatbot_core.translator.translator import Translator
 from chatbot_core.v3.connector.social_connector import SocialConnector
@@ -21,7 +22,8 @@ from chatbot_core.v3.model.messages import TextualResponse, RapidAnswerResponse,
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEvent
 from eat_together_bot.utils import Utils
 from uhopper.utils.alert import AlertModule
-from wenet.common.interface.exceptions import TaskNotFound, TaskCreationError, TaskTransactionCreationError
+from wenet.common.interface.exceptions import TaskNotFound, TaskCreationError, TaskTransactionCreationError, \
+    UpdateMetadataError
 from wenet.common.interface.service_api import ServiceApiInterface
 from wenet.common.model.message.builder import MessageBuilder
 from wenet.common.model.message.message import TaskNotification, TextualMessage, NewUserForPlatform, \
@@ -257,6 +259,21 @@ class EatTogetherHandler(EventHandler):
                 static_context=(self.CONTEXT_CURRENT_STATE, self.TASK_ACTION_CONCLUDE)
             )
         )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3("", self.handle_expired_click).with_rule(intent=self.INTENT_OUTCOME_FAILED)
+                                                            .with_rule(intent=self.INTENT_OUTCOME_CANCELLED)
+                                                            .with_rule(intent=self.INTENT_OUTCOME_COMPLETED)
+                                                            .with_rule(intent=self.INTENT_TASK_LIST_CONFIRM)
+                                                            .with_rule(intent=self.INTENT_TASK_LIST_CANCEL)
+                                                            .with_rule(intent=self.INTENT_CREATOR_INFO)
+                                                            .with_rule(intent=self.INTENT_CANCEL_VOLUNTEER_PROPOSAL)
+                                                            .with_rule(intent=self.INTENT_CONFIRM_VOLUNTEER_PROPOSAL)
+                                                            .with_rule(intent=self.INTENT_VOLUNTEER_INFO)
+                                                            .with_rule(intent=self.INTENT_CANCEL_TASK_PROPOSAL)
+                                                            .with_rule(intent=self.INTENT_CONFIRM_TASK_PROPOSAL)
+                                                            .with_rule(intent=self.INTENT_CONFIRM_TASK_CREATION)
+                                                            .with_rule(intent=self.INTENT_CANCEL_TASK_CREATION)
+        )
 
     # handle messages coming from WeNet
     def _handle_custom_event(self, custom_event: IncomingCustomEvent):
@@ -316,12 +333,13 @@ class EatTogetherHandler(EventHandler):
                     response = TelegramRapidAnswerResponse(
                         TelegramTextualResponse(emojize(Utils.task_recap_complete(task, creator_name), use_aliases=True)),
                         row_displacement=[1, 2])
-                    response.with_textual_option(emojize(":question: More about the volunteer", use_aliases=True),
+                    response.with_textual_option(emojize(":question: More about the task creator", use_aliases=True),
                                                  self.INTENT_CREATOR_INFO)
                     response.with_textual_option(emojize(":x: Not interested", use_aliases=True),
                                                  self.INTENT_CANCEL_TASK_PROPOSAL)
                     response.with_textual_option(emojize(":white_check_mark: I'm interested", use_aliases=True),
                                                  self.INTENT_CONFIRM_TASK_PROPOSAL)
+                    logger.info(f"Sent proposal to user [{message.recipient_id}] regarding task [{task.task_id}]")
                     return NotificationEvent(recipient_details, [response_message, response], context.context)
                 except KeyError:
                     error_message = "Wrong parsing of the task representation. Not able to find either the location" \
@@ -348,6 +366,7 @@ class EatTogetherHandler(EventHandler):
                 context.context.with_static_state(self.CONTEXT_VOLUNTEER_INFO, message.volunteer_id)
                 context.context.with_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_TASK_ID, message.task_id)
                 self._interface_connector.update_user_context(context)
+                logger.info(f"Sent volunteer [{message.volunteer_id}] candidature to task [{task.task_id}] created by user [{message.recipient_id}]")
                 return NotificationEvent(recipient_details, [response], context.context)
             elif isinstance(message, TaskSelectionNotification):
                 if message.outcome == TaskSelectionNotification.OUTCOME_ACCEPTED:
@@ -359,12 +378,13 @@ class EatTogetherHandler(EventHandler):
                 else:
                     logger.error("Outcome [%s] unrecognized" % message.outcome)
                     raise Exception("Outcome [%s] unrecognized" % message.outcome)
+                logger.info(f"Sent volunteer proposal decision to user [{message.recipient_id}] with outcome {message.outcome}")
                 response = TextualResponse(emojize(text, use_aliases=True))
                 return NotificationEvent(recipient_details, [response])
             else:
                 pass
-        except TaskNotFound:
-            logger.error(f"No task associated with id [{message.task_id}]")
+        except TaskNotFound as e:
+            logger.error(e.message)
         except AttributeError:
             logger.error("Null pointer exception. Either not able to extract a user account from Wenet id, or no Telegram account associated. User account returned: %s" % user_account.to_repr())
         except KeyError:
@@ -378,6 +398,7 @@ class EatTogetherHandler(EventHandler):
         try:
             user_telegram_profile = Utils.extract_telegram_account(user_account)
             social_details = TelegramDetails(user_telegram_profile.telegram_id, user_telegram_profile.telegram_id)
+            logger.info(f"WeNet user [{message.user_id}] associated with Telegram user [{user_telegram_profile.telegram_id}]")
             # asking the username to Telegram
             user_name_req = requests.get("https://api.telegram.org/bot%s/getChat" % self.telegram_id,
                                          params={"chat_id": user_telegram_profile.telegram_id}).json()
@@ -412,10 +433,14 @@ class EatTogetherHandler(EventHandler):
         else:
             # updating user metadata with chat id
             if isinstance(incoming_event.social_details, TelegramDetails):
-                user_metadata = {"chat_id": incoming_event.social_details.chat_id}
-                wenet_id = incoming_event.context.get_static_state(self.CONTEXT_WENET_USER_ID)
-                self.service_api.update_user_metadata_telegram(incoming_event.social_details.user_id, wenet_id,
-                                                               user_metadata)
+                try:
+                    user_metadata = {"chat_id": incoming_event.social_details.chat_id}
+                    wenet_id = incoming_event.context.get_static_state(self.CONTEXT_WENET_USER_ID)
+                    self.service_api.update_user_metadata_telegram(incoming_event.social_details.user_id, wenet_id,
+                                                                   user_metadata)
+                except UpdateMetadataError as e:
+                    logger.error(e.message)
+                    self._alert_module.alert(e.message, e)
         try:
             outgoing_event, fulfiller, satisfying_rule = self.intent_manager.manage(incoming_event)
             context.with_dynamic_state(self.PREVIOUS_INTENT, fulfiller.intent_id)
@@ -439,7 +464,9 @@ class EatTogetherHandler(EventHandler):
         Cancel the current operation - e.g. the ongoing creation of a task
         """
         to_remove = [self.CONTEXT_CURRENT_STATE, self.CONTEXT_ORGANIZE_TASK_OBJECT, self.CONTEXT_PROPOSAL_TASK_OBJECT,
-                     self.CONTEXT_USER_TASK_LIST, self.CONTEXT_USER_TASK_INDEX, self.CONTEXT_USER_TASK_ACTION]
+                     self.CONTEXT_USER_TASK_LIST, self.CONTEXT_USER_TASK_INDEX, self.CONTEXT_USER_TASK_ACTION,
+                     self.CONTEXT_PROPOSAL_USER_ID, self.CONTEXT_VOLUNTEER_CANDIDATURE_TASK_ID,
+                     self.CONTEXT_VOLUNTEER_INFO]
         context = incoming_event.context
         for context_key in to_remove:
             if context.has_static_state(context_key):
@@ -627,8 +654,8 @@ class EatTogetherHandler(EventHandler):
             logger.info("Task [%s] created successfully by user [%s]" % (task.goal.name, str(task.requester_id)))
             response.with_message(TextualResponse(emojize("Your event has been saved successfully :tada:",
                                                           use_aliases=True)))
-        except TaskCreationError:
-            logger.error("Error, unable to create a new task")
+        except TaskCreationError as e:
+            logger.error(f"The service API responded with code {e.http_status} and message {json.dumps(e.json_response)}")
             response.with_message(TextualResponse("I'm sorry, but something went wrong with the creation of your task."
                                                   " Try again later"))
         finally:
@@ -664,10 +691,11 @@ class EatTogetherHandler(EventHandler):
             response.with_message(TextualResponse(emojize("Great! I immediately send a notification to the task creator! "
                                                           "I'll let you know if you are selected to participate :wink:",
                                                           use_aliases=True)))
-        except TaskTransactionCreationError:
+        except TaskTransactionCreationError as e:
             response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
             error_message = "Error in the creation of the transaction for confirming the partecipation of user" \
-                            " [%s] to task [%s]" % (volunteer_id, task.task_id)
+                            " [%s] to task [%s]. The service API resonded with code %d and message %s" \
+                            % (volunteer_id, task.task_id, e.http_status, json.dumps(e.json_response))
             logger.error(error_message)
         return response
 
@@ -678,6 +706,7 @@ class EatTogetherHandler(EventHandler):
         context = incoming_event.context
         context.delete_static_state(self.CONTEXT_PROPOSAL_TASK_OBJECT)
         context.delete_static_state(self.CONTEXT_CURRENT_STATE)
+        context.delete_static_state(self.CONTEXT_PROPOSAL_USER_ID)
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_message(TextualResponse(emojize("All right :+1:", use_aliases=True)))
         response.with_context(context)
@@ -733,7 +762,7 @@ class EatTogetherHandler(EventHandler):
             error_message = "Error, userId [%s] does not give any user profile" % str(user_id)
             logger.error(error_message)
             raise ValueError(error_message)
-        response.with_message(TextualResponse("%s %s" % (user_object.name.first, user_object.name.last)))
+        response.with_message(TextualResponse("The volunteer is *%s %s*" % (user_object.name.first, user_object.name.last)))
         menu = RapidAnswerResponse(TextualResponse("So, what do you want to do?"))
         menu.with_textual_option(emojize(":x: Not accept", use_aliases=True),
                                  self.INTENT_CANCEL_VOLUNTEER_PROPOSAL)
@@ -768,8 +797,10 @@ class EatTogetherHandler(EventHandler):
             self.service_api.create_task_transaction(transaction)
             logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
             outcome = True
-        except TaskTransactionCreationError:
-            logger.error("Error during the creation of the task transaction")
+        except TaskTransactionCreationError as e:
+            logger.error("Error in the creation of the transaction with creator decision about the partecipation of user"
+                         " [%s] to task [%s]. The service API resonded with code %d and message %s"
+                         % (volunteer_id, task_id, e.http_status, json.dumps(e.json_response)))
             outcome = False
         finally:
             message.context.delete_static_state(self.CONTEXT_VOLUNTEER_INFO)
@@ -821,7 +852,7 @@ class EatTogetherHandler(EventHandler):
             self._alert_module.alert(error_message)
             raise ValueError(error_message)
         response = OutgoingEvent(social_details=incoming_event.social_details)
-        response.with_message(TextualResponse("%s %s" % (creator.name.first, creator.name.last)))
+        response.with_message(TextualResponse("The task is created by *%s %s*" % (creator.name.first, creator.name.last)))
         creator_info_message = RapidAnswerResponse(TextualResponse("What do you want to do?"))
         creator_info_message.with_textual_option(emojize(":x: Not interested", use_aliases=True),
                                                  self.INTENT_CANCEL_TASK_PROPOSAL)
@@ -1009,10 +1040,10 @@ class EatTogetherHandler(EventHandler):
             context.delete_static_state(self.CONTEXT_USER_TASK_LIST)
             context.delete_static_state(self.CONTEXT_USER_TASK_INDEX)
             context.delete_static_state(self.CONTEXT_CURRENT_STATE)
-        except TaskTransactionCreationError:
+        except TaskTransactionCreationError as e:
             response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
-            error_message = "Error in the creation of the transaction for concluding the task [%s]" % task_list[current_index].task_id
-            logger.error(error_message)
+            logger.error("Error in the creation of the transaction for concluding the task [%s]. The service API resonded with code %d and message %s"
+                         % (task_list[current_index].task_id, e.http_status, json.dumps(e.json_response)))
         response.with_context(context)
         return response
 
@@ -1028,3 +1059,10 @@ class EatTogetherHandler(EventHandler):
             # "*/find* to search for an already created social meal to attend"
             "To interrupt an ongoing procedure at any time, type */cancel*"
         )
+
+    def handle_expired_click(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        if isinstance(incoming_event.incoming_message, IncomingCommand):
+            logger.info("The user clicked on an expired button: %s" % incoming_event.incoming_message.command)
+            response.with_message(TextualResponse("Operation not allowed anymore, you clicked on an expired button"))
+        return response

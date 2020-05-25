@@ -21,7 +21,7 @@ if __name__ == "__main__":
     bot_token = os.getenv("TELEGRAM_KEY")
     connector = TelegramSocialConnector(bot_token)
     alert_module = AlertModule("wenet-eat-together-chatbot")
-    alert_module.with_slack(["@nicolopomini"])
+    alert_module.with_slack(["@nicolo.pomini"])
     wenet_backend_url = os.getenv("WENET_BACKEND_URL")
     wenet_hub_url = os.getenv("WENET_HUB_URL")
     app_id = os.getenv("WENET_APP_ID")
