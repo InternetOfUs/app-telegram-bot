@@ -22,8 +22,7 @@ from chatbot_core.v3.model.messages import TextualResponse, RapidAnswerResponse,
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEvent
 from eat_together_bot.utils import Utils
 from uhopper.utils.alert import AlertModule
-from wenet.common.interface.exceptions import TaskNotFound, TaskCreationError, TaskTransactionCreationError, \
-    UpdateMetadataError
+from wenet.common.interface.exceptions import TaskNotFound, TaskCreationError, TaskTransactionCreationError
 from wenet.common.interface.service_api import ServiceApiInterface
 from wenet.common.model.message.builder import MessageBuilder
 from wenet.common.model.message.message import TaskNotification, TextualMessage, NewUserForPlatform, \
@@ -311,7 +310,7 @@ class EatTogetherHandler(EventHandler):
         try:
             user_telegram_profile = Utils.extract_telegram_account(user_account)
             recipient_details = TelegramDetails(user_telegram_profile.telegram_id,
-                                                user_telegram_profile.metadata["chat_id"])
+                                                user_telegram_profile.telegram_id)
             context = self._interface_connector.get_user_context(recipient_details)
             task = self.service_api.get_task(str(message.task_id))
             if isinstance(message, TaskProposalNotification):
@@ -387,8 +386,6 @@ class EatTogetherHandler(EventHandler):
             logger.error(e.message)
         except AttributeError:
             logger.error("Null pointer exception. Either not able to extract a user account from Wenet id, or no Telegram account associated. User account returned: %s" % user_account.to_repr())
-        except KeyError:
-            logger.error("WeNet profile [%s] has not an associated Telegram chat id. It must authenticate before using the bot" % user_account.to_repr())
 
     def _handle_new_user_message(self, message: NewUserForPlatform) -> NotificationEvent:
         """
@@ -430,17 +427,6 @@ class EatTogetherHandler(EventHandler):
         context = incoming_event.context
         if not self.authenticate_user(incoming_event):  # authentication adds wenet id in the context
             return self.not_authenticated_response(incoming_event)
-        else:
-            # updating user metadata with chat id
-            if isinstance(incoming_event.social_details, TelegramDetails):
-                try:
-                    user_metadata = {"chat_id": incoming_event.social_details.chat_id}
-                    wenet_id = incoming_event.context.get_static_state(self.CONTEXT_WENET_USER_ID)
-                    self.service_api.update_user_metadata_telegram(incoming_event.social_details.user_id, wenet_id,
-                                                                   user_metadata)
-                except UpdateMetadataError as e:
-                    logger.error(e.message)
-                    self._alert_module.alert(e.message, e)
         try:
             outgoing_event, fulfiller, satisfying_rule = self.intent_manager.manage(incoming_event)
             context.with_dynamic_state(self.PREVIOUS_INTENT, fulfiller.intent_id)
