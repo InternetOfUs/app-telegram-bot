@@ -386,6 +386,8 @@ class EatTogetherHandler(EventHandler):
             logger.error(e.message)
         except AttributeError:
             logger.error("Null pointer exception. Either not able to extract a user account from Wenet id, or no Telegram account associated. User account returned: %s" % user_account.to_repr())
+        except KeyError:
+            logger.error(f"No context associated with Wenet user {message.recipient_id}")
 
     def _handle_new_user_message(self, message: NewUserForPlatform) -> NotificationEvent:
         """
@@ -862,7 +864,7 @@ class EatTogetherHandler(EventHandler):
             self._alert_module.alert(error_message)
             raise ValueError(error_message)
         wenet_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
-        task_list = self.service_api.get_tasks_of_user(str(wenet_id))
+        task_list = self.service_api.get_opened_tasks_of_user(str(wenet_id))
         # filter on the malformed tasks (those without "where" and "maxPeople" attributes)
         task_list = [x for x in task_list if "where" in x.attributes and "maxPeople" in x.attributes]
         if len(task_list) > 0:
@@ -873,7 +875,7 @@ class EatTogetherHandler(EventHandler):
             response.with_message(TelegramTextualResponse(emojize(initial_message, use_aliases=True)))
             carousel = TelegramCarouselResponse(TelegramTextualResponse(emojize(Utils.task_recap_without_creator(task_list[0]), use_aliases=True)),
                                                 None,
-                                                TelegramCallbackButton.build_for_carousel("Next", self.INTENT_TASK_LIST_NEXT),
+                                                TelegramCallbackButton.build_for_carousel("Next", self.INTENT_TASK_LIST_NEXT) if len(task_list) > 1 else None,
                                                 [TelegramCallbackButton.build_for_carousel(emojize(":x: Cancel", use_aliases=True), self.INTENT_TASK_LIST_CANCEL),
                                                  TelegramCallbackButton.build_for_carousel(emojize(":white_check_mark: Select", use_aliases=True), self.INTENT_TASK_LIST_CONFIRM)],
                                                 [2])
