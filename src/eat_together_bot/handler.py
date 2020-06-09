@@ -2,6 +2,7 @@ import json
 import logging
 from datetime import datetime, timedelta
 from typing import Optional, List
+from uuid import uuid4
 
 import requests
 from emoji import emojize
@@ -40,11 +41,9 @@ class EatTogetherHandler(EventHandler):
     # context keys
     CONTEXT_CURRENT_STATE = "current_state"
     CONTEXT_ORGANIZE_TASK_OBJECT = 'organize_task_object'
-    CONTEXT_PROPOSAL_TASK_OBJECT = 'proposal_task_object'
-    CONTEXT_VOLUNTEER_CANDIDATURE_TASK_ID = 'volunteer_candidature_task_id'
-    CONTEXT_PROPOSAL_USER_ID = 'proposal_user_id'
+    CONTEXT_PROPOSAL_TASK_DICT = 'proposal_task_dict'
+    CONTEXT_VOLUNTEER_CANDIDATURE_DICT = 'volunteer_candidature_dict'
     CONTEXT_WENET_USER_ID = 'wenet_user_id'
-    CONTEXT_VOLUNTEER_INFO = 'volunteer_info'
     CONTEXT_USER_TASK_LIST = 'task_list'
     CONTEXT_USER_TASK_INDEX = 'task_index'
     CONTEXT_USER_TASK_ACTION = 'task_action'
@@ -57,12 +56,12 @@ class EatTogetherHandler(EventHandler):
     INTENT_INFO = '/info'
     INTENT_CONFIRM_TASK_CREATION = 'task_creation_confirm'
     INTENT_CANCEL_TASK_CREATION = 'task_creation_cancel'
-    INTENT_CONFIRM_TASK_PROPOSAL = 'task_creation_confirm'
-    INTENT_CANCEL_TASK_PROPOSAL = 'task_creation_cancel'
-    INTENT_VOLUNTEER_INFO = 'volunteer_info'
-    INTENT_CREATOR_INFO = 'creator_info'
-    INTENT_CONFIRM_VOLUNTEER_PROPOSAL = 'task_volunteer_confirm'
-    INTENT_CANCEL_VOLUNTEER_PROPOSAL = 'task_volunteer_cancel'
+    INTENT_CONFIRM_TASK_PROPOSAL = 'task-cr-conf_{}'
+    INTENT_CANCEL_TASK_PROPOSAL = 'task-cr-can_{}'
+    INTENT_VOLUNTEER_INFO = 'vol-info_{}'
+    INTENT_CREATOR_INFO = 'creator-info_{}'
+    INTENT_CONFIRM_VOLUNTEER_PROPOSAL = 'task-vol-con_{}'
+    INTENT_CANCEL_VOLUNTEER_PROPOSAL = 'task-vol-can_{}'
     INTENT_TASK_LIST_PREVIOUS = 'task_list_previous'
     INTENT_TASK_LIST_NEXT = 'task_list_next'
     INTENT_TASK_LIST_CONFIRM = 'task_list_confirm'
@@ -193,36 +192,32 @@ class EatTogetherHandler(EventHandler):
         )
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_CONFIRM_TASK_PROPOSAL, self.action_confirm_task_proposal).with_rule(
-                intent=self.INTENT_CONFIRM_TASK_PROPOSAL, static_context=(self.CONTEXT_CURRENT_STATE, self.PROPOSAL)
+                regex=self.INTENT_CONFIRM_TASK_PROPOSAL.format("[0-9a-zA-Z]+")
             )
         )
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_CANCEL_TASK_PROPOSAL, self.action_delete_task_proposal).with_rule(
-                intent=self.INTENT_CANCEL_TASK_PROPOSAL, static_context=(self.CONTEXT_CURRENT_STATE, self.PROPOSAL)
+                regex=self.INTENT_CANCEL_TASK_PROPOSAL.format("[0-9a-zA-Z]+")
             )
         )
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_VOLUNTEER_INFO, self.handle_volunteer_info).with_rule(
-                intent=self.INTENT_VOLUNTEER_INFO,
-                static_context=(self.CONTEXT_CURRENT_STATE, self.VOLUNTEER_CANDIDATURE)
+                regex=self.INTENT_VOLUNTEER_INFO.format("[0-9a-zA-Z]+")
             )
         )
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_CONFIRM_VOLUNTEER_PROPOSAL, self.handle_confirm_candidature).with_rule(
-                intent=self.INTENT_CONFIRM_VOLUNTEER_PROPOSAL,
-                static_context=(self.CONTEXT_CURRENT_STATE, self.VOLUNTEER_CANDIDATURE)
+                regex=self.INTENT_CONFIRM_VOLUNTEER_PROPOSAL.format("[0-9a-zA-Z]+")
             )
         )
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_CANCEL_VOLUNTEER_PROPOSAL, self.handle_reject_candidature).with_rule(
-                intent=self.INTENT_CANCEL_VOLUNTEER_PROPOSAL,
-                static_context=(self.CONTEXT_CURRENT_STATE, self.VOLUNTEER_CANDIDATURE)
+                regex=self.INTENT_CANCEL_VOLUNTEER_PROPOSAL.format("[0-9a-zA-Z]+")
             )
         )
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_CREATOR_INFO, self.get_creator_info).with_rule(
-                intent=self.INTENT_CREATOR_INFO,
-                static_context=(self.CONTEXT_CURRENT_STATE, self.PROPOSAL)
+                regex=self.INTENT_CREATOR_INFO.format("[0-9a-zA-Z]+")
             )
         )
         self.intent_manager.with_fulfiller(
@@ -257,21 +252,6 @@ class EatTogetherHandler(EventHandler):
                 intent=self.INTENT_OUTCOME_FAILED,
                 static_context=(self.CONTEXT_CURRENT_STATE, self.TASK_ACTION_CONCLUDE)
             )
-        )
-        self.intent_manager.with_fulfiller(
-            IntentFulfillerV3("", self.handle_expired_click).with_rule(intent=self.INTENT_OUTCOME_FAILED)
-                                                            .with_rule(intent=self.INTENT_OUTCOME_CANCELLED)
-                                                            .with_rule(intent=self.INTENT_OUTCOME_COMPLETED)
-                                                            .with_rule(intent=self.INTENT_TASK_LIST_CONFIRM)
-                                                            .with_rule(intent=self.INTENT_TASK_LIST_CANCEL)
-                                                            .with_rule(intent=self.INTENT_CREATOR_INFO)
-                                                            .with_rule(intent=self.INTENT_CANCEL_VOLUNTEER_PROPOSAL)
-                                                            .with_rule(intent=self.INTENT_CONFIRM_VOLUNTEER_PROPOSAL)
-                                                            .with_rule(intent=self.INTENT_VOLUNTEER_INFO)
-                                                            .with_rule(intent=self.INTENT_CANCEL_TASK_PROPOSAL)
-                                                            .with_rule(intent=self.INTENT_CONFIRM_TASK_PROPOSAL)
-                                                            .with_rule(intent=self.INTENT_CONFIRM_TASK_CREATION)
-                                                            .with_rule(intent=self.INTENT_CANCEL_TASK_CREATION)
         )
 
     # handle messages coming from WeNet
@@ -316,9 +296,14 @@ class EatTogetherHandler(EventHandler):
             if isinstance(message, TaskProposalNotification):
                 # the system wants to propose a task to an user
                 try:
+                    task_proposals = context.context.get_static_state(self.CONTEXT_PROPOSAL_TASK_DICT, {})
+                    proposal_id = str(uuid4()).replace('-', '')[:20]
+                    task_proposals[proposal_id] = {
+                        "task": task.to_repr(),
+                        "user": message.recipient_id
+                    }
                     context.context.with_static_state(self.CONTEXT_CURRENT_STATE, self.PROPOSAL)
-                    context.context.with_static_state(self.CONTEXT_PROPOSAL_TASK_OBJECT, task.to_repr())
-                    context.context.with_static_state(self.CONTEXT_PROPOSAL_USER_ID, message.recipient_id)
+                    context.context.with_static_state(self.CONTEXT_PROPOSAL_TASK_DICT, task_proposals)
                     self._interface_connector.update_user_context(context)
                     task_creator = self.service_api.get_user_profile(task.requester_id)
                     if task_creator is None:
@@ -333,11 +318,11 @@ class EatTogetherHandler(EventHandler):
                         TelegramTextualResponse(emojize(Utils.task_recap_complete(task, creator_name), use_aliases=True)),
                         row_displacement=[1, 2])
                     response.with_textual_option(emojize(":question: More about the task creator", use_aliases=True),
-                                                 self.INTENT_CREATOR_INFO)
+                                                 self.INTENT_CREATOR_INFO.format(proposal_id))
                     response.with_textual_option(emojize(":x: Not interested", use_aliases=True),
-                                                 self.INTENT_CANCEL_TASK_PROPOSAL)
+                                                 self.INTENT_CANCEL_TASK_PROPOSAL.format(proposal_id))
                     response.with_textual_option(emojize(":white_check_mark: I'm interested", use_aliases=True),
-                                                 self.INTENT_CONFIRM_TASK_PROPOSAL)
+                                                 self.INTENT_CONFIRM_TASK_PROPOSAL.format(proposal_id))
                     logger.info(f"Sent proposal to user [{message.recipient_id}] regarding task [{task.task_id}]")
                     return NotificationEvent(recipient_details, [response_message, response], context.context)
                 except KeyError:
@@ -351,19 +336,23 @@ class EatTogetherHandler(EventHandler):
                     error_message = "Error, userId [%s] does not give any user profile" % str(message.volunteer_id)
                     logger.error(error_message)
                     raise ValueError(error_message)
+                candidatures = context.context.get_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_DICT, {})
+                candidature_id = str(uuid4()).replace('-', '')[:20]
+                candidatures[candidature_id] = {
+                    "task": task.task_id,
+                    "user": message.volunteer_id
+                }
+                context.context.with_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_DICT, candidatures)
                 user_name = "%s %s" % (user_object.name.first, user_object.name.last)
                 message_text = "%s is interested in your event: *%s*! Do you want to accept his application?" \
                                % (user_name, task.goal.name)
                 response = TelegramRapidAnswerResponse(TextualResponse(message_text), row_displacement=[1, 2])
                 response.with_textual_option(emojize(":question: More about the volunteer", use_aliases=True),
-                                             self.INTENT_VOLUNTEER_INFO)
+                                             self.INTENT_VOLUNTEER_INFO.format(candidature_id))
                 response.with_textual_option(emojize(":x: Not accept", use_aliases=True),
-                                             self.INTENT_CANCEL_VOLUNTEER_PROPOSAL)
+                                             self.INTENT_CANCEL_VOLUNTEER_PROPOSAL.format(candidature_id))
                 response.with_textual_option(emojize(":white_check_mark: Yes, why not!?!", use_aliases=True),
-                                             self.INTENT_CONFIRM_VOLUNTEER_PROPOSAL)
-                context.context.with_static_state(self.CONTEXT_CURRENT_STATE, self.VOLUNTEER_CANDIDATURE)
-                context.context.with_static_state(self.CONTEXT_VOLUNTEER_INFO, message.volunteer_id)
-                context.context.with_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_TASK_ID, message.task_id)
+                                             self.INTENT_CONFIRM_VOLUNTEER_PROPOSAL.format(candidature_id))
                 self._interface_connector.update_user_context(context)
                 logger.info(f"Sent volunteer [{message.volunteer_id}] candidature to task [{task.task_id}] created by user [{message.recipient_id}]")
                 return NotificationEvent(recipient_details, [response], context.context)
@@ -451,10 +440,8 @@ class EatTogetherHandler(EventHandler):
         """
         Cancel the current operation - e.g. the ongoing creation of a task
         """
-        to_remove = [self.CONTEXT_CURRENT_STATE, self.CONTEXT_ORGANIZE_TASK_OBJECT, self.CONTEXT_PROPOSAL_TASK_OBJECT,
-                     self.CONTEXT_USER_TASK_LIST, self.CONTEXT_USER_TASK_INDEX, self.CONTEXT_USER_TASK_ACTION,
-                     self.CONTEXT_PROPOSAL_USER_ID, self.CONTEXT_VOLUNTEER_CANDIDATURE_TASK_ID,
-                     self.CONTEXT_VOLUNTEER_INFO]
+        to_remove = [self.CONTEXT_CURRENT_STATE, self.CONTEXT_ORGANIZE_TASK_OBJECT, self.CONTEXT_PROPOSAL_TASK_DICT,
+                     self.CONTEXT_USER_TASK_LIST, self.CONTEXT_USER_TASK_INDEX, self.CONTEXT_USER_TASK_ACTION]
         context = incoming_event.context
         for context_key in to_remove:
             if context.has_static_state(context_key):
@@ -655,21 +642,14 @@ class EatTogetherHandler(EventHandler):
         A volunteer confirms its application to a task. Transaction sent
         """
         context = incoming_event.context
-        if not context.has_static_state(self.CONTEXT_PROPOSAL_TASK_OBJECT):
-            error_message = "Illegal state: no task object in the context when the user confirms its proposal"
-            logger.error(error_message)
-            self._alert_module.alert(error_message)
-            raise ValueError(error_message)
-        if not context.has_static_state(self.CONTEXT_PROPOSAL_USER_ID):
-            error_message = "Illegal state: no volunteer id in the context when the user confirms its proposal"
-            logger.error(error_message)
-            self._alert_module.alert(error_message)
-            raise ValueError(error_message)
-        task = Task.from_repr(context.get_static_state(self.CONTEXT_PROPOSAL_TASK_OBJECT))
-        volunteer_id = context.get_static_state(self.CONTEXT_PROPOSAL_USER_ID)
-        context.delete_static_state(self.CONTEXT_PROPOSAL_TASK_OBJECT)
-        context.delete_static_state(self.CONTEXT_PROPOSAL_USER_ID)
-        context.delete_static_state(self.CONTEXT_CURRENT_STATE)
+        task_dict = context.get_static_state(self.CONTEXT_PROPOSAL_TASK_DICT, {})
+        intent = incoming_event.incoming_message.intent.value
+        proposal_id = intent.split('_')[1]
+        if proposal_id not in task_dict:
+            return self.handle_expired_click(incoming_event, "")
+        task = Task.from_repr(task_dict[proposal_id]["task"])
+        volunteer_id = task_dict[proposal_id]["user"]
+        task_dict.pop(proposal_id, None)
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_context(context)
         try:
@@ -692,9 +672,12 @@ class EatTogetherHandler(EventHandler):
         A volunteer does not apply to a task. No transactions sent
         """
         context = incoming_event.context
-        context.delete_static_state(self.CONTEXT_PROPOSAL_TASK_OBJECT)
-        context.delete_static_state(self.CONTEXT_CURRENT_STATE)
-        context.delete_static_state(self.CONTEXT_PROPOSAL_USER_ID)
+        task_dict = context.get_static_state(self.CONTEXT_PROPOSAL_TASK_DICT, {})
+        intent = incoming_event.incoming_message.intent.value
+        proposal_id = intent.split('_')[1]
+        if proposal_id not in task_dict:
+            return self.handle_expired_click(incoming_event, "")
+        task_dict.pop(proposal_id, None)
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_message(TextualResponse(emojize("All right :+1:", use_aliases=True)))
         response.with_context(context)
@@ -737,13 +720,12 @@ class EatTogetherHandler(EventHandler):
         """
         Display information about a volunteer that is applying for a task
         """
-        if not message.context.has_static_state(self.CONTEXT_VOLUNTEER_INFO):
-            error_message = "Illegal state: no info about the volunteer in the static context when asking for " \
-                            "volunteer info during a candidature approval"
-            logger.error(error_message)
-            self._alert_module.alert(error_message)
-            raise ValueError(error_message)
-        user_id = message.context.get_static_state(self.CONTEXT_VOLUNTEER_INFO)
+        intent = message.incoming_message.intent.value
+        candidatures = message.context.get_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_DICT, {})
+        candidature_id = intent.split('_')[1]
+        if candidature_id not in candidatures:
+            return self.handle_expired_click(message, "")
+        user_id = candidatures[candidature_id]["user"]
         response = OutgoingEvent(social_details=message.social_details)
         user_object = self.service_api.get_user_profile(str(user_id))
         if user_object is None:
@@ -753,9 +735,9 @@ class EatTogetherHandler(EventHandler):
         response.with_message(TextualResponse("The volunteer is *%s %s*" % (user_object.name.first, user_object.name.last)))
         menu = RapidAnswerResponse(TextualResponse("So, what do you want to do?"))
         menu.with_textual_option(emojize(":x: Not accept", use_aliases=True),
-                                 self.INTENT_CANCEL_VOLUNTEER_PROPOSAL)
+                                 self.INTENT_CANCEL_VOLUNTEER_PROPOSAL.format(candidature_id))
         menu.with_textual_option(emojize(":white_check_mark: Yes, of course!", use_aliases=True),
-                                 self.INTENT_CONFIRM_VOLUNTEER_PROPOSAL)
+                                 self.INTENT_CONFIRM_VOLUNTEER_PROPOSAL.format(candidature_id))
         response.with_message(menu)
         response.with_context(message.context)
         return response
@@ -765,20 +747,13 @@ class EatTogetherHandler(EventHandler):
         Internal function used to handle the creator's decision of either accept or refuse a volunteer.
         In any case, a transaction is sent
         """
-        if not message.context.has_static_state(self.CONTEXT_VOLUNTEER_INFO):
-            error_message = "Illegal state: no info about the volunteer in the static context when handling" \
-                            " a candidature approval"
-            logger.error(error_message)
-            self._alert_module.alert(error_message)
-            raise ValueError(error_message)
-        if not message.context.has_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_TASK_ID):
-            error_message = "Illegal state: no info about the task in the static context when handling" \
-                            " a candidature approval"
-            logger.error(error_message)
-            self._alert_module.alert(error_message)
-            raise ValueError(error_message)
-        volunteer_id = message.context.get_static_state(self.CONTEXT_VOLUNTEER_INFO)
-        task_id = message.context.get_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_TASK_ID)
+        candidatures = message.context.get_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_DICT, {})
+        intent = message.incoming_message.intent.value
+        candidature_id = intent.split('_')[1]
+        if candidature_id not in candidatures:
+            raise ValueError("No candidature found")
+        volunteer_id = candidatures[candidature_id]["user"]
+        task_id = candidatures[candidature_id]["task"]
         task_label = self.LABEL_ACCEPT_VOLUNTEER if decision else self.LABEL_REFUSE_VOLUNTEER
         transaction = TaskTransaction(task_id, task_label, {"volunteerId": volunteer_id})
         try:
@@ -791,8 +766,8 @@ class EatTogetherHandler(EventHandler):
                          % (volunteer_id, task_id, e.http_status, json.dumps(e.json_response)))
             outcome = False
         finally:
-            message.context.delete_static_state(self.CONTEXT_VOLUNTEER_INFO)
-            message.context.delete_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_TASK_ID)
+            candidatures.pop(candidature_id, None)
+            message.context.with_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_DICT, candidatures)
         return outcome
 
     def handle_confirm_candidature(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
@@ -800,38 +775,42 @@ class EatTogetherHandler(EventHandler):
         The creator confirms a volunteer's candidature
         """
         response = OutgoingEvent(social_details=incoming_event.social_details)
-        if self._handle_volunteer_proposal(incoming_event, True):
-            response.with_message(TextualResponse("Great, you have accepted the volunteer!"))
-        else:
-            response.with_message(TextualResponse("I'm sorry, but something went wrong"))
-        incoming_event.context.delete_static_state(self.CONTEXT_CURRENT_STATE)
-        response.with_context(incoming_event.context)
-        return response
+        try:
+            if self._handle_volunteer_proposal(incoming_event, True):
+                response.with_message(TextualResponse("Great, you have accepted the volunteer!"))
+            else:
+                response.with_message(TextualResponse("I'm sorry, but something went wrong"))
+            response.with_context(incoming_event.context)
+            return response
+        except ValueError:
+            return self.handle_expired_click(incoming_event, "")
 
     def handle_reject_candidature(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         """
         The creator refuses a volunteer's candidature
         """
         response = OutgoingEvent(social_details=incoming_event.social_details)
-        if self._handle_volunteer_proposal(incoming_event, False):
-            response.with_message(TextualResponse("Ok, you have rejected the volunteer!"))
-        else:
-            response.with_message(TextualResponse("I'm sorry, but something went wrong"))
-        incoming_event.context.delete_static_state(self.CONTEXT_CURRENT_STATE)
-        response.with_context(incoming_event.context)
-        return response
+        try:
+            if self._handle_volunteer_proposal(incoming_event, False):
+                response.with_message(TextualResponse("Ok, you have rejected the volunteer!"))
+            else:
+                response.with_message(TextualResponse("I'm sorry, but something went wrong"))
+            response.with_context(incoming_event.context)
+            return response
+        except ValueError:
+            return self.handle_expired_click(incoming_event, "")
 
     def get_creator_info(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         """
         Display information about a creator, when a volunteer is applying to a task
         """
         context = incoming_event.context
-        if not context.has_static_state(self.CONTEXT_PROPOSAL_TASK_OBJECT):
-            error_message = "Illegal state: no task object in the context when showing creator's info"
-            logger.error(error_message)
-            self._alert_module.alert(error_message)
-            raise ValueError(error_message)
-        task = Task.from_repr(context.get_static_state(self.CONTEXT_PROPOSAL_TASK_OBJECT))
+        task_dict = context.get_static_state(self.CONTEXT_PROPOSAL_TASK_DICT, {})
+        intent = incoming_event.incoming_message.intent.value
+        proposal_id = intent.split('_')[1]
+        if proposal_id not in task_dict:
+            return self.handle_expired_click(incoming_event, "")
+        task = Task.from_repr(task_dict[proposal_id]["task"])
         # getting user information
         creator = self.service_api.get_user_profile(task.requester_id)
         if creator is None:
@@ -843,9 +822,9 @@ class EatTogetherHandler(EventHandler):
         response.with_message(TextualResponse("The task is created by *%s %s*" % (creator.name.first, creator.name.last)))
         creator_info_message = RapidAnswerResponse(TextualResponse("What do you want to do?"))
         creator_info_message.with_textual_option(emojize(":x: Not interested", use_aliases=True),
-                                                 self.INTENT_CANCEL_TASK_PROPOSAL)
+                                                 self.INTENT_CANCEL_TASK_PROPOSAL.format(proposal_id))
         creator_info_message.with_textual_option(emojize(":white_check_mark: I'm interested", use_aliases=True),
-                                                 self.INTENT_CONFIRM_TASK_PROPOSAL)
+                                                 self.INTENT_CONFIRM_TASK_PROPOSAL.format(proposal_id))
         response.with_message(creator_info_message)
         return response
 
