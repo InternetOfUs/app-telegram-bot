@@ -265,8 +265,7 @@ class EatTogetherHandler(EventHandler):
                 notification = self.handle_wenet_notification_message(message)
                 self.send_notification(notification)
             elif isinstance(message, TextualMessage):
-                self.handle_wenet_textual_message(message)
-                # self.send_notification(self.handle_wenet_textual_message(message))
+                self.send_notification(self.handle_wenet_textual_message(message))
             elif isinstance(message, NewUserForPlatform):
                 self.send_notification(self._handle_new_user_message(message))
         except (KeyError, ValueError) as e:
@@ -276,8 +275,18 @@ class EatTogetherHandler(EventHandler):
         """
         Handle all the incoming textual messages
         """
-        # currently not able to handle messages between users
-        logger.warning("Not able to handle messages between users")
+        user_account = self.service_api.get_user_accounts(message.recipient_id)
+        try:
+            user_telegram_profile = Utils.extract_telegram_account(user_account)
+            recipient_details = TelegramDetails(user_telegram_profile.telegram_id,
+                                                user_telegram_profile.telegram_id)
+            context = self._interface_connector.get_user_context(recipient_details)
+            response = TelegramTextualResponse("There is a message for you:\n\n*%s*\n_%s_" % (message.title, message.text))
+            return NotificationEvent(recipient_details, [response], context.context)
+        except AttributeError:
+            logger.error("Null pointer exception. Either not able to extract a user account from Wenet id, or no Telegram account associated. User account returned: %s" % user_account.to_repr())
+        except KeyError:
+            logger.error(f"No context associated with Wenet user {message.recipient_id}")
 
     def handle_wenet_notification_message(self, message: TaskNotification) -> NotificationEvent:
         """

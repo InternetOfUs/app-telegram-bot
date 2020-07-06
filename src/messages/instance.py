@@ -1,3 +1,4 @@
+import json
 import logging
 
 from flask import request
@@ -34,10 +35,10 @@ class WeNetMessageInterface(Resource):
             logger.error(e.message)
             return {"Error": e.message}, 400
         except KeyError:
-            logger.error("Bad payload: parsing error")
+            logger.error("Bad payload: parsing error. Received %s" % json.dumps(data))
             return {"Error": "One or more required keys are missing"}, 400
         except ValueError:
-            logger.error("Error, enum values not respected")
+            logger.error("Error, enum values not respected. Received %s" % json.dumps(data))
             return {"Error": "One or more values of the enum fields are not respected. Please check the documentation "
                              "and try again"}, 400
 
