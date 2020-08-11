@@ -1,5 +1,4 @@
 import logging
-import os
 
 from flask import Flask
 from flask_restful import Api
@@ -25,9 +24,7 @@ class MessageInterface:
             logging.debug("Installing route %s", path)
             self._api.add_resource(resource, path, resource_class_args=args)
 
-    def run_server(self):
-        host = os.getenv("MESSAGES_HOST", "0.0.0.0")
-        port = os.getenv("MESSAGES_PORT", "12345")
+    def run(self, host: str, port: int):
         self._app.run(host=host, port=port, debug=False)
 
     def get_application(self):

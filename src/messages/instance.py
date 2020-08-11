@@ -13,8 +13,10 @@ logger = logging.getLogger("uhopper.chatbot.wenet.eattogether.messages")
 
 
 class WeNetMessageInterface(Resource):
+
     def __init__(self, mqtt_publisher: MqttPublishHandler, mqtt_topic: str, instance_namespace: str,
                  bot_id: str) -> None:
+
         self.mqtt_publisher = mqtt_publisher
         self.instance_namespace = instance_namespace
         self.bot_id = bot_id
