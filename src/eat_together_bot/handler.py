@@ -7,7 +7,6 @@ from uuid import uuid4
 import requests
 from emoji import emojize
 
-from authentication_utils.oauth2_client import Oauth2Client
 from chatbot_core.model.details import TelegramDetails
 from chatbot_core.model.event import IncomingSocialEvent, IncomingCustomEvent
 from chatbot_core.model.message import IncomingTextMessage, IncomingTelegramCarouselCommand, IncomingCommand
@@ -24,6 +23,7 @@ from chatbot_core.v3.model.messages import TextualResponse, RapidAnswerResponse,
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEvent
 from eat_together_bot.utils import Utils
 from uhopper.utils.alert import AlertModule
+from wenet.common.interface.client import Oauth2Client
 from wenet.common.interface.exceptions import TaskNotFound, TaskCreationError, TaskTransactionCreationError
 from wenet.common.interface.service_api import ServiceApiInterface
 from wenet.common.model.message.builder import MessageBuilder
