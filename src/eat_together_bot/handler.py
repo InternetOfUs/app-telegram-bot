@@ -7,6 +7,7 @@ from uuid import uuid4
 import requests
 from emoji import emojize
 
+from authentication_utils.oauth2_client import Oauth2Client
 from chatbot_core.model.details import TelegramDetails
 from chatbot_core.model.event import IncomingSocialEvent, IncomingCustomEvent
 from chatbot_core.model.message import IncomingTextMessage, IncomingTelegramCarouselCommand, IncomingCommand
@@ -27,7 +28,7 @@ from wenet.common.interface.exceptions import TaskNotFound, TaskCreationError, T
 from wenet.common.interface.service_api import ServiceApiInterface
 from wenet.common.model.message.builder import MessageBuilder
 from wenet.common.model.message.message import TaskNotification, TextualMessage, NewUserForPlatform, \
-    TaskProposalNotification, TaskVolunteerNotification, TaskSelectionNotification
+    TaskProposalNotification, TaskVolunteerNotification, TaskSelectionNotification, WeNetAuthentication
 from wenet.common.model.task.task import Task, TaskGoal
 from wenet.common.model.task.transaction import TaskTransaction
 
@@ -47,6 +48,8 @@ class EatTogetherHandler(EventHandler):
     CONTEXT_USER_TASK_LIST = 'task_list'
     CONTEXT_USER_TASK_INDEX = 'task_index'
     CONTEXT_USER_TASK_ACTION = 'task_action'
+    CONTEXT_ACCESS_TOKEN = 'access_token'
+    CONTEXT_REFRESH_TOKEN = 'refresh_token'
     TASK_ACTION_CONCLUDE = 'conclude'
     # all the recognize intents
     INTENT_START = '/start'
@@ -97,6 +100,11 @@ class EatTogetherHandler(EventHandler):
                  app_id: str,
                  wenet_hub_url: str,
                  task_type_id: str,
+                 wenet_authentication_url: str,
+                 wenet_authentication_management_url: str,
+                 redirect_url: str,
+                 client_id: str,
+                 client_secret: str,
                  api_key: str,
                  alert_module: AlertModule,
                  connector: SocialConnector,
@@ -139,11 +147,19 @@ class EatTogetherHandler(EventHandler):
         self.task_type_id = task_type_id
         self.service_api = ServiceApiInterface(wenet_backend_url, app_id, api_key)
         self.intent_manager = IntentManagerV3()
-        uhopper_logger_connector = UhopperLoggerConnector().with_handler(instance_namespace)
-        self.with_logger_connector(uhopper_logger_connector)
+        self.wenet_authentication_url = wenet_authentication_url
+        self.wenet_authentication_management_url = wenet_authentication_management_url
+        self.redirect_url = redirect_url
+        self.client_id = client_id
+        self.client_secret = client_secret
+        # uhopper_logger_connector = UhopperLoggerConnector().with_handler(instance_namespace)
+        # self.with_logger_connector(uhopper_logger_connector)
         # redirecting the flow in the corresponding points
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_START, self.action_info).with_rule(intent=self.INTENT_START)
+        )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3("TOKEN", self.handle_oauth_login).with_rule(static_context=(self.CONTEXT_ACCESS_TOKEN, None))
         )
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_HELP, self.handle_help).with_rule(intent=self.INTENT_HELP)
@@ -253,12 +269,14 @@ class EatTogetherHandler(EventHandler):
                 static_context=(self.CONTEXT_CURRENT_STATE, self.TASK_ACTION_CONCLUDE)
             )
         )
+        logger.debug("READY")
 
     # handle messages coming from WeNet
     def _handle_custom_event(self, custom_event: IncomingCustomEvent):
         """
         This function handles all the incoming messages from the bot endpoint
         """
+        logger.debug(f"received event {custom_event}")
         try:
             message = MessageBuilder.build(custom_event.payload)
             if isinstance(message, TaskNotification):
@@ -268,6 +286,8 @@ class EatTogetherHandler(EventHandler):
                 self.send_notification(self.handle_wenet_textual_message(message))
             elif isinstance(message, NewUserForPlatform):
                 self.send_notification(self._handle_new_user_message(message))
+            elif isinstance(message, WeNetAuthentication):
+                self.send_notification(self._handle_wenet_authentication_result(message))
         except (KeyError, ValueError) as e:
             logger.error("Malformed message from WeNet, the parser raised the following exception: %s" % e)
 
@@ -387,6 +407,35 @@ class EatTogetherHandler(EventHandler):
         except KeyError:
             logger.error(f"No context associated with Wenet user {message.recipient_id}")
 
+    def _handle_wenet_authentication_result(self, message: WeNetAuthentication) -> NotificationEvent:
+        social_details = TelegramDetails(int(message.external_id), int(message.external_id))
+        try:
+            client = Oauth2Client.initialize_with_code(self.wenet_authentication_management_url, self.client_id, self.client_secret, message.code, self.redirect_url)
+
+            context = self._interface_connector.get_user_context(social_details)
+
+            context.context.with_static_state(self.CONTEXT_ACCESS_TOKEN, client.token)
+            context.context.with_static_state(self.CONTEXT_REFRESH_TOKEN, client.refresh_token)
+
+            notification = NotificationEvent(social_details)
+
+            self._interface_connector.update_user_context(context)
+
+            notification.with_message(
+                TextualResponse("Login successful")
+            )
+
+            return notification
+
+        except Exception as e:
+            logger.exception("Unable to initialize the oauth client", exc_info=e)
+            return NotificationEvent(social_details).with_message(
+                TextualResponse("Unable to complete the WeNetAuthentication")
+            )
+
+
+
+
     def _handle_new_user_message(self, message: NewUserForPlatform) -> NotificationEvent:
         """
         Handle the automatic message sent to the user when it logs in for the first time
@@ -424,6 +473,7 @@ class EatTogetherHandler(EventHandler):
         """
         General handler for all the user incoming messages
         """
+        logger.debug(f"Received event {incoming_event}")
         context = incoming_event.context
         if not self.authenticate_user(incoming_event):  # authentication adds wenet id in the context
             return self.not_authenticated_response(incoming_event)
@@ -434,6 +484,7 @@ class EatTogetherHandler(EventHandler):
         except Exception as e:
             logger.exception("Something went wrong while handling incoming message", exc_info=e)
             outgoing_event = self._action_error(incoming_event, "error")
+        logger.debug(f"Created response {outgoing_event}")
         return outgoing_event
 
     def _action_error(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
@@ -484,6 +535,7 @@ class EatTogetherHandler(EventHandler):
         """
         Step 1 of task creation
         """
+        logger.debug(f"Organizer q1 for event: {incoming_event}")
         message = ("Q1: :calendar: When do you want to organize the social meal?"
                    "(remember to specify both the date and time, in the following format: "
                    "`<YYYY> <MM> <DD> <HH> <mm>` - e.g. `2020 05 13 13 00`)")
@@ -723,6 +775,13 @@ class EatTogetherHandler(EventHandler):
         response = OutgoingEvent(social_details=message.social_details)
         help_text = "These are the commands you can use with this chatbot:\n" + self._get_command_list()
         response.with_message(TextualResponse(help_text))
+        return response
+
+    def handle_oauth_login(self, message: IncomingSocialEvent, _: str) -> OutgoingEvent:
+        response = OutgoingEvent(social_details=message.social_details)
+        response.with_message(
+            TelegramTextualResponse(f"To use the bot you must first authorize access on the WeNet platform: {self.wenet_authentication_url}/login?client_id={self.client_id}&external_id={message.social_details.get_user_id()}", parse_mode=None)
+        )
         return response
 
     def handle_volunteer_info(self, message: IncomingSocialEvent, _: str) -> OutgoingEvent:
