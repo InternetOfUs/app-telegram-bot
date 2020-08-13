@@ -1,5 +1,6 @@
 import logging.config
 import os
+import uuid
 
 from log_config.logging_config import loggingConfiguration
 from messages.ws import MessageInterface
@@ -11,7 +12,7 @@ logger = logging.getLogger("uhopper.chatbot.wenet.eattogether.messages")
 topic = os.getenv("MQTT_TOPIC")
 publisher = MqttPublishHandler(
     os.getenv("MQTT_HOST"),
-    os.getenv("MQTT_PUBLISHER_ID"),
+    f"{os.getenv('MQTT_PUBLISHER_ID')}_{uuid.uuid4()}",
     os.getenv("MQTT_USER"),
     os.getenv("MQTT_PASSWORD")
 )
