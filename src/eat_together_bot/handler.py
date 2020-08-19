@@ -15,6 +15,7 @@ from chatbot_core.model.user_context import UserConversationContext
 from chatbot_core.nlp.handler import NLPHandler
 from chatbot_core.translator.translator import Translator
 from chatbot_core.v3.connector.social_connector import SocialConnector
+from chatbot_core.v3.connector.social_connectors.telegram_connector import TelegramSocialConnector
 from chatbot_core.v3.handler.event_handler import EventHandler
 from chatbot_core.v3.handler.helpers.intent_manager import IntentManagerV3, IntentFulfillerV3
 from chatbot_core.v3.logger.connectors.uhopper_connector import UhopperLoggerConnector
@@ -307,7 +308,7 @@ class EatTogetherHandler(EventHandler):
         """
         This function handles all the incoming messages from the bot endpoint
         """
-        logger.debug(f"Received event {type(custom_event)} {custom_event}")
+        logger.debug(f"Received event {type(custom_event)} {custom_event.to_repr()}")
         try:
             message = MessageBuilder.build(custom_event.payload)
             if isinstance(message, TaskNotification):
@@ -460,7 +461,11 @@ class EatTogetherHandler(EventHandler):
             return notification_event
 
     def _handle_wenet_authentication_result(self, message: WeNetAuthentication) -> NotificationEvent:
-        social_details = TelegramDetails(int(message.external_id), int(message.external_id))
+
+        if not isinstance(self._connector, TelegramSocialConnector):
+            raise Exception("Expected telegram social connector")
+
+        social_details = TelegramDetails(int(message.external_id), int(message.external_id), self._connector.get_telegram_bot_id())
         try:
             client = Oauth2Client.initialize_with_code(self.wenet_authentication_management_url, self.client_id, self.client_secret, message.code, self.redirect_url)
 
@@ -496,13 +501,16 @@ class EatTogetherHandler(EventHandler):
         Handle the automatic message sent to the user when it logs in for the first time
         """
 
-        social_details = TelegramDetails(int(message.user_id), int(message.user_id))
+        if not isinstance(self._connector, TelegramSocialConnector):
+            raise Exception("Expected telegram social connector")
+
+        social_details = TelegramDetails(int(message.user_id), int(message.user_id), self._connector.get_telegram_bot_id())
         service_api = self._get_service_connector_from_social_details(social_details)
 
         user_account = service_api.get_user_accounts(message.user_id, self.app_id)
         try:
             user_telegram_profile = Utils.extract_telegram_account(user_account)
-            social_details = TelegramDetails(user_telegram_profile.telegram_id, user_telegram_profile.telegram_id)
+            social_details = TelegramDetails(user_telegram_profile.telegram_id, user_telegram_profile.telegram_id, self._connector.get_telegram_bot_id())
             logger.info(f"WeNet user [{message.user_id}] associated with Telegram user [{user_telegram_profile.telegram_id}]")
             # asking the username to Telegram
             user_name_req = requests.get("https://api.telegram.org/bot%s/getChat" % self.telegram_id,
@@ -1002,8 +1010,9 @@ class EatTogetherHandler(EventHandler):
         else:
             raise Exception(f"Missing conversation context for event {incoming_event}")
 
-        response = OutgoingEvent(social_details=incoming_event.social_details)
         context = incoming_event.context
+        response = OutgoingEvent(social_details=incoming_event.social_details, context=context)
+
         if not context.has_static_state(self.CONTEXT_WENET_USER_ID):
             error_message = "WeNet User ID not saved in the context for user [%d]" % incoming_event.social_details.get_user_id()
             logger.error(error_message)
@@ -1017,7 +1026,6 @@ class EatTogetherHandler(EventHandler):
             context.with_static_state(self.CONTEXT_USER_TASK_LIST, [t.to_repr() for t in task_list])
             context.with_static_state(self.CONTEXT_USER_TASK_INDEX, 0)
             context.with_static_state(self.CONTEXT_USER_TASK_ACTION, action)
-            response.with_context(context)
             response.with_message(TelegramTextualResponse(emojize(initial_message, use_aliases=True)))
             carousel = TelegramCarouselResponse(TelegramTextualResponse(emojize(Utils.task_recap_without_creator(task_list[0]), use_aliases=True)),
                                                 None,
@@ -1044,7 +1052,10 @@ class EatTogetherHandler(EventHandler):
         """
         Handle the carousel usage, in this case used to navigate through the tasks created by a user and to select one
         """
-        recipient_details = TelegramDetails(message.user_id, message.chat_id)
+        if not isinstance(self._connector, TelegramSocialConnector):
+            raise Exception("Expected telegram social connector")
+
+        recipient_details = TelegramDetails(message.user_id, message.chat_id, self._connector.get_telegram_bot_id())
         context = self._interface_connector.get_user_context(recipient_details)
         if not context.context.has_static_state(self.CONTEXT_USER_TASK_LIST):
             error_message = "Illegal state: no list of tasks of a user when trying to select one"
