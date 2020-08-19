@@ -35,10 +35,10 @@ class WeNetMessageInterface(Resource):
             logger.error(e.message)
             return {"Error": e.message}, 400
         except NotificationTypeError as e:
-            logger.error(e.message)
+            logger.exception("Unable to parse the notification", exc_info=e)
             return {"Error": e.message}, 400
-        except KeyError:
-            logger.error("Bad payload: parsing error. Received %s" % json.dumps(data))
+        except KeyError as e:
+            logger.exception("Bad payload: parsing error. Received %s" % json.dumps(data), exc_info=e)
             return {"Error": "One or more required keys are missing"}, 400
         except ValueError:
             logger.error("Error, enum values not respected. Received %s" % json.dumps(data))
