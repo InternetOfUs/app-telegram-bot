@@ -1,0 +1,109 @@
+image: docker:19.03.1
+
+services:
+  - docker:19.03.1-dind
+
+before_script:
+  - apk add --update bash wget ca-certificates openssl git tar openssh-client curl
+  - apk add ansible ansible-lint
+  - export ANSIBLE_HOST_KEY_CHECKING=False
+
+  - docker login registry.u-hopper.com -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD
+
+variables:
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_HOST: "tcp://docker:2375"
+  GIT_SUBMODULE_STRATEGY: recursive
+
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
+
+stages:
+  - build
+  - test
+  - push
+  - trigger-deploy
+  - notify
+
+build_dev:
+  stage: build
+  script:
+    - ./docker-support/runner.sh -bs latest
+  artifacts:
+    paths:
+      - bots_image.tar.gz
+    expire_in: 1 day
+  only:
+    - develop
+
+test_dev:
+  stage: test
+  script:
+    - docker load -i bots_image.tar.gz
+    - ./docker-support/runner.sh -t latest
+  dependencies:
+    - build_dev
+  only:
+    - develop
+
+push_dev:
+  stage: push
+  script:
+    - docker load -i bots_image.tar.gz
+    - ./docker-support/runner.sh -p latest
+  dependencies:
+    - build_dev
+    - test_dev
+  only:
+    - develop
+
+trigger-deploy_dev:
+  stage: trigger-deploy
+  script:
+    - curl --request POST --form "token=${CI_DEPLOY_TOKEN}" --form ref=develop https://lab.u-hopper.com/api/v4/projects/29/trigger/pipeline
+  dependencies:
+    - push_dev
+  only:
+    - develop
+
+build_prod:
+  stage: build
+  script:
+    - ./docker-support/runner.sh -bs $CI_COMMIT_TAG
+  artifacts:
+    paths:
+      - bots_image.tar.gz
+    expire_in: 1 day
+  only:
+    - tags
+
+test_prod:
+  stage: test
+  script:
+    - docker load -i bots_image.tar.gz
+    - ./docker-support/runner.sh -t $CI_COMMIT_TAG
+  dependencies:
+    - build_prod
+  only:
+    - tags
+
+push_prod:
+  stage: push
+  script:
+    - docker load -i bots_image.tar.gz
+    - ./docker-support/runner.sh -p $CI_COMMIT_TAG
+  dependencies:
+    - build_prod
+    - test_prod
+  only:
+    - tags
+
+notify:
+  stage: notify
+  script:
+    - echo $ANSIBLE_VAULT_PASSWORD > ansible/password_file
+    - ansible-playbook --vault-password-file ansible/password_file notify-tag-push.yml
+  dependencies:
+    - push_prod
+  only:
+    - tags

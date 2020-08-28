@@ -1,3 +1,5 @@
 .idea
 venv3
 *.pyc
+
+ansible/password_file
