@@ -19,7 +19,7 @@ loggingConfiguration = {
         "handlers": ["console"],
     },
     "loggers": {
-        "uhopper.chatbot": {
+        "uhopper": {
             "level": "DEBUG",
             "handlers": ["console"],
             "propagate": 0

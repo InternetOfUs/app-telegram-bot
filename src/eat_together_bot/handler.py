@@ -7,12 +7,15 @@ from uuid import uuid4
 import requests
 from emoji import emojize
 
+from chatbot_core.model.context import ConversationContext
 from chatbot_core.model.details import TelegramDetails
 from chatbot_core.model.event import IncomingSocialEvent, IncomingCustomEvent
 from chatbot_core.model.message import IncomingTextMessage, IncomingTelegramCarouselCommand, IncomingCommand
+from chatbot_core.model.user_context import UserConversationContext
 from chatbot_core.nlp.handler import NLPHandler
 from chatbot_core.translator.translator import Translator
 from chatbot_core.v3.connector.social_connector import SocialConnector
+from chatbot_core.v3.connector.social_connectors.telegram_connector import TelegramSocialConnector
 from chatbot_core.v3.handler.event_handler import EventHandler
 from chatbot_core.v3.handler.helpers.intent_manager import IntentManagerV3, IntentFulfillerV3
 from chatbot_core.v3.logger.connectors.uhopper_connector import UhopperLoggerConnector
@@ -23,13 +26,16 @@ from chatbot_core.v3.model.messages import TextualResponse, RapidAnswerResponse,
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEvent
 from eat_together_bot.utils import Utils
 from uhopper.utils.alert import AlertModule
-from wenet.common.interface.exceptions import TaskNotFound, TaskCreationError, TaskTransactionCreationError
+from wenet.common.interface.client import Oauth2Client
+from wenet.common.interface.exceptions import TaskNotFound, TaskCreationError, TaskTransactionCreationError, \
+    RefreshTokenExpiredError
 from wenet.common.interface.service_api import ServiceApiInterface
 from wenet.common.model.message.builder import MessageBuilder
 from wenet.common.model.message.message import TaskNotification, TextualMessage, NewUserForPlatform, \
-    TaskProposalNotification, TaskVolunteerNotification, TaskSelectionNotification
+    TaskProposalNotification, TaskVolunteerNotification, TaskSelectionNotification, WeNetAuthentication
 from wenet.common.model.task.task import Task, TaskGoal
 from wenet.common.model.task.transaction import TaskTransaction
+from wenet.common.model.user.authentication_account import TelegramAuthenticationAccount
 
 logger = logging.getLogger("uhopper.chatbot.wenet-eat-together-chatbot")
 
@@ -47,6 +53,8 @@ class EatTogetherHandler(EventHandler):
     CONTEXT_USER_TASK_LIST = 'task_list'
     CONTEXT_USER_TASK_INDEX = 'task_index'
     CONTEXT_USER_TASK_ACTION = 'task_action'
+    CONTEXT_ACCESS_TOKEN = 'access_token'
+    CONTEXT_REFRESH_TOKEN = 'refresh_token'
     TASK_ACTION_CONCLUDE = 'conclude'
     # all the recognize intents
     INTENT_START = '/start'
@@ -97,6 +105,11 @@ class EatTogetherHandler(EventHandler):
                  app_id: str,
                  wenet_hub_url: str,
                  task_type_id: str,
+                 wenet_authentication_url: str,
+                 wenet_authentication_management_url: str,
+                 redirect_url: str,
+                 client_id: str,
+                 client_secret: str,
                  api_key: str,
                  alert_module: AlertModule,
                  connector: SocialConnector,
@@ -137,13 +150,21 @@ class EatTogetherHandler(EventHandler):
         self.app_id = app_id
         self.wenet_hub_url = wenet_hub_url
         self.task_type_id = task_type_id
-        self.service_api = ServiceApiInterface(wenet_backend_url, app_id, api_key)
+        self.wenet_backend_url = wenet_backend_url
         self.intent_manager = IntentManagerV3()
-        uhopper_logger_connector = UhopperLoggerConnector().with_handler(instance_namespace)
-        self.with_logger_connector(uhopper_logger_connector)
+        self.wenet_authentication_url = wenet_authentication_url
+        self.wenet_authentication_management_url = wenet_authentication_management_url
+        self.redirect_url = redirect_url
+        self.client_id = client_id
+        self.client_secret = client_secret
+        # uhopper_logger_connector = UhopperLoggerConnector().with_handler(instance_namespace)
+        # self.with_logger_connector(uhopper_logger_connector)
         # redirecting the flow in the corresponding points
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_START, self.action_info).with_rule(intent=self.INTENT_START)
+        )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3("TOKEN", self.handle_oauth_login).with_rule(static_context=(self.CONTEXT_ACCESS_TOKEN, None))
         )
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_HELP, self.handle_help).with_rule(intent=self.INTENT_HELP)
@@ -253,40 +274,80 @@ class EatTogetherHandler(EventHandler):
                 static_context=(self.CONTEXT_CURRENT_STATE, self.TASK_ACTION_CONCLUDE)
             )
         )
+        logger.debug("READY")
+
+    def _get_service_connector_from_social_details(self, social_details: TelegramDetails) -> ServiceApiInterface:
+        context = self._interface_connector.get_user_context(social_details)
+        return self._get_service_api_interface_connector_from_context(context.context)
+
+    def _get_service_api_interface_connector_from_context(self, context: ConversationContext) -> ServiceApiInterface:
+        if not context.has_static_state(self.CONTEXT_ACCESS_TOKEN) or not context.has_static_state(self.CONTEXT_REFRESH_TOKEN):
+            raise Exception("Missing refresh or access token")
+        token = context.get_static_state(self.CONTEXT_ACCESS_TOKEN, None)
+        refresh_token = context.get_static_state(self.CONTEXT_REFRESH_TOKEN, None)
+        oauth_client = Oauth2Client.initialize_with_token(self.wenet_authentication_management_url, self.client_id, self.client_secret, token, refresh_token)
+        return ServiceApiInterface(self.wenet_backend_url, oauth_client)
+
+    def _save_updated_token(self, context: ConversationContext, client: Oauth2Client) -> ConversationContext:
+        context.with_static_state(self.CONTEXT_ACCESS_TOKEN, client.token)
+        context.with_static_state(self.CONTEXT_REFRESH_TOKEN, client.refresh_token)
+        return context
+
+    def get_user_accounts(self, wenet_id) -> List[UserConversationContext]:
+        result = self._interface_connector.get_user_contexts(
+            self._instance_namespace,
+            self._bot_id,
+            static_context_key=self.CONTEXT_WENET_USER_ID,
+            static_context_value=wenet_id
+        )
+        logger.info(f"Retrieved [{len(result)}] user conversation context for account [{wenet_id}]")
+        return result
 
     # handle messages coming from WeNet
     def _handle_custom_event(self, custom_event: IncomingCustomEvent):
         """
         This function handles all the incoming messages from the bot endpoint
         """
+        logger.debug(f"Received event {type(custom_event)} {custom_event.to_repr()}")
         try:
             message = MessageBuilder.build(custom_event.payload)
             if isinstance(message, TaskNotification):
                 notification = self.handle_wenet_notification_message(message)
                 self.send_notification(notification)
             elif isinstance(message, TextualMessage):
-                self.send_notification(self.handle_wenet_textual_message(message))
-            elif isinstance(message, NewUserForPlatform):
-                self.send_notification(self._handle_new_user_message(message))
+                notification = self.handle_wenet_textual_message(message)
+                self.send_notification(notification)
+            elif isinstance(message, WeNetAuthentication):
+                notification = self._handle_wenet_authentication_result(message)
+                self.send_notification(notification)
+            else:
+                raise ValueError(f"Unable to handle an event of type [{type(custom_event)}]")
+
+            if notification.context is not None:
+                self._interface_connector.update_user_context(UserConversationContext(notification.social_details, context= notification.context))
         except (KeyError, ValueError) as e:
             logger.error("Malformed message from WeNet, the parser raised the following exception: %s" % e)
+        except TaskNotFound as e:
+            logger.error(e.message)
+        except Exception as e:
+            logger.exception("Unable to handle to command", exc_info=e)
 
     def handle_wenet_textual_message(self, message: TextualMessage):  # -> NotificationEvent:
         """
         Handle all the incoming textual messages
         """
-        user_account = self.service_api.get_user_accounts(message.recipient_id)
-        try:
-            user_telegram_profile = Utils.extract_telegram_account(user_account)
-            recipient_details = TelegramDetails(user_telegram_profile.telegram_id,
-                                                user_telegram_profile.telegram_id)
-            context = self._interface_connector.get_user_context(recipient_details)
-            response = TelegramTextualResponse("There is a message for you:\n\n*%s*\n_%s_" % (message.title, message.text))
-            return NotificationEvent(recipient_details, [response], context.context)
-        except AttributeError:
-            logger.error("Null pointer exception. Either not able to extract a user account from Wenet id, or no Telegram account associated. User account returned: %s" % user_account.to_repr())
-        except KeyError:
+
+        # TODO if telegram social details
+        # TODO return
+        user_accounts = self.get_user_accounts(message.recipient_id)
+        if len(user_accounts) != 1:
             logger.error(f"No context associated with Wenet user {message.recipient_id}")
+            return
+
+        user_account = user_accounts[0]
+        context = user_account.context
+        response = TelegramTextualResponse("There is a message for you:\n\n*%s*\n_%s_" % (message.title, message.text))
+        return NotificationEvent(user_account.social_details, [response], context)
 
     def handle_wenet_notification_message(self, message: TaskNotification) -> NotificationEvent:
         """
@@ -295,26 +356,31 @@ class EatTogetherHandler(EventHandler):
         TaskVolunteer: a volunteer has applied, and the bot asks the creator to reject or confirm the application
         TaskSelection: a volunteer is notified that the owner has (not) approved its application
         """
-        user_account = self.service_api.get_user_accounts(message.recipient_id)
+
+        # TODO if telegram social details
+        user_accounts = self.get_user_accounts(message.recipient_id)
+        if len(user_accounts) != 1:
+            raise Exception(f"No context associated with Wenet user {message.recipient_id}")
+
+        user_account = user_accounts[0]
+        service_api = self._get_service_api_interface_connector_from_context(user_account.context)
+
         try:
-            user_telegram_profile = Utils.extract_telegram_account(user_account)
-            recipient_details = TelegramDetails(user_telegram_profile.telegram_id,
-                                                user_telegram_profile.telegram_id)
-            context = self._interface_connector.get_user_context(recipient_details)
-            task = self.service_api.get_task(str(message.task_id))
+            context = user_account.context
+            task = service_api.get_task(str(message.task_id))
             if isinstance(message, TaskProposalNotification):
                 # the system wants to propose a task to an user
                 try:
-                    task_proposals = context.context.get_static_state(self.CONTEXT_PROPOSAL_TASK_DICT, {})
+                    task_proposals = context.get_static_state(self.CONTEXT_PROPOSAL_TASK_DICT, {})
                     proposal_id = str(uuid4()).replace('-', '')[:20]
                     task_proposals[proposal_id] = {
                         "task": task.to_repr(),
                         "user": message.recipient_id
                     }
-                    context.context.with_static_state(self.CONTEXT_CURRENT_STATE, self.PROPOSAL)
-                    context.context.with_static_state(self.CONTEXT_PROPOSAL_TASK_DICT, task_proposals)
+                    context.with_static_state(self.CONTEXT_CURRENT_STATE, self.PROPOSAL)
+                    context.with_static_state(self.CONTEXT_PROPOSAL_TASK_DICT, task_proposals)
                     self._interface_connector.update_user_context(context)
-                    task_creator = self.service_api.get_user_profile(task.requester_id)
+                    task_creator = service_api.get_user_profile(task.requester_id)
                     if task_creator is None:
                         error_message = "Error: Creator of task [%s] with id [%s] not found by the API" \
                                         % (task.task_id, task.requester_id)
@@ -333,25 +399,27 @@ class EatTogetherHandler(EventHandler):
                     response.with_textual_option(emojize(":white_check_mark: I'm interested", use_aliases=True),
                                                  self.INTENT_CONFIRM_TASK_PROPOSAL.format(proposal_id))
                     logger.info(f"Sent proposal to user [{message.recipient_id}] regarding task [{task.task_id}]")
-                    return NotificationEvent(recipient_details, [response_message, response], context.context)
+
+                    context = self._save_updated_token(context, service_api.client)
+                    return NotificationEvent(user_account.social_details, [response_message, response], context)
                 except KeyError:
                     error_message = "Wrong parsing of the task representation. Not able to find either the location" \
                                     " or the max people that can attend. Got %s" % str(task.to_repr())
                     logger.error(error_message)
             elif isinstance(message, TaskVolunteerNotification):
                 # a volunteer has applied to a task, and the task creator is notified
-                user_object = self.service_api.get_user_profile(str(message.volunteer_id))
+                user_object = service_api.get_user_profile(str(message.volunteer_id))
                 if user_object is None:
                     error_message = "Error, userId [%s] does not give any user profile" % str(message.volunteer_id)
                     logger.error(error_message)
                     raise ValueError(error_message)
-                candidatures = context.context.get_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_DICT, {})
+                candidatures = context.get_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_DICT, {})
                 candidature_id = str(uuid4()).replace('-', '')[:20]
                 candidatures[candidature_id] = {
                     "task": task.task_id,
                     "user": message.volunteer_id
                 }
-                context.context.with_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_DICT, candidatures)
+                context.with_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_DICT, candidatures)
                 user_name = "%s %s" % (user_object.name.first, user_object.name.last)
                 message_text = "%s is interested in your event: *%s*! Do you want to accept his application?" \
                                % (user_name, task.goal.name)
@@ -364,7 +432,9 @@ class EatTogetherHandler(EventHandler):
                                              self.INTENT_CONFIRM_VOLUNTEER_PROPOSAL.format(candidature_id))
                 self._interface_connector.update_user_context(context)
                 logger.info(f"Sent volunteer [{message.volunteer_id}] candidature to task [{task.task_id}] created by user [{message.recipient_id}]")
-                return NotificationEvent(recipient_details, [response], context.context)
+
+                context = self._save_updated_token(context, service_api.client)
+                return NotificationEvent(user_account.social_details, [response], context)
             elif isinstance(message, TaskSelectionNotification):
                 if message.outcome == TaskSelectionNotification.OUTCOME_ACCEPTED:
                     text = ":tada: I'm happy to announce that the creator accepted you for the event: *%s*" \
@@ -377,24 +447,70 @@ class EatTogetherHandler(EventHandler):
                     raise Exception("Outcome [%s] unrecognized" % message.outcome)
                 logger.info(f"Sent volunteer proposal decision to user [{message.recipient_id}] with outcome {message.outcome}")
                 response = TextualResponse(emojize(text, use_aliases=True))
-                return NotificationEvent(recipient_details, [response])
+                return NotificationEvent(user_account.social_details, [response])
             else:
                 pass
-        except TaskNotFound as e:
-            logger.error(e.message)
-        except AttributeError:
-            logger.error("Null pointer exception. Either not able to extract a user account from Wenet id, or no Telegram account associated. User account returned: %s" % user_account.to_repr())
-        except KeyError:
-            logger.error(f"No context associated with Wenet user {message.recipient_id}")
+        except RefreshTokenExpiredError:
+            logger.exception("Refresh token is not longer valid")
+            notification_event = NotificationEvent(social_details=user_account.social_details)
+            notification_event.with_message(
+                TelegramTextualResponse(
+                    f"Sorry, the login credential are not longer valid, please perform the login again in order to continue to use the bot:\n {self.wenet_authentication_url}/login?client_id={self.client_id}&external_id={incoming_event.social_details.get_user_id()}",
+                    parse_mode=None)
+            )
+            return notification_event
 
+    def _handle_wenet_authentication_result(self, message: WeNetAuthentication) -> NotificationEvent:
+
+        if not isinstance(self._connector, TelegramSocialConnector):
+            raise Exception("Expected telegram social connector")
+
+        social_details = TelegramDetails(int(message.external_id), int(message.external_id), self._connector.get_telegram_bot_id())
+        try:
+            client = Oauth2Client.initialize_with_code(self.wenet_authentication_management_url, self.client_id, self.client_secret, message.code, self.redirect_url)
+
+            context = self._interface_connector.get_user_context(social_details)
+
+            context.context.with_static_state(self.CONTEXT_ACCESS_TOKEN, client.token)
+            context.context.with_static_state(self.CONTEXT_REFRESH_TOKEN, client.refresh_token)
+            service_api = self._get_service_api_interface_connector_from_context(context.context)
+
+            user_profile = service_api.get_user_profile()
+            logger.debug(f"retrieved_profile: {user_profile}")
+            context.context.with_static_state(self.CONTEXT_WENET_USER_ID, user_profile.profile_id)
+
+            notification = NotificationEvent(social_details)
+
+            self._interface_connector.update_user_context(context)
+
+            notification.with_message(
+                TextualResponse("Login successful")
+            )
+
+            return notification
+
+        except Exception as e:
+            logger.exception("Unable to complete the wenet login", exc_info=e)
+            return NotificationEvent(social_details).with_message(
+                TextualResponse("Unable to complete the WeNetAuthentication")
+            )
+
+    # TODO remove
     def _handle_new_user_message(self, message: NewUserForPlatform) -> NotificationEvent:
         """
         Handle the automatic message sent to the user when it logs in for the first time
         """
-        user_account = self.service_api.get_user_accounts(message.user_id)
+
+        if not isinstance(self._connector, TelegramSocialConnector):
+            raise Exception("Expected telegram social connector")
+
+        social_details = TelegramDetails(int(message.user_id), int(message.user_id), self._connector.get_telegram_bot_id())
+        service_api = self._get_service_connector_from_social_details(social_details)
+
+        user_account = service_api.get_user_accounts(message.user_id, self.app_id)
         try:
             user_telegram_profile = Utils.extract_telegram_account(user_account)
-            social_details = TelegramDetails(user_telegram_profile.telegram_id, user_telegram_profile.telegram_id)
+            social_details = TelegramDetails(user_telegram_profile.telegram_id, user_telegram_profile.telegram_id, self._connector.get_telegram_bot_id())
             logger.info(f"WeNet user [{message.user_id}] associated with Telegram user [{user_telegram_profile.telegram_id}]")
             # asking the username to Telegram
             user_name_req = requests.get("https://api.telegram.org/bot%s/getChat" % self.telegram_id,
@@ -424,16 +540,25 @@ class EatTogetherHandler(EventHandler):
         """
         General handler for all the user incoming messages
         """
+        logger.debug(f"Received event {incoming_event}")
         context = incoming_event.context
         if not self.authenticate_user(incoming_event):  # authentication adds wenet id in the context
-            return self.not_authenticated_response(incoming_event)
+            # return self.not_authenticated_response(incoming_event)
+            return self.handle_oauth_login(incoming_event, "")
         try:
             outgoing_event, fulfiller, satisfying_rule = self.intent_manager.manage(incoming_event)
             context.with_dynamic_state(self.PREVIOUS_INTENT, fulfiller.intent_id)
             outgoing_event.with_context(context)
+        except RefreshTokenExpiredError:
+            logger.exception("Refresh token is not longer valid")
+            outgoing_event = OutgoingEvent(social_details=incoming_event.social_details)
+            outgoing_event.with_message(
+                TelegramTextualResponse(f"Sorry, the login credential are not longer valid, please perform the login again in order to continue to use the bot:\n {self.wenet_authentication_url}/login?client_id={self.client_id}&external_id={incoming_event.social_details.get_user_id()}", parse_mode=None)
+            )
         except Exception as e:
             logger.exception("Something went wrong while handling incoming message", exc_info=e)
             outgoing_event = self._action_error(incoming_event, "error")
+        logger.debug(f"Created response {outgoing_event}")
         return outgoing_event
 
     def _action_error(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
@@ -484,6 +609,7 @@ class EatTogetherHandler(EventHandler):
         """
         Step 1 of task creation
         """
+        logger.debug(f"Organizer q1 for event: {incoming_event}")
         message = ("Q1: :calendar: When do you want to organize the social meal?"
                    "(remember to specify both the date and time, in the following format: "
                    "`<YYYY> <MM> <DD> <HH> <mm>` - e.g. `2020 05 13 13 00`)")
@@ -628,13 +754,17 @@ class EatTogetherHandler(EventHandler):
         """
         The task creation is confirmed. The task is created
         """
+        if incoming_event.context is not None:
+            service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
+        else:
+            raise Exception(f"Missing conversation context for event {incoming_event}")
         context = incoming_event.context
         task = Task.from_repr(context.get_static_state(self.CONTEXT_ORGANIZE_TASK_OBJECT))
         context.delete_static_state(self.CONTEXT_ORGANIZE_TASK_OBJECT)
         context.delete_static_state(self.CONTEXT_CURRENT_STATE)
         response = OutgoingEvent(social_details=incoming_event.social_details)
         try:
-            self.service_api.create_task(task)
+            service_api.create_task(task)
             logger.info("Task [%s] created successfully by user [%s]" % (task.goal.name, str(task.requester_id)))
             response.with_message(TextualResponse(emojize("Your event has been saved successfully :tada:",
                                                           use_aliases=True)))
@@ -643,6 +773,7 @@ class EatTogetherHandler(EventHandler):
             response.with_message(TextualResponse("I'm sorry, but something went wrong with the creation of your task."
                                                   " Try again later"))
         finally:
+            context = self._save_updated_token(context, service_api.client)
             response.with_context(context)
             return response
 
@@ -650,6 +781,11 @@ class EatTogetherHandler(EventHandler):
         """
         A volunteer confirms its application to a task. Transaction sent
         """
+        if incoming_event.context is not None:
+            service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
+        else:
+            raise Exception(f"Missing conversation context for event {incoming_event}")
+
         context = incoming_event.context
         task_dict = context.get_static_state(self.CONTEXT_PROPOSAL_TASK_DICT, {})
         intent = incoming_event.incoming_message.intent.value
@@ -663,7 +799,8 @@ class EatTogetherHandler(EventHandler):
         response.with_context(context)
         try:
             transaction = TaskTransaction(task.task_id, self.LABEL_VOLUNTEER_FOR_TASK, {"volunteerId": volunteer_id})
-            self.service_api.create_task_transaction(transaction)
+            service_api.create_task_transaction(transaction)
+
             logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
             response.with_message(TextualResponse(emojize("Great! I immediately send a notification to the task creator! "
                                                           "I'll let you know if you are selected to participate :wink:",
@@ -674,6 +811,7 @@ class EatTogetherHandler(EventHandler):
                             " [%s] to task [%s]. The service API resonded with code %d and message %s" \
                             % (volunteer_id, task.task_id, e.http_status, json.dumps(e.json_response))
             logger.error(error_message)
+        self._save_updated_token(response.context, service_api.client)
         return response
 
     def action_delete_task_proposal(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
@@ -697,12 +835,7 @@ class EatTogetherHandler(EventHandler):
         Check whether the user is authenticated
         :return: True if the user is authenticated, False otherwise
         """
-        if isinstance(message.social_details, TelegramDetails):
-            user_id = self.service_api.authenticate_telegram_user(message.social_details.user_id)
-            if user_id is not None:
-                message.context.with_static_state(self.CONTEXT_WENET_USER_ID, user_id)
-                return True
-        return False
+        return message.context.has_static_state(self.CONTEXT_WENET_USER_ID) and message.context.has_static_state(self.CONTEXT_ACCESS_TOKEN) and message.context.has_static_state(self.CONTEXT_REFRESH_TOKEN)
 
     def not_authenticated_response(self, message: IncomingSocialEvent) -> OutgoingEvent:
         """
@@ -725,10 +858,22 @@ class EatTogetherHandler(EventHandler):
         response.with_message(TextualResponse(help_text))
         return response
 
+    def handle_oauth_login(self, message: IncomingSocialEvent, _: str) -> OutgoingEvent:
+        response = OutgoingEvent(social_details=message.social_details)
+        response.with_message(
+            TelegramTextualResponse(f"To use the bot you must first authorize access on the WeNet platform: {self.wenet_authentication_url}/login?client_id={self.client_id}&external_id={message.social_details.get_user_id()}", parse_mode=None)
+        )
+        return response
+
     def handle_volunteer_info(self, message: IncomingSocialEvent, _: str) -> OutgoingEvent:
         """
         Display information about a volunteer that is applying for a task
         """
+        if message.context is not None:
+            service_api = self._get_service_api_interface_connector_from_context(message.context)
+        else:
+            raise Exception(f"Missing conversation context for event {message}")
+
         intent = message.incoming_message.intent.value
         candidatures = message.context.get_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_DICT, {})
         candidature_id = intent.split('_')[1]
@@ -736,7 +881,7 @@ class EatTogetherHandler(EventHandler):
             return self.handle_expired_click(message, "")
         user_id = candidatures[candidature_id]["user"]
         response = OutgoingEvent(social_details=message.social_details)
-        user_object = self.service_api.get_user_profile(str(user_id))
+        user_object = service_api.get_user_profile(str(user_id))
         if user_object is None:
             error_message = "Error, userId [%s] does not give any user profile" % str(user_id)
             logger.error(error_message)
@@ -749,13 +894,19 @@ class EatTogetherHandler(EventHandler):
                                  self.INTENT_CONFIRM_VOLUNTEER_PROPOSAL.format(candidature_id))
         response.with_message(menu)
         response.with_context(message.context)
+        response.context = self._save_updated_token(response.context, service_api.client)
         return response
 
-    def _handle_volunteer_proposal(self, message: IncomingSocialEvent, decision: bool) -> bool:
+    def _handle_volunteer_proposal(self, message: IncomingSocialEvent, decision: bool) -> (bool, ConversationContext):
         """
         Internal function used to handle the creator's decision of either accept or refuse a volunteer.
         In any case, a transaction is sent
         """
+        if message.context is not None:
+            service_api = self._get_service_api_interface_connector_from_context(message.context)
+        else:
+            raise Exception(f"Missing conversation context for event {message}")
+
         candidatures = message.context.get_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_DICT, {})
         intent = message.incoming_message.intent.value
         candidature_id = intent.split('_')[1]
@@ -766,7 +917,7 @@ class EatTogetherHandler(EventHandler):
         task_label = self.LABEL_ACCEPT_VOLUNTEER if decision else self.LABEL_REFUSE_VOLUNTEER
         transaction = TaskTransaction(task_id, task_label, {"volunteerId": volunteer_id})
         try:
-            self.service_api.create_task_transaction(transaction)
+            service_api.create_task_transaction(transaction)
             logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
             outcome = True
         except TaskTransactionCreationError as e:
@@ -777,7 +928,9 @@ class EatTogetherHandler(EventHandler):
         finally:
             candidatures.pop(candidature_id, None)
             message.context.with_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_DICT, candidatures)
-        return outcome
+
+        context = self._save_updated_token(message.context, service_api.client)
+        return outcome, context
 
     def handle_confirm_candidature(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         """
@@ -785,11 +938,12 @@ class EatTogetherHandler(EventHandler):
         """
         response = OutgoingEvent(social_details=incoming_event.social_details)
         try:
-            if self._handle_volunteer_proposal(incoming_event, True):
+            result, context = self._handle_volunteer_proposal(incoming_event, True)
+            if result:
                 response.with_message(TextualResponse("Great, you have accepted the volunteer!"))
             else:
                 response.with_message(TextualResponse("I'm sorry, but something went wrong"))
-            response.with_context(incoming_event.context)
+            response.with_context(context)
             return response
         except ValueError:
             return self.handle_expired_click(incoming_event, "")
@@ -800,11 +954,12 @@ class EatTogetherHandler(EventHandler):
         """
         response = OutgoingEvent(social_details=incoming_event.social_details)
         try:
-            if self._handle_volunteer_proposal(incoming_event, False):
+            result, context = self._handle_volunteer_proposal(incoming_event, False)
+            if result:
                 response.with_message(TextualResponse("Ok, you have rejected the volunteer!"))
             else:
                 response.with_message(TextualResponse("I'm sorry, but something went wrong"))
-            response.with_context(incoming_event.context)
+            response.with_context(context)
             return response
         except ValueError:
             return self.handle_expired_click(incoming_event, "")
@@ -813,6 +968,11 @@ class EatTogetherHandler(EventHandler):
         """
         Display information about a creator, when a volunteer is applying to a task
         """
+        if incoming_event.context is not None:
+            service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
+        else:
+            raise Exception(f"Missing conversation context for event {incoming_event}")
+
         context = incoming_event.context
         task_dict = context.get_static_state(self.CONTEXT_PROPOSAL_TASK_DICT, {})
         intent = incoming_event.incoming_message.intent.value
@@ -821,7 +981,7 @@ class EatTogetherHandler(EventHandler):
             return self.handle_expired_click(incoming_event, "")
         task = Task.from_repr(task_dict[proposal_id]["task"])
         # getting user information
-        creator = self.service_api.get_user_profile(task.requester_id)
+        creator = service_api.get_user_profile(task.requester_id)
         if creator is None:
             error_message = "Illegal state: task [%s] creator is None" % task.task_id
             logger.error(error_message)
@@ -835,6 +995,7 @@ class EatTogetherHandler(EventHandler):
         creator_info_message.with_textual_option(emojize(":white_check_mark: I'm interested", use_aliases=True),
                                                  self.INTENT_CONFIRM_TASK_PROPOSAL.format(proposal_id))
         response.with_message(creator_info_message)
+        self._save_updated_token(response.context, service_api.client)
         return response
 
     def _select_task(self, incoming_event: IncomingSocialEvent, initial_message: str, action: str) -> OutgoingEvent:
@@ -844,22 +1005,27 @@ class EatTogetherHandler(EventHandler):
         :param initial_message: starting message to be displayed
         :param action: action performed by the user (e.g. concluding a task)
         """
-        response = OutgoingEvent(social_details=incoming_event.social_details)
+        if incoming_event.context is not None:
+            service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
+        else:
+            raise Exception(f"Missing conversation context for event {incoming_event}")
+
         context = incoming_event.context
+        response = OutgoingEvent(social_details=incoming_event.social_details, context=context)
+
         if not context.has_static_state(self.CONTEXT_WENET_USER_ID):
             error_message = "WeNet User ID not saved in the context for user [%d]" % incoming_event.social_details.get_user_id()
             logger.error(error_message)
             self._alert_module.alert(error_message)
             raise ValueError(error_message)
         wenet_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
-        task_list = self.service_api.get_opened_tasks_of_user(str(wenet_id))
+        task_list = service_api.get_opened_tasks_of_user(str(wenet_id), self.app_id)
         # filter on the malformed tasks (those without "where" and "maxPeople" attributes)
         task_list = [x for x in task_list if "where" in x.attributes and "maxPeople" in x.attributes]
         if len(task_list) > 0:
             context.with_static_state(self.CONTEXT_USER_TASK_LIST, [t.to_repr() for t in task_list])
             context.with_static_state(self.CONTEXT_USER_TASK_INDEX, 0)
             context.with_static_state(self.CONTEXT_USER_TASK_ACTION, action)
-            response.with_context(context)
             response.with_message(TelegramTextualResponse(emojize(initial_message, use_aliases=True)))
             carousel = TelegramCarouselResponse(TelegramTextualResponse(emojize(Utils.task_recap_without_creator(task_list[0]), use_aliases=True)),
                                                 None,
@@ -870,6 +1036,8 @@ class EatTogetherHandler(EventHandler):
             response.with_message(carousel)
         else:
             response.with_message(TextualResponse("There are no tasks created by you"))
+
+        self._save_updated_token(response.context, service_api.client)
         return response
 
     def action_conclude_select_task(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
@@ -884,7 +1052,10 @@ class EatTogetherHandler(EventHandler):
         """
         Handle the carousel usage, in this case used to navigate through the tasks created by a user and to select one
         """
-        recipient_details = TelegramDetails(message.user_id, message.chat_id)
+        if not isinstance(self._connector, TelegramSocialConnector):
+            raise Exception("Expected telegram social connector")
+
+        recipient_details = TelegramDetails(message.user_id, message.chat_id, self._connector.get_telegram_bot_id())
         context = self._interface_connector.get_user_context(recipient_details)
         if not context.context.has_static_state(self.CONTEXT_USER_TASK_LIST):
             error_message = "Illegal state: no list of tasks of a user when trying to select one"
@@ -984,6 +1155,11 @@ class EatTogetherHandler(EventHandler):
         """
         Create a transaction with the outcome of the task
         """
+        if incoming_event.context is not None:
+            service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
+        else:
+            raise Exception(f"Missing conversation context for event {incoming_event}")
+
         context = incoming_event.context
         if not context.has_static_state(self.CONTEXT_USER_TASK_LIST):
             error_message = "Illegal state: no list of tasks of a user when trying to close one"
@@ -1010,7 +1186,7 @@ class EatTogetherHandler(EventHandler):
         response = OutgoingEvent(social_details=incoming_event.social_details)
         try:
             transaction = TaskTransaction(task_list[current_index].task_id, self.LABEL_TASK_COMPLETED, {"outcome": outcome})
-            self.service_api.create_task_transaction(transaction)
+            service_api.create_task_transaction(transaction)
             logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
             response.with_message(TextualResponse("Your task has been closed successfully"))
             context.delete_static_state(self.CONTEXT_USER_TASK_LIST)
@@ -1020,6 +1196,8 @@ class EatTogetherHandler(EventHandler):
             response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
             logger.error("Error in the creation of the transaction for concluding the task [%s]. The service API resonded with code %d and message %s"
                          % (task_list[current_index].task_id, e.http_status, json.dumps(e.json_response)))
+
+        context = self._save_updated_token(context, service_api.client)
         response.with_context(context)
         return response
 
