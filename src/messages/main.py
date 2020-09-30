@@ -17,9 +17,13 @@ publisher = MqttPublishHandler(
     os.getenv("MQTT_PASSWORD")
 )
 instance_namespace = os.getenv("INSTANCE_NAMESPACE")
+app_id = os.getenv("WENET_APP_ID")
+hub_url = os.getenv("WENET_HUB_URL")
+oauth_success_url = f"{hub_url}/oauth/complete"
+
 publisher.connect()
 
-ws = MessageInterface(publisher, topic, instance_namespace, "wenet-eat-together")
+ws = MessageInterface(publisher, topic, instance_namespace, "wenet-eat-together", app_id, oauth_success_url)
 bot_messages_app = ws.get_application()
 
 host = os.getenv("MESSAGES_HOST", "0.0.0.0")

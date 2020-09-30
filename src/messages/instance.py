@@ -1,7 +1,7 @@
 import json
 import logging
 
-from flask import request
+from flask import request, redirect
 from flask_restful import Resource, abort
 
 from chatbot_core.model.event import IncomingCustomEvent
@@ -49,11 +49,13 @@ class WeNetMessageInterface(Resource):
 class WeNetLoginCallbackInterface(Resource):
 
     def __init__(self, mqtt_publisher: MqttPublishHandler, mqtt_topic: str, instance_namespace: str,
-                 bot_id: str) -> None:
+                 bot_id: str, wenet_app_id: str, oauth_successful_redirect_url: str) -> None:
         self.mqtt_publisher = mqtt_publisher
         self.instance_namespace = instance_namespace
         self.bot_id = bot_id
         self.mqtt_topic = mqtt_topic
+        self._app_id = wenet_app_id
+        self.oauth_successful_redirect_url = oauth_successful_redirect_url
 
     def get(self):
 
@@ -71,14 +73,14 @@ class WeNetLoginCallbackInterface(Resource):
         self.mqtt_publisher.publish_data(self.mqtt_topic, event.to_repr())
 
         logger.debug("event sent")
-        return "OK", 200
+        return redirect(f"{self.oauth_successful_redirect_url}?app_id={self._app_id}")
 
 
 class InstanceResourcesBuilder:
 
     @staticmethod
-    def routes(mqtt_publisher: MqttPublishHandler, mqtt_topic: str, instance_namespace: str, bot_id: str):
+    def routes(mqtt_publisher: MqttPublishHandler, mqtt_topic: str, instance_namespace: str, bot_id: str, wenet_app_id: str, oauth_successful_redirect_url: str):
         return [
             (WeNetMessageInterface, '/message', (mqtt_publisher, mqtt_topic, instance_namespace, bot_id)),
-            (WeNetLoginCallbackInterface, '/auth', (mqtt_publisher, mqtt_topic, instance_namespace, bot_id))
+            (WeNetLoginCallbackInterface, '/auth', (mqtt_publisher, mqtt_topic, instance_namespace, bot_id, wenet_app_id, oauth_successful_redirect_url))
         ]
