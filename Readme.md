@@ -79,6 +79,8 @@ python -m messages.main
 * `MQTT_PASSWORD`: MQTT password
 * `MQTT_TOPIC`: MQTT topic to write on
 * `INSTANCE_NAMESPACE`: bot instance namespace
+* `WENET_APP_ID`: WeNet App ID used by the bot
+* `WENET_HUB_URL`: url of the WeNet hub
 
 ## Instances
 
