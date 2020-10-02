@@ -379,7 +379,10 @@ class EatTogetherHandler(EventHandler):
                     }
                     context.with_static_state(self.CONTEXT_CURRENT_STATE, self.PROPOSAL)
                     context.with_static_state(self.CONTEXT_PROPOSAL_TASK_DICT, task_proposals)
-                    self._interface_connector.update_user_context(context)
+                    self._interface_connector.update_user_context(UserConversationContext(
+                        social_details=user_account.social_details,
+                        context=context
+                    ))
                     task_creator = service_api.get_user_profile(task.requester_id)
                     if task_creator is None:
                         error_message = "Error: Creator of task [%s] with id [%s] not found by the API" \
