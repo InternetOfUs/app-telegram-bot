@@ -479,12 +479,20 @@ class EatTogetherHandler(EventHandler):
             logger.debug(f"retrieved_profile: {user_profile}")
             context.context.with_static_state(self.CONTEXT_WENET_USER_ID, user_profile.profile_id)
 
-            notification = NotificationEvent(social_details)
-
             self._interface_connector.update_user_context(context)
 
-            notification.with_message(
-                TextualResponse("Login successful")
+            text_0 = TextualResponse(emojize("Hello, welcome to the Wenet eat together chatbot :hugging_face:", use_aliases=True))
+
+            text_1 = TextualResponse("Now you are part of the community! Are you curious to join new experiences and make your social network even more diverse and exciting?\n Well, here is how I can help you!")
+            text_2 = TextualResponse("Type one the following commands to start chatting with me:\n" + self._get_command_list())
+
+            notification = NotificationEvent(
+                social_details=social_details,
+                messages=[
+                    text_0,
+                    text_1,
+                    text_2
+                ]
             )
 
             return notification
@@ -494,47 +502,6 @@ class EatTogetherHandler(EventHandler):
             return NotificationEvent(social_details).with_message(
                 TextualResponse("Unable to complete the WeNetAuthentication")
             )
-
-    # TODO remove
-    def _handle_new_user_message(self, message: NewUserForPlatform) -> NotificationEvent:
-        """
-        Handle the automatic message sent to the user when it logs in for the first time
-        """
-
-        if not isinstance(self._connector, TelegramSocialConnector):
-            raise Exception("Expected telegram social connector")
-
-        social_details = TelegramDetails(int(message.user_id), int(message.user_id), self._connector.get_telegram_bot_id())
-        service_api = self._get_service_connector_from_social_details(social_details)
-
-        user_account = service_api.get_user_accounts(message.user_id, self.app_id)
-        try:
-            user_telegram_profile = Utils.extract_telegram_account(user_account)
-            social_details = TelegramDetails(user_telegram_profile.telegram_id, user_telegram_profile.telegram_id, self._connector.get_telegram_bot_id())
-            logger.info(f"WeNet user [{message.user_id}] associated with Telegram user [{user_telegram_profile.telegram_id}]")
-            # asking the username to Telegram
-            user_name_req = requests.get("https://api.telegram.org/bot%s/getChat" % self.telegram_id,
-                                         params={"chat_id": user_telegram_profile.telegram_id}).json()
-            user_name = ""
-            if user_name_req["ok"] and "first_name" in user_name_req["result"]:
-                user_name = user_name_req["result"]["first_name"]
-            text_1 = (
-                "Now you are part of the community! "
-                "Are you curious to join new experiences "
-                "and make your social network even more "
-                "diverse and exciting?\n"
-                "Well, here is how I can help you!"
-            )
-            text_2 = "Type one the following commands to start chatting with me:\n" + self._get_command_list()
-            response = [
-                TextualResponse(emojize("Hello %s, welcome to the Wenet _eat together_ chatbot :hugging_face:"
-                                        % user_name.replace("_", ""), use_aliases=True)),
-                TextualResponse(text_1),
-                TextualResponse(text_2)
-            ]
-            return NotificationEvent(social_details, response)
-        except AttributeError:
-            logger.error(f"WeNet user {message.user_id} has not an associated Telegram account")
 
     def _create_response(self, incoming_event: IncomingSocialEvent) -> OutgoingEvent:
         """
@@ -1206,13 +1173,10 @@ class EatTogetherHandler(EventHandler):
         """
         :return: a markdown string with all the commands available in the chatbot
         """
-        return (
-            "*/info* for receiving information on this bot\n"
-            "*/organize* to organize a social meal\n"
-            "*/conclude* to close an existing social meal\n"
-            # "*/find* to search for an already created social meal to attend"
-            "To interrupt an ongoing procedure at any time, type */cancel*"
-        )
+        return "*/info* for receiving information on this bot\n" \
+               "*/organize* to organize a social meal\n" \
+               "*/conclude* to close an existing social meal\n" \
+               "To interrupt an ongoing procedure at any time, type */cancel*"
 
     def handle_expired_click(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
