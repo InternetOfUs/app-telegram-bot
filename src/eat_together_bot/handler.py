@@ -289,6 +289,7 @@ class EatTogetherHandler(EventHandler):
         return ServiceApiInterface(self.wenet_backend_url, oauth_client)
 
     def _save_updated_token(self, context: ConversationContext, client: Oauth2Client) -> ConversationContext:
+        logger.info("Saving client status")
         context.with_static_state(self.CONTEXT_ACCESS_TOKEN, client.token)
         context.with_static_state(self.CONTEXT_REFRESH_TOKEN, client.refresh_token)
         return context
@@ -324,9 +325,9 @@ class EatTogetherHandler(EventHandler):
                 raise ValueError(f"Unable to handle an event of type [{type(custom_event)}]")
 
             if notification.context is not None:
-                self._interface_connector.update_user_context(UserConversationContext(notification.social_details, context= notification.context))
+                self._interface_connector.update_user_context(UserConversationContext(notification.social_details, context=notification.context, version=UserConversationContext.VERSION_V3))
         except (KeyError, ValueError) as e:
-            logger.error("Malformed message from WeNet, the parser raised the following exception: %s" % e)
+            logger.error("Malformed message from WeNet, the parser raised the following exception: %s \n event: [%s]" % (e, custom_event.to_repr()))
         except TaskNotFound as e:
             logger.error(e.message)
         except Exception as e:
@@ -381,7 +382,8 @@ class EatTogetherHandler(EventHandler):
                     context.with_static_state(self.CONTEXT_PROPOSAL_TASK_DICT, task_proposals)
                     self._interface_connector.update_user_context(UserConversationContext(
                         social_details=user_account.social_details,
-                        context=context
+                        context=context,
+                        version=UserConversationContext.VERSION_V3
                     ))
                     task_creator = service_api.get_user_profile(task.requester_id)
                     if task_creator is None:
@@ -415,6 +417,11 @@ class EatTogetherHandler(EventHandler):
                 if user_object is None:
                     error_message = "Error, userId [%s] does not give any user profile" % str(message.volunteer_id)
                     logger.error(error_message)
+                    self._interface_connector.update_user_context(UserConversationContext(
+                        social_details=user_account.social_details,
+                        context=context,
+                        version=UserConversationContext.VERSION_V3
+                    ))
                     raise ValueError(error_message)
                 candidatures = context.get_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_DICT, {})
                 candidature_id = str(uuid4()).replace('-', '')[:20]
@@ -433,7 +440,11 @@ class EatTogetherHandler(EventHandler):
                                              self.INTENT_CANCEL_VOLUNTEER_PROPOSAL.format(candidature_id))
                 response.with_textual_option(emojize(":white_check_mark: Yes, why not!?!", use_aliases=True),
                                              self.INTENT_CONFIRM_VOLUNTEER_PROPOSAL.format(candidature_id))
-                self._interface_connector.update_user_context(context)
+                self._interface_connector.update_user_context(UserConversationContext(
+                        social_details=user_account.social_details,
+                        context=context,
+                        version=UserConversationContext.VERSION_V3
+                    ))
                 logger.info(f"Sent volunteer [{message.volunteer_id}] candidature to task [{task.task_id}] created by user [{message.recipient_id}]")
 
                 context = self._save_updated_token(context, service_api.client)
@@ -458,7 +469,7 @@ class EatTogetherHandler(EventHandler):
             notification_event = NotificationEvent(social_details=user_account.social_details)
             notification_event.with_message(
                 TelegramTextualResponse(
-                    f"Sorry, the login credential are not longer valid, please perform the login again in order to continue to use the bot:\n {self.wenet_authentication_url}/login?client_id={self.client_id}&external_id={incoming_event.social_details.get_user_id()}",
+                    f"Sorry, the login credential are not longer valid, please perform the login again in order to continue to use the bot:\n {self.wenet_authentication_url}/login?client_id={self.client_id}&external_id={user_account.social_details.get_user_id()}",
                     parse_mode=None)
             )
             return notification_event
