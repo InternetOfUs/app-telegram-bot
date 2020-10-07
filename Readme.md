@@ -67,7 +67,10 @@ python -m messages.main
 * `WENET_APP_ID`: WeNet App ID used by the bot
 * `WENET_HUB_URL`: url of the WeNet hub
 * `TASK_TYPE_ID`: the type ID of the tasks Eat Together
-* `API_TOKEN`: the API token to authenticate requests to the Service APIs
+* `CLIENT_ID`: the client ID of the WeNet application
+* `CLIENT_SECRET`: the secret key of the WeNet application
+* `WENET_AUTHENTICATION_MANAGEMENT_URL`: the URL that manages OAuth in WeNet
+* `REDIRECT_URL`: the redirection URL associated with the WeNet application
 
 ### Endpoint env variables
 
