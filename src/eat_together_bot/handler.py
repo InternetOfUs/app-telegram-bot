@@ -1,6 +1,7 @@
 import json
 import logging
 from datetime import datetime, timedelta
+from threading import Lock
 from typing import Optional, List
 from uuid import uuid4
 
@@ -18,7 +19,6 @@ from chatbot_core.v3.connector.social_connector import SocialConnector
 from chatbot_core.v3.connector.social_connectors.telegram_connector import TelegramSocialConnector
 from chatbot_core.v3.handler.event_handler import EventHandler
 from chatbot_core.v3.handler.helpers.intent_manager import IntentManagerV3, IntentFulfillerV3
-from chatbot_core.v3.logger.connectors.uhopper_connector import UhopperLoggerConnector
 from chatbot_core.v3.logger.event_logger import LoggerConnector
 from chatbot_core.v3.model.actions import UrlButton, TelegramCallbackButton
 from chatbot_core.v3.model.messages import TextualResponse, RapidAnswerResponse, TelegramTextualResponse, \
@@ -31,11 +31,10 @@ from wenet.common.interface.exceptions import TaskNotFound, TaskCreationError, T
     RefreshTokenExpiredError
 from wenet.common.interface.service_api import ServiceApiInterface
 from wenet.common.model.message.builder import MessageBuilder
-from wenet.common.model.message.message import TaskNotification, TextualMessage, NewUserForPlatform, \
+from wenet.common.model.message.message import TaskNotification, TextualMessage, \
     TaskProposalNotification, TaskVolunteerNotification, TaskSelectionNotification, WeNetAuthentication
 from wenet.common.model.task.task import Task, TaskGoal
 from wenet.common.model.task.transaction import TaskTransaction
-from wenet.common.model.user.authentication_account import TelegramAuthenticationAccount
 
 logger = logging.getLogger("uhopper.chatbot.wenet-eat-together-chatbot")
 
@@ -110,7 +109,6 @@ class EatTogetherHandler(EventHandler):
                  redirect_url: str,
                  client_id: str,
                  client_secret: str,
-                 api_key: str,
                  alert_module: AlertModule,
                  connector: SocialConnector,
                  nlp_handler: Optional[NLPHandler],
@@ -128,7 +126,6 @@ class EatTogetherHandler(EventHandler):
         :param app_id: WeNet app id with which the bot works
         :param wenet_hub_url: url of the hub, where to redirect not authenticated users
         :param task_type_id: the ID of the type of the tasks the bot will create
-        :param api_key: the API key to authenticate requests to the service API
         :param alert_module:
         :param connector:
         :param nlp_handler:
@@ -157,8 +154,7 @@ class EatTogetherHandler(EventHandler):
         self.redirect_url = redirect_url
         self.client_id = client_id
         self.client_secret = client_secret
-        # uhopper_logger_connector = UhopperLoggerConnector().with_handler(instance_namespace)
-        # self.with_logger_connector(uhopper_logger_connector)
+        self.messages_lock = Lock()
         # redirecting the flow in the corresponding points
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_START, self.action_info).with_rule(intent=self.INTENT_START)
@@ -310,6 +306,9 @@ class EatTogetherHandler(EventHandler):
         This function handles all the incoming messages from the bot endpoint
         """
         logger.debug(f"Received event {type(custom_event)} {custom_event.to_repr()}")
+        # this lock is needed to avoid that different threads write concurrently the static context,
+        # in particular the oauth tokens
+        self.messages_lock.acquire()
         try:
             message = MessageBuilder.build(custom_event.payload)
             if isinstance(message, TaskNotification):
@@ -325,21 +324,25 @@ class EatTogetherHandler(EventHandler):
                 raise ValueError(f"Unable to handle an event of type [{type(custom_event)}]")
 
             if notification.context is not None:
-                self._interface_connector.update_user_context(UserConversationContext(notification.social_details, context=notification.context, version=UserConversationContext.VERSION_V3))
+                self._interface_connector.update_user_context(UserConversationContext(
+                    notification.social_details,
+                    context=notification.context,
+                    version=UserConversationContext.VERSION_V3)
+                )
         except (KeyError, ValueError) as e:
             logger.error("Malformed message from WeNet, the parser raised the following exception: %s \n event: [%s]" % (e, custom_event.to_repr()))
         except TaskNotFound as e:
             logger.error(e.message)
         except Exception as e:
             logger.exception("Unable to handle to command", exc_info=e)
+        finally:
+            # in any case the lock must be released, otherwise all the other messages are blocked forever
+            self.messages_lock.release()
 
     def handle_wenet_textual_message(self, message: TextualMessage):  # -> NotificationEvent:
         """
         Handle all the incoming textual messages
         """
-
-        # TODO if telegram social details
-        # TODO return
         user_accounts = self.get_user_accounts(message.recipient_id)
         if len(user_accounts) != 1:
             logger.error(f"No context associated with Wenet user {message.recipient_id}")
@@ -357,8 +360,6 @@ class EatTogetherHandler(EventHandler):
         TaskVolunteer: a volunteer has applied, and the bot asks the creator to reject or confirm the application
         TaskSelection: a volunteer is notified that the owner has (not) approved its application
         """
-
-        # TODO if telegram social details
         user_accounts = self.get_user_accounts(message.recipient_id)
         if len(user_accounts) != 1:
             raise Exception(f"No context associated with Wenet user {message.recipient_id}")
@@ -469,7 +470,8 @@ class EatTogetherHandler(EventHandler):
             notification_event = NotificationEvent(social_details=user_account.social_details)
             notification_event.with_message(
                 TelegramTextualResponse(
-                    f"Sorry, the login credential are not longer valid, please perform the login again in order to continue to use the bot:\n {self.wenet_authentication_url}/login?client_id={self.client_id}&external_id={user_account.social_details.get_user_id()}",
+                    f"Sorry, the login credential are no longer valid, please login again in order to continue to use the bot:\n "
+                    f"{self.wenet_authentication_url}/login?client_id={self.client_id}&external_id={user_account.social_details.get_user_id()}",
                     parse_mode=None)
             )
             return notification_event
@@ -842,7 +844,9 @@ class EatTogetherHandler(EventHandler):
     def handle_oauth_login(self, message: IncomingSocialEvent, _: str) -> OutgoingEvent:
         response = OutgoingEvent(social_details=message.social_details)
         response.with_message(
-            TelegramTextualResponse(f"To use the bot you must first authorize access on the WeNet platform: {self.wenet_authentication_url}/login?client_id={self.client_id}&external_id={message.social_details.get_user_id()}", parse_mode=None)
+            TelegramTextualResponse(f"To use the bot you must first authorize access on the WeNet platform: "
+                                    f"{self.wenet_authentication_url}/login?client_id={self.client_id}&external_id={message.social_details.get_user_id()}",
+                                    parse_mode=None)
         )
         return response
 
@@ -968,7 +972,7 @@ class EatTogetherHandler(EventHandler):
             logger.error(error_message)
             self._alert_module.alert(error_message)
             raise ValueError(error_message)
-        response = OutgoingEvent(social_details=incoming_event.social_details)
+        response = OutgoingEvent(social_details=incoming_event.social_details, context=incoming_event.context)
         response.with_message(TextualResponse("The task is created by *%s %s*" % (creator.name.first, creator.name.last)))
         creator_info_message = RapidAnswerResponse(TextualResponse("What do you want to do?"))
         creator_info_message.with_textual_option(emojize(":x: Not interested", use_aliases=True),
@@ -1117,6 +1121,8 @@ class EatTogetherHandler(EventHandler):
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_message(TextualResponse(emojize("The operation has been cancelled :+1:", use_aliases=True)))
         incoming_event.context.delete_static_state(self.CONTEXT_CURRENT_STATE)
+        incoming_event.context.delete_static_state(self.CONTEXT_USER_TASK_LIST)
+        incoming_event.context.delete_static_state(self.CONTEXT_USER_TASK_INDEX)
         response.with_context(incoming_event.context)
         return response
 
