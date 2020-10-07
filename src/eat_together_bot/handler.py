@@ -489,17 +489,23 @@ class EatTogetherHandler(EventHandler):
 
             context.context.with_static_state(self.CONTEXT_ACCESS_TOKEN, client.token)
             context.context.with_static_state(self.CONTEXT_REFRESH_TOKEN, client.refresh_token)
-            service_api = self._get_service_api_interface_connector_from_context(context.context)
 
-            user_profile = service_api.get_user_profile()
-            logger.debug(f"retrieved_profile: {user_profile}")
-            context.context.with_static_state(self.CONTEXT_WENET_USER_ID, user_profile.profile_id)
+            # get wenet user ID
+            wenet_user_id_request = requests.get(self.wenet_backend_url + '/token',
+                                                 headers={"Authorization": f"bearer {client.token}"})
+            if wenet_user_id_request.status_code != 200:
+                raise Exception(wenet_user_id_request.json()['error_description'])
+            wenet_user_id = wenet_user_id_request.json()['profileId']
+            logger.debug(f"Wenet user ID is {wenet_user_id}")
+            context.context.with_static_state(self.CONTEXT_WENET_USER_ID, wenet_user_id)
 
             self._interface_connector.update_user_context(context)
 
             text_0 = TextualResponse(emojize("Hello, welcome to the Wenet eat together chatbot :hugging_face:", use_aliases=True))
 
-            text_1 = TextualResponse("Now you are part of the community! Are you curious to join new experiences and make your social network even more diverse and exciting?\n Well, here is how I can help you!")
+            text_1 = TextualResponse(("Now you are part of the community! "
+                                      "Are you curious to join new experiences and make your social network even more diverse and exciting?\n"
+                                      "Well, here is how I can help you!"))
             text_2 = TextualResponse("Type one the following commands to start chatting with me:\n" + self._get_command_list())
 
             notification = NotificationEvent(
@@ -526,7 +532,6 @@ class EatTogetherHandler(EventHandler):
         logger.debug(f"Received event {incoming_event}")
         context = incoming_event.context
         if not self.authenticate_user(incoming_event):  # authentication adds wenet id in the context
-            # return self.not_authenticated_response(incoming_event)
             return self.handle_oauth_login(incoming_event, "")
         try:
             outgoing_event, fulfiller, satisfying_rule = self.intent_manager.manage(incoming_event)
