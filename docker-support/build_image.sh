@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DEFAULT_VERSION="latest"
+DEFAULT_VERSION="1.0.0"
 
 clean () {
     rm -R -f ${SCRIPT_DIR}/src
