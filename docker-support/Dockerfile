@@ -1,4 +1,4 @@
-FROM registry.u-hopper.com:5000/uhopper/chatbot-core:1.3.0
+FROM registry.u-hopper.com:5000/uhopper/chatbot-core:1.4.0
 
 LABEL authors="Carlo Caprini, Stefano Tavonatti"
 

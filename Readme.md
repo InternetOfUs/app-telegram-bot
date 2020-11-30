@@ -88,6 +88,7 @@ python -m messages.main
 ## Instances
 
 The development instance of this chatbot is available here [https://t.me/wenet_test_bot](https://t.me/wenet_test_bot)
+The production instance is available here [https://t.me/wenet_eat_together_bot](https://t.me/wenet_eat_together_bot)
 
 ## Maintainers
 
