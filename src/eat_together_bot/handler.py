@@ -107,7 +107,6 @@ class EatTogetherHandler(EventHandler):
                  wenet_authentication_url: str,
                  wenet_authentication_management_url: str,
                  redirect_url: str,
-                 client_id: str,
                  client_secret: str,
                  alert_module: AlertModule,
                  connector: SocialConnector,
@@ -152,7 +151,6 @@ class EatTogetherHandler(EventHandler):
         self.wenet_authentication_url = wenet_authentication_url
         self.wenet_authentication_management_url = wenet_authentication_management_url
         self.redirect_url = redirect_url
-        self.client_id = client_id
         self.client_secret = client_secret
         self.messages_lock = Lock()
         # redirecting the flow in the corresponding points
@@ -281,7 +279,7 @@ class EatTogetherHandler(EventHandler):
             raise Exception("Missing refresh or access token")
         token = context.get_static_state(self.CONTEXT_ACCESS_TOKEN, None)
         refresh_token = context.get_static_state(self.CONTEXT_REFRESH_TOKEN, None)
-        oauth_client = Oauth2Client.initialize_with_token(self.wenet_authentication_management_url, self.client_id, self.client_secret, token, refresh_token)
+        oauth_client = Oauth2Client.initialize_with_token(self.wenet_authentication_management_url, self.app_id, self.client_secret, token, refresh_token)
         return ServiceApiInterface(self.wenet_backend_url, oauth_client)
 
     def _save_updated_token(self, context: ConversationContext, client: Oauth2Client) -> ConversationContext:
@@ -471,7 +469,7 @@ class EatTogetherHandler(EventHandler):
             notification_event.with_message(
                 TelegramTextualResponse(
                     f"Sorry, the login credential are no longer valid, please login again in order to continue to use the bot:\n "
-                    f"{self.wenet_authentication_url}/login?client_id={self.client_id}&external_id={user_account.social_details.get_user_id()}",
+                    f"{self.wenet_authentication_url}/login?client_id={self.app_id}&external_id={user_account.social_details.get_user_id()}",
                     parse_mode=None)
             )
             return notification_event
@@ -483,7 +481,7 @@ class EatTogetherHandler(EventHandler):
 
         social_details = TelegramDetails(int(message.external_id), int(message.external_id), self._connector.get_telegram_bot_id())
         try:
-            client = Oauth2Client.initialize_with_code(self.wenet_authentication_management_url, self.client_id, self.client_secret, message.code, self.redirect_url)
+            client = Oauth2Client.initialize_with_code(self.wenet_authentication_management_url, self.app_id, self.client_secret, message.code, self.redirect_url)
 
             context = self._interface_connector.get_user_context(social_details)
 
@@ -541,7 +539,7 @@ class EatTogetherHandler(EventHandler):
             logger.exception("Refresh token is not longer valid")
             outgoing_event = OutgoingEvent(social_details=incoming_event.social_details)
             outgoing_event.with_message(
-                TelegramTextualResponse(f"Sorry, the login credential are not longer valid, please perform the login again in order to continue to use the bot:\n {self.wenet_authentication_url}/login?client_id={self.client_id}&external_id={incoming_event.social_details.get_user_id()}", parse_mode=None)
+                TelegramTextualResponse(f"Sorry, the login credential are not longer valid, please perform the login again in order to continue to use the bot:\n {self.wenet_authentication_url}/login?client_id={self.app_id}&external_id={incoming_event.social_details.get_user_id()}", parse_mode=None)
             )
         except Exception as e:
             logger.exception("Something went wrong while handling incoming message", exc_info=e)
@@ -850,7 +848,7 @@ class EatTogetherHandler(EventHandler):
         response = OutgoingEvent(social_details=message.social_details)
         response.with_message(
             TelegramTextualResponse(f"To use the bot you must first authorize access on the WeNet platform: "
-                                    f"{self.wenet_authentication_url}/login?client_id={self.client_id}&external_id={message.social_details.get_user_id()}",
+                                    f"{self.wenet_authentication_url}/login?client_id={self.app_id}&external_id={message.social_details.get_user_id()}",
                                     parse_mode=None)
         )
         return response

@@ -10,6 +10,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 RUN pip install --no-cache-dir -r requirements-common.txt
 
 COPY run.sh .
+COPY run_tests.sh /run_test_wenet.sh
 
 ADD src/ /scripts/
 
