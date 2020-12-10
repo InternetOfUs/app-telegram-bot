@@ -24,7 +24,7 @@ from chatbot_core.v3.model.actions import UrlButton, TelegramCallbackButton
 from chatbot_core.v3.model.messages import TextualResponse, RapidAnswerResponse, TelegramTextualResponse, \
     TelegramRapidAnswerResponse, TelegramCarouselResponse
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEvent
-from eat_together_bot.utils import Utils
+from common.utils import Utils
 from uhopper.utils.alert import AlertModule
 from wenet.common.interface.client import Oauth2Client
 from wenet.common.interface.exceptions import TaskNotFound, TaskCreationError, TaskTransactionCreationError, \

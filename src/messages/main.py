@@ -2,7 +2,7 @@ import logging.config
 import os
 import uuid
 
-from log_config.logging_config import loggingConfiguration
+from common.logging_config import loggingConfiguration
 from messages.ws import MessageInterface
 from uhopper.utils.mqtt import MqttPublishHandler
 

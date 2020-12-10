@@ -2,7 +2,7 @@ import logging.config
 import os
 
 from eat_together_bot.handler import EatTogetherHandler
-from log_config.logging_config import loggingConfiguration
+from common.logging_config import loggingConfiguration
 from uhopper.utils.alert import AlertModule
 from uhopper.utils.mqtt import MqttSubscriptionHandler
 from chatbot_core.v3.connector.social_connectors.telegram_connector import TelegramSocialConnector
