@@ -28,13 +28,26 @@ if __name__ == "__main__":
     task_type_id = os.getenv("TASK_TYPE_ID")
     wenet_authentication_url = os.getenv("WENET_AUTHENTICATION_URL")
     redirect_url = os.getenv("REDIRECT_URL")
-    client_id = os.getenv("CLIENT_ID")
     client_secret = os.getenv("CLIENT_SECRET")
     wenet_authentication_management_url = os.getenv("WENET_AUTHENTICATION_MANAGEMENT_URL")
-    handler = EatTogetherHandler(instance_namespace, "wenet-eat-together", "wenet-eat-together-handler", bot_token,
-                                 wenet_backend_url, app_id, wenet_hub_url, task_type_id, wenet_authentication_url,
-                                 wenet_authentication_management_url, redirect_url, client_id, client_secret,
-                                 alert_module, connector, None, None)
+    handler = EatTogetherHandler(
+        instance_namespace,
+        "wenet-eat-together",
+        "wenet-eat-together-handler",
+        bot_token,
+        wenet_backend_url,
+        app_id,
+        wenet_hub_url,
+        task_type_id,
+        wenet_authentication_url,
+        wenet_authentication_management_url,
+        redirect_url,
+        client_secret,
+        alert_module,
+        connector,
+        None,
+        None
+    )
     instance_manager = InstanceManager(instance_namespace, subscriber, MultiThreadEventDispatcher())
     instance_manager.with_event_handler(handler)
 
