@@ -20,7 +20,7 @@ from chatbot_core.v3.model.messages import RapidAnswerResponse, TextualResponse,
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEvent
 from uhopper.utils.alert import AlertModule
 from wenet.common.interface.client import Oauth2Client
-from wenet.common.interface.exceptions import TaskNotFound
+from wenet.common.interface.exceptions import TaskNotFound, RefreshTokenExpiredError
 from wenet.common.interface.service_api import ServiceApiInterface
 from wenet.common.model.message.builder import MessageBuilder
 from wenet.common.model.message.message import TaskNotification, TextualMessage, WeNetAuthentication
@@ -53,6 +53,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
         - redirect_url: the url used for user redirection after authentication
         - wenet_authentication_url
         - wenet_authentication_management_url
+        - task_type_id: the type of the task used by the bot
     """
     TELEGRAM_GET_ME_API = 'https://api.telegram.org/bot{}/getMe'
 
@@ -80,6 +81,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
                  redirect_url: str,
                  wenet_authentication_url: str,
                  wenet_authentication_management_url: str,
+                 task_type_id: str,
                  alert_module: AlertModule,
                  connector: SocialConnector,
                  nlp_handler: Optional[NLPHandler],
@@ -105,6 +107,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
         self.redirect_url = redirect_url
         self.wenet_authentication_url = wenet_authentication_url
         self.wenet_authentication_management_url = wenet_authentication_management_url
+        self.task_type_id = task_type_id
         self.intent_manager = IntentManagerV3()
         self.messages_lock = Lock()
         # redirecting the flow in the corresponding points
@@ -274,3 +277,27 @@ class WenetEventHandler(EventHandler, abc.ABC):
         :return: a markdown string with all the commands available in the chatbot
         """
         pass
+
+    def _create_response(self, incoming_event: IncomingSocialEvent) -> OutgoingEvent:
+        """
+        General handler for all the user incoming messages
+        """
+        logger.debug(f"Received event {incoming_event}")
+        context = incoming_event.context
+        if not self.authenticate_user(incoming_event):  # authentication adds wenet id in the context
+            return self.handle_oauth_login(incoming_event, "")
+        try:
+            outgoing_event, fulfiller, satisfying_rule = self.intent_manager.manage(incoming_event)
+            context.with_dynamic_state(self.PREVIOUS_INTENT, fulfiller.intent_id)
+            outgoing_event.with_context(context)
+        except RefreshTokenExpiredError:
+            logger.exception("Refresh token is not longer valid")
+            outgoing_event = OutgoingEvent(social_details=incoming_event.social_details)
+            outgoing_event.with_message(
+                TelegramTextualResponse(f"Sorry, the login credential are not longer valid, please perform the login again in order to continue to use the bot:\n {self.wenet_authentication_url}/login?client_id={self.app_id}&external_id={incoming_event.social_details.get_user_id()}", parse_mode=None)
+            )
+        except Exception as e:
+            logger.exception("Something went wrong while handling incoming message", exc_info=e)
+            outgoing_event = self.action_error(incoming_event, "error")
+        logger.debug(f"Created response {outgoing_event}")
+        return outgoing_event
