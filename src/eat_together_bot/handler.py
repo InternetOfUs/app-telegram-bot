@@ -36,7 +36,7 @@ from wenet.common.model.message.message import TaskNotification, TextualMessage,
 from wenet.common.model.task.task import Task, TaskGoal
 from wenet.common.model.task.transaction import TaskTransaction
 
-logger = logging.getLogger("uhopper.chatbot.wenet-eat-together-chatbot")
+logger = logging.getLogger("uhopper.chatbot.wenet.eattogether.chatbot")
 
 
 class EatTogetherHandler(EventHandler):
