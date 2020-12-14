@@ -2,11 +2,11 @@ import logging.config
 import os
 import uuid
 
-from common.logging_config import loggingConfiguration
+from common.logging_config import get_logging_configuration
 from messages.ws import MessageInterface
 from uhopper.utils.mqtt import MqttPublishHandler
 
-logging.config.dictConfig(loggingConfiguration)
+logging.config.dictConfig(get_logging_configuration("uhopper.chatbot.wenet.eattogether.messages"))
 logger = logging.getLogger("uhopper.chatbot.wenet.eattogether.messages")
 
 topic = os.getenv("MQTT_TOPIC")

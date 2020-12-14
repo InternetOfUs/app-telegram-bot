@@ -1,15 +1,15 @@
 import logging.config
 import os
 
+from common.logging_config import get_logging_configuration
 from eat_together_bot.handler import EatTogetherHandler
-from common.logging_config import loggingConfiguration
 from uhopper.utils.alert import AlertModule
 from uhopper.utils.mqtt import MqttSubscriptionHandler
 from chatbot_core.v3.connector.social_connectors.telegram_connector import TelegramSocialConnector
 from chatbot_core.v3.handler.event_dipatcher import MultiThreadEventDispatcher
 from chatbot_core.v3.handler.instance_manager import InstanceManager
 
-logging.config.dictConfig(loggingConfiguration)
+logging.config.dictConfig(get_logging_configuration("uhopper.chatbot.wenet-eat-together-chatbot"))
 logger = logging.getLogger("uhopper.chatbot.wenet-eat-together-chatbot")
 
 if __name__ == "__main__":
