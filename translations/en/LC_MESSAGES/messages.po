@@ -1,0 +1,50 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2019-08-22 14:46+0200\n"
+"PO-Revision-Date: 2020-12-15 17:49+0100\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 2.4.2\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/ask_for_help/handler.py:32
+msgid "info_text"
+msgstr ""
+"You can ask a question with the /question command. With /answer you can "
+"check open questions and answer them. Use /profile to check your personal "
+"profile."
+
+#: src/ask_for_help/handler.py:58
+msgid "start_text_1"
+msgstr ""
+"Thanks for connecting! :wave: This is the *AskAAU* chatbot. My aim is to "
+"help students to help other students with questions and answers."
+
+#: src/ask_for_help/handler.py:59
+msgid "start_text_2"
+msgstr ""
+"I’m designed to connect people with diversity in mind - you know, opposites "
+"attract each other, but sometimes it’s comfortable to have a similar person "
+"listening to you."
+
+#: src/ask_for_help/handler.py:63
+msgid "start_button"
+msgstr "Ask a question! :thinking_face:"
+
+#: src/ask_for_help/handler.py:46
+msgid "error_text"
+msgstr "I’m very sorry but I didn’t understand :pensive:"
+
+#: src/ask_for_help/handler.py:52
+msgid "cancel_text"
+msgstr "The current operation has been cancelled successfully"
