@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from typing import Optional, List
 from uuid import uuid4
 
-import requests
 from emoji import emojize
 
 from chatbot_core.model.context import ConversationContext
@@ -25,7 +24,6 @@ from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEven
 from common.utils import Utils
 from common.wenet_event_handler import WenetEventHandler
 from uhopper.utils.alert import AlertModule
-from wenet.common.interface.client import Oauth2Client
 from wenet.common.interface.exceptions import TaskCreationError, TaskTransactionCreationError, RefreshTokenExpiredError
 from wenet.common.model.message.message import TaskNotification, TextualMessage, \
     TaskProposalNotification, TaskVolunteerNotification, TaskSelectionNotification, WeNetAuthentication
@@ -427,6 +425,9 @@ class EatTogetherHandler(WenetEventHandler):
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_message(TextualResponse(text_1))
         return response
+
+    def action_start(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+        return self.action_info(incoming_event, intent)
 
     def _ask_question(self, incoming_event: IncomingSocialEvent, message: str, state: str) -> OutgoingEvent:
         """

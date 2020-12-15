@@ -113,7 +113,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
         self.messages_lock = Lock()
         # redirecting the flow in the corresponding points
         self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_START, self.action_info).with_rule(intent=self.INTENT_START)
+            IntentFulfillerV3(self.INTENT_START, self.action_start).with_rule(intent=self.INTENT_START)
         )
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3("TOKEN", self.handle_oauth_login).with_rule(
@@ -128,6 +128,13 @@ class WenetEventHandler(EventHandler, abc.ABC):
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_INFO, self.action_info).with_rule(intent=self.INTENT_INFO)
         )
+
+    @abc.abstractmethod
+    def action_start(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+        """
+        Handle the starting message
+        """
+        pass
 
     @abc.abstractmethod
     def action_info(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
