@@ -369,23 +369,7 @@ class EatTogetherHandler(WenetEventHandler):
 
         social_details = TelegramDetails(int(message.external_id), int(message.external_id), self._connector.get_telegram_bot_id())
         try:
-            client = Oauth2Client.initialize_with_code(self.wenet_authentication_management_url, self.app_id, self.client_secret, message.code, self.redirect_url)
-
-            context = self._interface_connector.get_user_context(social_details)
-
-            context.context.with_static_state(self.CONTEXT_ACCESS_TOKEN, client.token)
-            context.context.with_static_state(self.CONTEXT_REFRESH_TOKEN, client.refresh_token)
-
-            # get wenet user ID
-            wenet_user_id_request = requests.get(self.wenet_backend_url + '/token',
-                                                 headers={"Authorization": f"bearer {client.token}"})
-            if wenet_user_id_request.status_code != 200:
-                raise Exception(wenet_user_id_request.json()['error_description'])
-            wenet_user_id = wenet_user_id_request.json()['profileId']
-            logger.debug(f"Wenet user ID is {wenet_user_id}")
-            context.context.with_static_state(self.CONTEXT_WENET_USER_ID, wenet_user_id)
-
-            self._interface_connector.update_user_context(context)
+            self._save_wenet_user_id_to_context(message, social_details)
 
             text_0 = TextualResponse(emojize("Hello, welcome to the Wenet eat together chatbot :hugging_face:", use_aliases=True))
 

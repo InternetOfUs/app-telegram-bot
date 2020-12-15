@@ -12,6 +12,7 @@ from chatbot_core.model.user_context import UserConversationContext
 from chatbot_core.nlp.handler import NLPHandler
 from chatbot_core.translator.translator import Translator
 from chatbot_core.v3.connector.social_connector import SocialConnector
+from chatbot_core.v3.connector.social_connectors.telegram_connector import TelegramSocialConnector
 from chatbot_core.v3.handler.event_handler import EventHandler
 from chatbot_core.v3.handler.helpers.intent_manager import IntentManagerV3, IntentFulfillerV3
 from chatbot_core.v3.logger.event_logger import LoggerConnector
@@ -301,3 +302,26 @@ class WenetEventHandler(EventHandler, abc.ABC):
             outgoing_event = self.action_error(incoming_event, "error")
         logger.debug(f"Created response {outgoing_event}")
         return outgoing_event
+
+    def _save_wenet_user_id_to_context(self, message: WeNetAuthentication, social_details: TelegramDetails) -> None:
+        """
+        Get from Wenet the user ID and saves it into the context
+        """
+        client = Oauth2Client.initialize_with_code(self.wenet_authentication_management_url, self.app_id,
+                                                   self.client_secret, message.code, self.redirect_url)
+
+        context = self._interface_connector.get_user_context(social_details)
+
+        context.context.with_static_state(self.CONTEXT_ACCESS_TOKEN, client.token)
+        context.context.with_static_state(self.CONTEXT_REFRESH_TOKEN, client.refresh_token)
+
+        # get wenet user ID
+        wenet_user_id_request = requests.get(self.wenet_backend_url + '/token',
+                                             headers={"Authorization": f"bearer {client.token}"})
+        if wenet_user_id_request.status_code != 200:
+            raise Exception(wenet_user_id_request.json()['error_description'])
+        wenet_user_id = wenet_user_id_request.json()['profileId']
+        logger.debug(f"Wenet user ID is {wenet_user_id}")
+        context.context.with_static_state(self.CONTEXT_WENET_USER_ID, wenet_user_id)
+
+        self._interface_connector.update_user_context(context)
