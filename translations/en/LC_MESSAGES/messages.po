@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2020-12-15 17:49+0100\n"
+"PO-Revision-Date: 2020-12-16 12:22+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -48,3 +48,35 @@ msgstr "I’m very sorry but I didn’t understand :pensive:"
 #: src/ask_for_help/handler.py:52
 msgid "cancel_text"
 msgstr "The current operation has been cancelled successfully"
+
+msgid "question_1"
+msgstr "What would you like to ask from the community members?"
+
+msgid "question_2"
+msgstr "Tell me more about what kind of person should I ask?"
+
+msgid "type_answer_1"
+msgstr "Different than me"
+
+msgid "type_answer_2"
+msgstr "Similar to me"
+
+msgid "type_answer_3"
+msgstr "Anyone"
+
+msgid "not_inclusive"
+msgstr "Please use more "
+
+msgid "question_is_not_text"
+msgstr "Please write your question"
+
+msgid "specify_answerer"
+msgstr "Could you specify?"
+
+msgid "question_4"
+msgstr ""
+"Alright, I will ask other users to answer your question! When I receive an "
+"answer, I will notify you."
+
+msgid "answerer_details_are_not_text"
+msgstr "Please specify what kind of person you would like to be answered by."

@@ -38,3 +38,33 @@ msgstr ""
 #: src/ask_for_help/handler.py:52
 msgid "cancel_text"
 msgstr ""
+
+msgid "question_1"
+msgstr ""
+
+msgid "question_2"
+msgstr ""
+
+msgid "type_answer_1"
+msgstr ""
+
+msgid "type_answer_2"
+msgstr ""
+
+msgid "type_answer_3"
+msgstr ""
+
+msgid "not_inclusive"
+msgstr ""
+
+msgid "question_is_not_text"
+msgstr ""
+
+msgid "specify_answerer"
+msgstr ""
+
+msgid "question_4"
+msgstr ""
+
+msgid "answerer_details_are_not_text"
+msgstr ""
