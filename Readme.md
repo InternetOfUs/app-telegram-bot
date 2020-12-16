@@ -91,6 +91,7 @@ Both the chatbots use the following environment variables
 * `INSTANCE_NAMESPACE`: bot instance namespace
 * `WENET_APP_ID`: WeNet App ID used by the bot
 * `WENET_HUB_URL`: url of the WeNet hub
+* `BOT_ID`: the bot ID associated with the EventHandler used by the bot itself.
 
 ## Instances
 

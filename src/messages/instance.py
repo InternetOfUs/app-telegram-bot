@@ -10,7 +10,7 @@ from wenet.common.model.message.builder import MessageBuilder
 from wenet.common.model.message.exception import MessageTypeError, NotificationTypeError
 from wenet.common.model.message.message import WeNetAuthentication
 
-logger = logging.getLogger("uhopper.chatbot.wenet.eattogether.messages")
+logger = logging.getLogger("uhopper.chatbot.wenet.messages")
 
 
 class WeNetMessageInterface(Resource):
