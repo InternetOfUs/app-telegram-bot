@@ -12,7 +12,6 @@ from chatbot_core.model.user_context import UserConversationContext
 from chatbot_core.nlp.handler import NLPHandler
 from chatbot_core.translator.translator import Translator
 from chatbot_core.v3.connector.social_connector import SocialConnector
-from chatbot_core.v3.connector.social_connectors.telegram_connector import TelegramSocialConnector
 from chatbot_core.v3.handler.event_handler import EventHandler
 from chatbot_core.v3.handler.helpers.intent_manager import IntentManagerV3, IntentFulfillerV3
 from chatbot_core.v3.logger.event_logger import LoggerConnector
@@ -24,7 +23,8 @@ from wenet.common.interface.client import Oauth2Client
 from wenet.common.interface.exceptions import TaskNotFound, RefreshTokenExpiredError
 from wenet.common.interface.service_api import ServiceApiInterface
 from wenet.common.model.message.builder import MessageBuilder
-from wenet.common.model.message.message import TaskNotification, TextualMessage, WeNetAuthentication
+from wenet.common.model.message.event import WeNetAuthenticationEvent
+from wenet.common.model.message.message import TextualMessage, Message
 
 logger = logging.getLogger("uhopper.chatbot.wenet")
 
@@ -230,14 +230,20 @@ class WenetEventHandler(EventHandler, abc.ABC):
         # in particular the oauth tokens
         self.messages_lock.acquire()
         try:
-            message = MessageBuilder.build(custom_event.payload)
-            if isinstance(message, TaskNotification):
-                notification = self.handle_wenet_notification_message(message)
-                self.send_notification(notification)
-            elif isinstance(message, TextualMessage):
+            payload = custom_event.payload
+            if "type" in payload and payload["type"] == WeNetAuthenticationEvent.TYPE:
+                message = WeNetAuthenticationEvent.from_repr(payload)
+            elif "label" in payload:
+                message = MessageBuilder.build(custom_event.payload)
+            else:
+                raise ValueError(f"Unable to handle an event of type [{type(custom_event)}]")
+            if isinstance(message, TextualMessage):
                 notification = self.handle_wenet_textual_message(message)
                 self.send_notification(notification)
-            elif isinstance(message, WeNetAuthentication):
+            elif isinstance(message, Message):
+                notification = self.handle_wenet_message(message)
+                self.send_notification(notification)
+            elif isinstance(message, WeNetAuthenticationEvent):
                 notification = self.handle_wenet_authentication_result(message)
                 self.send_notification(notification)
             else:
@@ -269,13 +275,13 @@ class WenetEventHandler(EventHandler, abc.ABC):
         pass
 
     @abc.abstractmethod
-    def handle_wenet_notification_message(self, message: TaskNotification) -> NotificationEvent:
+    def handle_wenet_message(self, message: Message) -> NotificationEvent:
         """
-        Handle all the incoming notifications.
+        Handle all the incoming messages (e.g. Task notifications, etc).
         """
 
     @abc.abstractmethod
-    def handle_wenet_authentication_result(self, message: WeNetAuthentication) -> NotificationEvent:
+    def handle_wenet_authentication_result(self, message: WeNetAuthenticationEvent) -> NotificationEvent:
         pass
 
     @staticmethod
@@ -310,7 +316,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
         logger.debug(f"Created response {outgoing_event}")
         return outgoing_event
 
-    def _save_wenet_user_id_to_context(self, message: WeNetAuthentication, social_details: TelegramDetails) -> None:
+    def _save_wenet_user_id_to_context(self, message: WeNetAuthenticationEvent, social_details: TelegramDetails) -> None:
         """
         Get from Wenet the user ID and saves it into the context
         """

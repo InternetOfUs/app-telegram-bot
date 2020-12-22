@@ -11,7 +11,8 @@ from chatbot_core.v3.model.messages import TextualResponse, RapidAnswerResponse
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEvent
 from common.wenet_event_handler import WenetEventHandler
 from uhopper.utils.alert import AlertModule
-from wenet.common.model.message.message import TextualMessage, TaskNotification, WeNetAuthentication
+from wenet.common.model.message.event import WeNetAuthenticationEvent
+from wenet.common.model.message.message import TextualMessage, Message
 
 
 class AskForHelpHandler(WenetEventHandler):
@@ -133,10 +134,10 @@ class AskForHelpHandler(WenetEventHandler):
     def handle_wenet_textual_message(self, message: TextualMessage) -> NotificationEvent:
         pass
 
-    def handle_wenet_notification_message(self, message: TaskNotification) -> NotificationEvent:
+    def handle_wenet_message(self, message: Message) -> NotificationEvent:
         pass
 
-    def handle_wenet_authentication_result(self, message: WeNetAuthentication) -> NotificationEvent:
+    def handle_wenet_authentication_result(self, message: WeNetAuthenticationEvent) -> NotificationEvent:
         # get and put wenet user id into context here
         pass
 
