@@ -54,9 +54,6 @@ msgstr ""
 msgid "type_answer_3"
 msgstr ""
 
-msgid "not_inclusive"
-msgstr ""
-
 msgid "question_is_not_text"
 msgstr ""
 
@@ -67,4 +64,10 @@ msgid "question_4"
 msgstr ""
 
 msgid "answerer_details_are_not_text"
+msgstr ""
+
+msgid "question_0"
+msgstr ""
+
+msgid "error_task_creation"
 msgstr ""
