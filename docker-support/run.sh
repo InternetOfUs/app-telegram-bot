@@ -1,33 +1,24 @@
 #!/bin/bash
 
-echo "Verifying env variables presence"
-declare -a REQUIRED_ENV_VARS=()
+SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-for e in "${REQUIRED_ENV_VARS[@]}"
-do
-    if [ -z "$e" ]; then
-        echo >&2 "Required env variable is missing"
-        exit 1
-    fi
-done
+echo "Running pre-flight checks..."
 
-DEFAULT_WORKERS=4
-if [ -z "${WORKERS}" ]; then
-    WORKERS=$DEFAULT_WORKERS
-fi
+SERVICE=$1
 
-if [ $1 == "bots" ]; then
-    exec python -m eat_together_bot.main
+
+if [[ ${SERVICE} == "ws" ]]; then
+    echo "Running ws..."
+    ${SCRIPT_DIR}/run_ws.sh
+
+elif [[ ${SERVICE} == "eat-together-bot" ]]; then
+    echo "Running eat-together-bot..."
+    ${SCRIPT_DIR}/run_eat-together-bot.sh
+
+elif [[ ${SERVICE} == "ask-for-help-bot" ]]; then
+    echo "Running ask-for-help-bot..."
+    ${SCRIPT_DIR}/run_ask-for-help-bot.sh
+
 else
-  if [ $1 == "ws" ]; then
-    echo "Running ws"
-    exec gunicorn -w "${WORKERS}" -b 0.0.0.0:80 "messages.main:bot_messages_app"
-
-  else
-    echo "Missing argument, use:"
-    echo "  ./run.sh bots - for running the bots"
-    echo "  ./runs.sh ws - to run the webservices"
-    exit 1
-  fi
-
+    echo "Unknown service ${1}"
 fi

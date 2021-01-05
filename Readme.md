@@ -84,7 +84,7 @@ Both the chatbots use the following environment variables
 * `MESSAGES_HOST`: host running the APIs (default to `0.0.0.0`)
 * `MESSAGES_PORT`: port of the host (default to `12345`)
 * `MQTT_HOST`: MQTT host
-* `MQTT_SUBSCRIBER_ID`: MQTT publisher id for the client
+* `MQTT_PUBLISHER_ID`: MQTT publisher id for the client
 * `MQTT_USER`: MQTT user
 * `MQTT_PASSWORD`: MQTT password
 * `MQTT_TOPIC`: MQTT topic to write on
