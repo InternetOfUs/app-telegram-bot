@@ -164,7 +164,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
         """
         pass
 
-    def authenticate_user(self, message: IncomingSocialEvent) -> bool:
+    def is_user_authenticated(self, message: IncomingSocialEvent) -> bool:
         """
         Check whether the user is authenticated
         :return: True if the user is authenticated, False otherwise
@@ -298,7 +298,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
         """
         logger.debug(f"Received event {incoming_event}")
         context = incoming_event.context
-        if not self.authenticate_user(incoming_event):  # authentication adds wenet id in the context
+        if not self.is_user_authenticated(incoming_event):  # authentication adds wenet id in the context
             return self.handle_oauth_login(incoming_event, "")
         try:
             outgoing_event, fulfiller, satisfying_rule = self.intent_manager.manage(incoming_event)

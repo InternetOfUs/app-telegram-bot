@@ -71,3 +71,48 @@ msgstr ""
 
 msgid "error_task_creation"
 msgstr ""
+
+msgid "answer_message_0"
+msgstr ""
+
+msgid "answer_question_button"
+msgstr ""
+
+msgid "answer_remind_later_button"
+msgstr ""
+
+msgid "answer_not_button"
+msgstr ""
+
+msgid "answer_report_button"
+msgstr ""
+
+msgid "answerer_is_not_text"
+msgstr ""
+
+msgid "answered_message"
+msgstr ""
+
+msgid "not_answer_response"
+msgstr ""
+
+msgid "answer_remind_later_message"
+msgstr ""
+
+msgid "why_reporting_message"
+msgstr ""
+
+msgid "button_why_reporting_1_text"
+msgstr ""
+
+msgid "button_why_reporting_2_text"
+msgstr ""
+
+msgid "button_why_reporting_3_text"
+msgstr ""
+
+msgid "report_comment_text"
+msgstr ""
+
+msgid "report_final_message"
+msgstr ""
