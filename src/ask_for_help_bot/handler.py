@@ -15,7 +15,8 @@ from chatbot_core.v3.model.messages import TextualResponse, RapidAnswerResponse,
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEvent
 from common.wenet_event_handler import WenetEventHandler
 from uhopper.utils.alert import AlertModule
-from wenet.common.interface.exceptions import TaskCreationError, RefreshTokenExpiredError, TaskTransactionCreationError
+from wenet.common.interface.exceptions import TaskCreationError, RefreshTokenExpiredError, TaskTransactionCreationError, \
+    TaskNotFound
 from wenet.common.model.message.event import WeNetAuthenticationEvent
 from wenet.common.model.message.message import TextualMessage, Message, QuestionToAnswerMessage, AnsweredQuestionMessage
 from wenet.common.model.task.task import Task, TaskGoal
@@ -36,9 +37,10 @@ class AskForHelpHandler(WenetEventHandler):
     CONTEXT_DESIRED_ANSWERER = "desired_answerer"
     CONTEXT_ASKED_QUESTION = "asked_question"
     CONTEXT_QUESTION_TO_ANSWER = "question_to_answer"
-    CONTEXT_QUESTION_TO_REPORT = "question_to_report"
+    CONTEXT_MESSAGE_TO_REPORT = "message_to_report"
     CONTEXT_REPORTING_IS_QUESTION = "reporting_is_question"
     CONTEXT_REPORTING_REASON = "reporting_reason"
+    CONTEXT_ORIGINAL_QUESTION_REPORTING = "original_question_reporting"
     # all the recognize intents
     INTENT_QUESTION = '/question'
     INTENT_QUESTION_FIRST = '/question_first'
@@ -48,9 +50,11 @@ class AskForHelpHandler(WenetEventHandler):
     INTENT_ANSWER_QUESTION = "answer_question"
     INTENT_ANSWER_REMIND_LATER = "answer_remind_later"
     INTENT_ANSWER_NOT = "answer_not"
-    INTENT_ANSWER_REPORT = "answer_report"
+    INTENT_QUESTION_REPORT = "question_report"
     INTENT_REPORT_ABUSIVE = "abusive"
     INTENT_REPORT_SPAM = "spam"
+    INTENT_ASK_MORE_ANSWERS = "ask_more_answers"
+    INTENT_ANSWER_REPORT = "answer_report"
     # available states
     STATE_QUESTION_1 = "question_1"
     STATE_QUESTION_2 = "question_2"
@@ -59,11 +63,13 @@ class AskForHelpHandler(WenetEventHandler):
     STATE_ANSWER_2 = "answer_2"
     STATE_REPORT_1 = "report_1"
     STATE_REPORT_2 = "report_2"
+    STATE_RECEIVED_ANSWER = "received_answer"
     # transaction labels
     LABEL_ANSWER_TRANSACTION = "answerTransaction"
     LABEL_NOT_ANSWER_TRANSACTION = "notAnswerTransaction"
     LABEL_REPORT_QUESTION_TRANSACTION = "reportQuestionTransaction"
     LABEL_REPORT_ANSWER_TRANSACTION = "reportAnswerTransaction"
+    LABEL_MORE_ANSWER_TRANSACTION = "moreAnswerTransaction"
 
     def __init__(self, instance_namespace: str, bot_id: str, handler_id: str, telegram_id: str, wenet_backend_url: str,
                  wenet_hub_url: str, app_id: str, client_secret: str, redirect_url: str, wenet_authentication_url: str,
@@ -132,9 +138,15 @@ class AskForHelpHandler(WenetEventHandler):
             )
         )
         self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_QUESTION_REPORT, self.action_report_message).with_rule(
+                intent=self.INTENT_QUESTION_REPORT,
+                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWER_1)
+            )
+        )
+        self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_ANSWER_REPORT, self.action_report_message).with_rule(
                 intent=self.INTENT_ANSWER_REPORT,
-                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWER_1)
+                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_RECEIVED_ANSWER)
             )
         )
         self.intent_manager.with_fulfiller(
@@ -149,6 +161,12 @@ class AskForHelpHandler(WenetEventHandler):
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3("", self.action_report_message_2).with_rule(
                 static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_REPORT_2)
+            )
+        )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_ASK_MORE_ANSWERS, self.action_more_answers).with_rule(
+                intent=self.INTENT_ASK_MORE_ANSWERS,
+                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_RECEIVED_ANSWER)
             )
         )
 
@@ -174,7 +192,9 @@ class AskForHelpHandler(WenetEventHandler):
 
     def cancel_action(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
         context_to_remove = [self.CONTEXT_CURRENT_STATE, self.CONTEXT_ASKED_QUESTION, self.CONTEXT_DESIRED_ANSWERER,
-                             self.CONTEXT_QUESTION_TO_ANSWER, self.CONTEXT_QUESTION_TO_REPORT]
+                             self.CONTEXT_QUESTION_TO_ANSWER, self.CONTEXT_MESSAGE_TO_REPORT,
+                             self.CONTEXT_REPORTING_IS_QUESTION, self.CONTEXT_REPORTING_REASON,
+                             self.CONTEXT_ORIGINAL_QUESTION_REPORTING]
         context = incoming_event.context
         for context_key in context_to_remove:
             context.delete_static_state(context_key)
@@ -236,7 +256,7 @@ class AskForHelpHandler(WenetEventHandler):
                 response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_question_button").translate(), self.INTENT_ANSWER_QUESTION)
                 response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_remind_later_button").translate(), self.INTENT_ANSWER_REMIND_LATER)
                 response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_not_button").translate(), self.INTENT_ANSWER_NOT)
-                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate(), self.INTENT_ANSWER_REPORT)
+                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate(), self.INTENT_QUESTION_REPORT)
                 self._interface_connector.update_user_context(UserConversationContext(
                     social_details=user_account.social_details,
                     context=context,
@@ -244,8 +264,37 @@ class AskForHelpHandler(WenetEventHandler):
                 ))
                 context = self._save_updated_token(context, service_api.client)
                 return NotificationEvent(user_account.social_details, [response], context)
-            # elif isinstance(message, AnsweredQuestionMessage):
-            #     pass
+            elif isinstance(message, AnsweredQuestionMessage):
+                answerer_id = message.user_id
+                answer_text = message.answer
+                answerer_user = service_api.get_user_profile(str(answerer_id))
+                try:
+                    question_task = service_api.get_task(message.task_id)
+                    question_text = question_task.goal.name
+                    message_string = self._translator.get_translation_instance(user_object.locale) \
+                        .with_text("new_answer_message") \
+                        .with_substitution("question", question_text) \
+                        .with_substitution("answer", answer_text) \
+                        .with_substitution("username", answerer_user.name.first) \
+                        .translate()
+                    answer = RapidAnswerResponse(TextualResponse(message_string))
+                    button_report_text = self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate()
+                    button_more_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("more_answers_button").translate()
+                    answer.with_textual_option(button_more_answers_text, self.INTENT_ASK_MORE_ANSWERS)
+                    answer.with_textual_option(button_report_text, self.INTENT_ANSWER_REPORT)
+                    context.with_static_state(self.CONTEXT_MESSAGE_TO_REPORT, message.transaction_id)
+                    context.with_static_state(self.CONTEXT_ORIGINAL_QUESTION_REPORTING, question_task.task_id)
+                    context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_RECEIVED_ANSWER)
+                    self._interface_connector.update_user_context(UserConversationContext(
+                        social_details=user_account.social_details,
+                        context=context,
+                        version=UserConversationContext.VERSION_V3
+                    ))
+                    context = self._save_updated_token(context, service_api.client)
+                    return NotificationEvent(user_account.social_details, [answer], context)
+                except TaskNotFound as e:
+                    logger.error(e.message)
+                    raise Exception(e.message)
             else:
                 logger.warning(f"Received unrecognized message of type {type(message)}: {message.to_repr()}")
                 raise Exception()
@@ -467,6 +516,7 @@ class AskForHelpHandler(WenetEventHandler):
         return response
 
     def action_answer_remind_later(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+        # TODO add a job to remind later
         response = OutgoingEvent(social_details=incoming_event.social_details)
         user_locale = self._get_user_locale(incoming_event)
         context = incoming_event.context
@@ -481,12 +531,13 @@ class AskForHelpHandler(WenetEventHandler):
         """
         First step of reporting a single message (either a question or an answer).
         The decision of what to report is taken by the context:
-        - intent == self.INTENT_ANSWER_REPORT: we are reporting a question, and the question is already in the context
+        - intent == self.INTENT_QUESTION_REPORT: we are reporting a question, and the question is already in the context
+        - intent == self.INTENT_ANSWER_REPORT: we are reporting an answer
         """
         response = OutgoingEvent(social_details=incoming_event.social_details)
         user_locale = self._get_user_locale(incoming_event)
         context = incoming_event.context
-        if intent == self.INTENT_ANSWER_REPORT:
+        if intent == self.INTENT_QUESTION_REPORT:
             if not context.has_static_state(self.CONTEXT_QUESTION_TO_ANSWER):
                 error_message = "Illegal state, expected the question ID in the context, but it does not exist"
                 logger.error(error_message)
@@ -494,11 +545,23 @@ class AskForHelpHandler(WenetEventHandler):
             question_id = context.get_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
             is_question = True
             context.delete_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
+        elif intent == self.INTENT_ANSWER_REPORT:
+            if not context.has_static_state(self.CONTEXT_ORIGINAL_QUESTION_REPORTING):
+                error_message = "Illegal state, expected the question ID in the context, but it does not exist"
+                logger.error(error_message)
+                raise ValueError(error_message)
+            if not context.has_static_state(self.CONTEXT_MESSAGE_TO_REPORT):
+                error_message = "Illegal state, expected the transaction ID in the context, but it does not exist"
+                logger.error(error_message)
+                raise ValueError(error_message)
+            question_id = context.get_static_state(self.CONTEXT_MESSAGE_TO_REPORT)
+            is_question = False
+            context.delete_static_state(self.CONTEXT_MESSAGE_TO_REPORT)
         else:
             error_message = f"Illegal state, received unexpected intent [{intent}] in reporting a message"
             logger.error(error_message)
             raise ValueError(error_message)
-        context.with_static_state(self.CONTEXT_QUESTION_TO_REPORT, question_id)
+        context.with_static_state(self.CONTEXT_MESSAGE_TO_REPORT, question_id)
         context.with_static_state(self.CONTEXT_REPORTING_IS_QUESTION, is_question)
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_REPORT_1)
         response.with_context(context)
@@ -539,7 +602,7 @@ class AskForHelpHandler(WenetEventHandler):
                 service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
             else:
                 raise Exception(f"Missing conversation context for event {incoming_event}")
-            if not context.has_static_state(self.CONTEXT_QUESTION_TO_REPORT):
+            if not context.has_static_state(self.CONTEXT_MESSAGE_TO_REPORT):
                 error_message = "Illegal state, expected the question to report in the context, but it does not exist"
                 logger.error(error_message)
                 raise ValueError(error_message)
@@ -551,7 +614,7 @@ class AskForHelpHandler(WenetEventHandler):
                 error_message = "Illegal state, expected the reporting reason in the context, but it does not exist"
                 logger.error(error_message)
                 raise ValueError(error_message)
-            message_to_report = context.get_static_state(self.CONTEXT_QUESTION_TO_REPORT)
+            message_to_report = context.get_static_state(self.CONTEXT_MESSAGE_TO_REPORT)
             is_question = bool(context.get_static_state(self.CONTEXT_REPORTING_IS_QUESTION))
             reporting_reason = context.get_static_state(self.CONTEXT_REPORTING_REASON)
             attributes = {
@@ -563,7 +626,8 @@ class AskForHelpHandler(WenetEventHandler):
             else:
                 transaction_label = self.LABEL_REPORT_ANSWER_TRANSACTION
                 attributes.update({"transactionId": message_to_report})
-                # TODO when reporting answer I need also the question ID
+                message_to_report = context.get_static_state(self.CONTEXT_ORIGINAL_QUESTION_REPORTING)
+                context.delete_static_state(self.CONTEXT_ORIGINAL_QUESTION_REPORTING)
             actioneer_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
             try:
                 transaction = TaskTransaction(None, message_to_report, transaction_label,
@@ -580,7 +644,7 @@ class AskForHelpHandler(WenetEventHandler):
                     "Error in the creation of the transaction for reporting the task [%s]. The service API resonded with code %d and message %s"
                     % (message_to_report, e.http_status, json.dumps(e.json_response)))
             finally:
-                context.delete_static_state(self.CONTEXT_QUESTION_TO_REPORT)
+                context.delete_static_state(self.CONTEXT_MESSAGE_TO_REPORT)
                 context.delete_static_state(self.CONTEXT_REPORTING_IS_QUESTION)
                 context.delete_static_state(self.CONTEXT_REPORTING_REASON)
                 context.delete_static_state(self.CONTEXT_CURRENT_STATE)
@@ -590,5 +654,35 @@ class AskForHelpHandler(WenetEventHandler):
             error_message = self._translator.get_translation_instance(user_locale).with_text(
                 "answerer_is_not_text").translate()
             response.with_message(TextualResponse(error_message))
+        return response
+
+    def action_more_answers(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        user_locale = self._get_user_locale(incoming_event)
+        context = incoming_event.context
+        if context is not None:
+            service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
+        else:
+            raise Exception(f"Missing conversation context for event {incoming_event}")
+        task_id = context.get_static_state(self.CONTEXT_ORIGINAL_QUESTION_REPORTING)
+        actioneer_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
+        try:
+            transaction = TaskTransaction(None, task_id, self.LABEL_MORE_ANSWER_TRANSACTION,
+                                          int(datetime.now().timestamp()), int(datetime.now().timestamp()),
+                                          actioneer_id, {}, [])
+            service_api.create_task_transaction(transaction)
+            logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
+            message = self._translator.get_translation_instance(user_locale).with_text("ask_more_answers_text").translate()
+            response.with_message(TextualResponse(message))
+        except TaskTransactionCreationError as e:
+            response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
+            logger.error(
+                "Error in the creation of the transaction to ask more responses for the task [%s]. The service API resonded with code %d and message %s"
+                % (task_id, e.http_status, json.dumps(e.json_response)))
+        finally:
+            context.delete_static_state(self.CONTEXT_ORIGINAL_QUESTION_REPORTING)
+            context.delete_static_state(self.CONTEXT_CURRENT_STATE)
+            context.delete_static_state(self.CONTEXT_MESSAGE_TO_REPORT)
+            response.with_context(context)
         return response
 

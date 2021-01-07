@@ -116,3 +116,12 @@ msgstr ""
 
 msgid "report_final_message"
 msgstr ""
+
+msgid "new_answer_message"
+msgstr ""
+
+msgid "more_answers_button"
+msgstr ""
+
+msgid "ask_more_answers_text"
+msgstr ""
