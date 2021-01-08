@@ -9,7 +9,7 @@ from chatbot_core.v3.connector.social_connectors.telegram_connector import Teleg
 from chatbot_core.v3.handler.event_dipatcher import MultiThreadEventDispatcher
 from chatbot_core.v3.handler.instance_manager import InstanceManager
 
-logging.config.dictConfig(get_logging_configuration("uhopper.chatbot.wenet-eat-together-chatbot"))
+logging.config.dictConfig(get_logging_configuration("wenet-eat-together-chatbot"))
 logger = logging.getLogger("uhopper.chatbot.wenet-eat-together-chatbot")
 
 if __name__ == "__main__":
