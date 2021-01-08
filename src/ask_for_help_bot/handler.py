@@ -11,14 +11,16 @@ from chatbot_core.translator.translator import Translator
 from chatbot_core.v3.connector.social_connector import SocialConnector
 from chatbot_core.v3.handler.helpers.intent_manager import IntentFulfillerV3
 from chatbot_core.v3.logger.event_logger import LoggerConnector
-from chatbot_core.v3.model.messages import TextualResponse, RapidAnswerResponse, TelegramRapidAnswerResponse
+from chatbot_core.v3.model.messages import TextualResponse, RapidAnswerResponse, TelegramRapidAnswerResponse, \
+    UrlImageResponse
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEvent
 from common.wenet_event_handler import WenetEventHandler
 from uhopper.utils.alert import AlertModule
 from wenet.common.interface.exceptions import TaskCreationError, RefreshTokenExpiredError, TaskTransactionCreationError, \
     TaskNotFound
 from wenet.common.model.message.event import WeNetAuthenticationEvent
-from wenet.common.model.message.message import TextualMessage, Message, QuestionToAnswerMessage, AnsweredQuestionMessage
+from wenet.common.model.message.message import TextualMessage, Message, QuestionToAnswerMessage, \
+    AnsweredQuestionMessage, IncentiveMessage, IncentiveBadge
 from wenet.common.model.task.task import Task, TaskGoal
 from wenet.common.model.task.transaction import TaskTransaction
 
@@ -233,6 +235,7 @@ class AskForHelpHandler(WenetEventHandler):
 
     def handle_wenet_message(self, message: Message) -> NotificationEvent:
         # new question to answer, or a new answer to a question
+        # incentive messages or badges
         user_accounts = self.get_user_accounts(message.receiver_id)
         if len(user_accounts) != 1:
             raise Exception(f"No context associated with Wenet user {message.receiver_id}")
@@ -295,6 +298,15 @@ class AskForHelpHandler(WenetEventHandler):
                 except TaskNotFound as e:
                     logger.error(e.message)
                     raise Exception(e.message)
+            elif isinstance(message, IncentiveMessage):
+                answer = TextualResponse(message.content)
+                context = self._save_updated_token(context, service_api.client)
+                return NotificationEvent(user_account.social_details, [answer], context)
+            elif isinstance(message, IncentiveBadge):
+                answer = TextualResponse(message.message)
+                image = UrlImageResponse(message.image_url)
+                context = self._save_updated_token(context, service_api.client)
+                return NotificationEvent(user_account.social_details, [answer, image], context)
             else:
                 logger.warning(f"Received unrecognized message of type {type(message)}: {message.to_repr()}")
                 raise Exception()
