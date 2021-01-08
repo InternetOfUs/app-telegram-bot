@@ -10,7 +10,7 @@ from common.logging_config import get_logging_configuration
 from uhopper.utils.alert import AlertModule
 from uhopper.utils.mqtt import MqttSubscriptionHandler
 
-logging.config.dictConfig(get_logging_configuration("uhopper.chatbot.wenet-ask-for-help-chatbot"))
+logging.config.dictConfig(get_logging_configuration("wenet-ask-for-help-chatbot"))
 logger = logging.getLogger("uhopper.chatbot.wenet-ask-for-help-chatbot")
 
 if __name__ == "__main__":
