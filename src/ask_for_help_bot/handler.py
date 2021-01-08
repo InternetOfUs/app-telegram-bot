@@ -43,6 +43,7 @@ class AskForHelpHandler(WenetEventHandler):
     CONTEXT_REPORTING_IS_QUESTION = "reporting_is_question"
     CONTEXT_REPORTING_REASON = "reporting_reason"
     CONTEXT_ORIGINAL_QUESTION_REPORTING = "original_question_reporting"
+    CONTEXT_PROPOSED_TASKS = "proposed_tasks"
     # all the recognize intents
     INTENT_QUESTION = '/question'
     INTENT_QUESTION_FIRST = '/question_first'
@@ -57,6 +58,8 @@ class AskForHelpHandler(WenetEventHandler):
     INTENT_REPORT_SPAM = "spam"
     INTENT_ASK_MORE_ANSWERS = "ask_more_answers"
     INTENT_ANSWER_REPORT = "answer_report"
+    INTENT_ANSWER = "/answer"
+    INTENT_ANSWER_PICKED_QUESTION = "answering-{}"
     # available states
     STATE_QUESTION_1 = "question_1"
     STATE_QUESTION_2 = "question_2"
@@ -66,6 +69,7 @@ class AskForHelpHandler(WenetEventHandler):
     STATE_REPORT_1 = "report_1"
     STATE_REPORT_2 = "report_2"
     STATE_RECEIVED_ANSWER = "received_answer"
+    STATE_ANSWERING = "answering"
     # transaction labels
     LABEL_ANSWER_TRANSACTION = "answerTransaction"
     LABEL_NOT_ANSWER_TRANSACTION = "notAnswerTransaction"
@@ -123,6 +127,11 @@ class AskForHelpHandler(WenetEventHandler):
             )
         )
         self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_ANSWER_PICKED_QUESTION, self.action_answer_question).with_rule(
+                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING)
+            )
+        )
+        self.intent_manager.with_fulfiller(
             IntentFulfillerV3("", self.action_answer_question_2).with_rule(
                 static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWER_2)
             )
@@ -170,6 +179,9 @@ class AskForHelpHandler(WenetEventHandler):
                 intent=self.INTENT_ASK_MORE_ANSWERS,
                 static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_RECEIVED_ANSWER)
             )
+        )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_ANSWER, self.action_answer).with_rule(intent=self.INTENT_ANSWER)
         )
 
     def _get_user_locale(self, incoming_event: IncomingSocialEvent) -> str:
@@ -438,13 +450,22 @@ class AskForHelpHandler(WenetEventHandler):
             response.with_message(TextualResponse(error_message))
         return response
 
-    def action_answer_question(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+    def action_answer_question(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
         """
         QuestionToAnswerMessage flow, when user click on the answer button
         """
         user_locale = self._get_user_locale(incoming_event)
         context = incoming_event.context
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWER_2)
+        if intent.startswith(self.INTENT_ANSWER_PICKED_QUESTION):
+            question_index = int(incoming_event.incoming_message.intent.value.split("-")[1])
+            if not context.has_static_state(self.CONTEXT_PROPOSED_TASKS):
+                error_message = "Illegal state, expected the proposed question ID in the context, but it does not exist"
+                logger.error(error_message)
+                raise ValueError(error_message)
+            proposed_questions = context.get_static_state(self.CONTEXT_PROPOSED_TASKS)
+            context.with_static_state(self.CONTEXT_QUESTION_TO_ANSWER, proposed_questions[question_index])
+            context.delete_static_state(self.CONTEXT_PROPOSED_TASKS)
         message = self._translator.get_translation_instance(user_locale).with_text("question_0").translate()
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_context(context)
@@ -696,5 +717,38 @@ class AskForHelpHandler(WenetEventHandler):
             context.delete_static_state(self.CONTEXT_CURRENT_STATE)
             context.delete_static_state(self.CONTEXT_MESSAGE_TO_REPORT)
             response.with_context(context)
+        return response
+
+    def action_answer(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        user_locale = self._get_user_locale(incoming_event)
+        context = incoming_event.context
+        if context is not None:
+            service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
+        else:
+            raise Exception(f"Missing conversation context for event {incoming_event}")
+        tasks = service_api.get_tasks(self.app_id, has_close_ts=False, limit=3)
+        context = self._save_updated_token(context, service_api.client)
+        if not tasks:
+            response.with_message(TextualResponse(
+                self._translator.get_translation_instance(user_locale).with_text("answers_no_tasks").translate()))
+        else:
+            context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING)
+            response.with_message(TextualResponse(
+                self._translator.get_translation_instance(user_locale).with_text("answers_tasks_intro").translate()))
+            # TODO put the array to empty
+            proposed_tasks = ["task1", "task3"]
+            for task in tasks:
+                questioning_user = service_api.get_user_profile(str(task.requester_id))
+                context = self._save_updated_token(context, service_api.client)
+                if questioning_user:
+                    response.with_message(TextualResponse(f"#{1 + len(proposed_tasks)}: {task.goal.name} - {questioning_user.name.first}"))
+                    proposed_tasks.append(task.task_id)
+            context.with_static_state(self.CONTEXT_PROPOSED_TASKS, proposed_tasks)
+            rapid_answer = RapidAnswerResponse(TextualResponse(self._translator.get_translation_instance(user_locale).with_text("answers_tasks_choose").translate()))
+            for i in range(len(proposed_tasks)):
+                rapid_answer.with_textual_option(f"#{1 + i}", self.INTENT_ANSWER_PICKED_QUESTION.format(i))
+            response.with_message(rapid_answer)
+        response.with_context(context)
         return response
 

@@ -125,3 +125,12 @@ msgstr ""
 
 msgid "ask_more_answers_text"
 msgstr ""
+
+msgid "answers_no_tasks"
+msgstr ""
+
+msgid "answers_tasks_intro"
+msgstr ""
+
+msgid "answers_tasks_choose"
+msgstr ""
