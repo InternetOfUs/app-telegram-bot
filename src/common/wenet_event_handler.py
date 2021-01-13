@@ -205,7 +205,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
         return ServiceApiInterface(self.wenet_backend_url, oauth_client)
 
     def _save_updated_token(self, context: ConversationContext, client: Oauth2Client) -> ConversationContext:
-        logger.info("Saving client status")
+        logger.debug("Saving client status")
         context.with_static_state(self.CONTEXT_ACCESS_TOKEN, client.token)
         context.with_static_state(self.CONTEXT_REFRESH_TOKEN, client.refresh_token)
         return context

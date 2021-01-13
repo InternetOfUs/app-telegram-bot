@@ -3,6 +3,9 @@ import logging
 from datetime import datetime
 from typing import Optional, List
 
+from ask_for_help_bot.pending_conversations import PendingQuestionToAnswer
+from ask_for_help_bot.pending_messages_job import PendingMessagesJob
+from chatbot_core.model.context import ConversationContext
 from chatbot_core.model.event import IncomingSocialEvent
 from chatbot_core.model.message import IncomingTextMessage
 from chatbot_core.model.user_context import UserConversationContext
@@ -10,6 +13,7 @@ from chatbot_core.nlp.handler import NLPHandler
 from chatbot_core.translator.translator import Translator
 from chatbot_core.v3.connector.social_connector import SocialConnector
 from chatbot_core.v3.handler.helpers.intent_manager import IntentFulfillerV3
+from chatbot_core.v3.job.job_manager import JobManager
 from chatbot_core.v3.logger.event_logger import LoggerConnector
 from chatbot_core.v3.model.messages import TextualResponse, RapidAnswerResponse, TelegramRapidAnswerResponse, \
     UrlImageResponse
@@ -44,6 +48,7 @@ class AskForHelpHandler(WenetEventHandler):
     CONTEXT_REPORTING_REASON = "reporting_reason"
     CONTEXT_ORIGINAL_QUESTION_REPORTING = "original_question_reporting"
     CONTEXT_PROPOSED_TASKS = "proposed_tasks"
+    CONTEXT_PENDING_ANSWERS = "pending_answers"
     # all the recognize intents
     INTENT_QUESTION = '/question'
     INTENT_QUESTION_FIRST = '/question_first'
@@ -87,6 +92,8 @@ class AskForHelpHandler(WenetEventHandler):
                          client_secret, redirect_url, wenet_authentication_url, wenet_authentication_management_url,
                          task_type_id, alert_module, connector, nlp_handler, translator, delay_between_messages_sec,
                          delay_between_text_sec, logger_connectors)
+        JobManager.instance().add_job(PendingMessagesJob("wenet_ask_for_help_pending_messages_job",
+                                                         self._instance_namespace, self._connector, None))
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_QUESTION, self.action_question).with_rule(intent=self.INTENT_QUESTION)
         )
@@ -272,6 +279,11 @@ class AskForHelpHandler(WenetEventHandler):
                 response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_remind_later_button").translate(), self.INTENT_ANSWER_REMIND_LATER)
                 response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_not_button").translate(), self.INTENT_ANSWER_NOT)
                 response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate(), self.INTENT_QUESTION_REPORT)
+                # pending answers: dict question_id -> PendingQuestionToAnswer
+                # in this way we recycle the message to show to the user
+                pending_answers = context.get_static_state(self.CONTEXT_PENDING_ANSWERS, dict())
+                pending_answers[question_id] = PendingQuestionToAnswer(question_id, response, user_account.social_details).to_repr()
+                context.with_static_state(self.CONTEXT_PENDING_ANSWERS, pending_answers)
                 self._interface_connector.update_user_context(UserConversationContext(
                     social_details=user_account.social_details,
                     context=context,
@@ -332,6 +344,19 @@ class AskForHelpHandler(WenetEventHandler):
                 )
             )
             return notification_event
+
+    def _remove_pending_answer(self, question_id: str, context: ConversationContext) -> ConversationContext:
+        """
+        Remove the question with `question_id` from the dictionary of pending answers in the context
+        """
+        pending_answers = context.get_static_state(self.CONTEXT_PENDING_ANSWERS, dict())
+        if question_id in pending_answers:
+            pending_answers.pop(question_id)
+        if pending_answers:
+            context.with_static_state(self.CONTEXT_PENDING_ANSWERS, pending_answers)
+        else:
+            context.delete_static_state(self.CONTEXT_PENDING_ANSWERS)
+        return context
 
     def handle_wenet_authentication_result(self, message: WeNetAuthenticationEvent) -> NotificationEvent:
         # get and put wenet user id into context here
@@ -506,6 +531,7 @@ class AskForHelpHandler(WenetEventHandler):
                     "Error in the creation of the transaction for answering the task [%s]. The service API resonded with code %d and message %s"
                     % (question_id, e.http_status, json.dumps(e.json_response)))
             finally:
+                context = self._remove_pending_answer(question_id, context)
                 context.delete_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
                 context.delete_static_state(self.CONTEXT_CURRENT_STATE)
                 context = self._save_updated_token(context, service_api.client)
@@ -542,6 +568,7 @@ class AskForHelpHandler(WenetEventHandler):
                 "Error in the creation of the transaction for not answering the task [%s]. The service API resonded with code %d and message %s"
                 % (question_id, e.http_status, json.dumps(e.json_response)))
         finally:
+            context = self._remove_pending_answer(question_id, context)
             context.delete_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
             context.delete_static_state(self.CONTEXT_CURRENT_STATE)
             context = self._save_updated_token(context, service_api.client)
@@ -549,12 +576,29 @@ class AskForHelpHandler(WenetEventHandler):
         return response
 
     def action_answer_remind_later(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
-        # TODO add a job to remind later
         response = OutgoingEvent(social_details=incoming_event.social_details)
         user_locale = self._get_user_locale(incoming_event)
         context = incoming_event.context
+        if not context.has_static_state(self.CONTEXT_QUESTION_TO_ANSWER):
+            error_message = "Illegal state, expected the question ID in the context, but it does not exist"
+            logger.error(error_message)
+            raise ValueError(error_message)
+        if not context.has_static_state(self.CONTEXT_PENDING_ANSWERS):
+            error_message = "Illegal state, expected the pending questions in the context, but it does not exist"
+            logger.error(error_message)
+            raise ValueError(error_message)
         message = self._translator.get_translation_instance(user_locale).with_text("answer_remind_later_message").translate()
         response.with_message(TextualResponse(message))
+        pending_answers = context.get_static_state(self.CONTEXT_PENDING_ANSWERS)
+        question_id = context.get_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
+        if question_id not in pending_answers:
+            error_message = f"Illegal state, expected the question [{question_id}] in the pending questions, but it does not exist"
+            logger.error(error_message)
+            raise ValueError(error_message)
+        pending_answer = PendingQuestionToAnswer.from_repr(pending_answers[question_id])
+        pending_answer.sent = datetime.now()
+        pending_answers[question_id] = pending_answer.to_repr()
+        context.with_static_state(self.CONTEXT_PENDING_ANSWERS, pending_answers)
         context.delete_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
         context.delete_static_state(self.CONTEXT_CURRENT_STATE)
         response.with_context(context)
@@ -597,6 +641,7 @@ class AskForHelpHandler(WenetEventHandler):
         context.with_static_state(self.CONTEXT_MESSAGE_TO_REPORT, question_id)
         context.with_static_state(self.CONTEXT_REPORTING_IS_QUESTION, is_question)
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_REPORT_1)
+        context = self._remove_pending_answer(question_id, context)
         response.with_context(context)
         message_text = self._translator.get_translation_instance(user_locale).with_text("why_reporting_message").translate()
         button_why_reporting_1_text = self._translator.get_translation_instance(user_locale).with_text("button_why_reporting_1_text").translate()
