@@ -7,10 +7,9 @@ from flask_restful import Resource, abort
 from chatbot_core.model.event import IncomingCustomEvent
 from uhopper.utils.mqtt import MqttPublishHandler
 from wenet.common.model.message.builder import MessageBuilder
-from wenet.common.model.message.exception import MessageTypeError, NotificationTypeError
-from wenet.common.model.message.message import WeNetAuthentication
+from wenet.common.model.message.event import WeNetAuthenticationEvent
 
-logger = logging.getLogger("uhopper.chatbot.wenet.eattogether.messages")
+logger = logging.getLogger("uhopper.chatbot.wenet.messages")
 
 
 class WeNetMessageInterface(Resource):
@@ -31,12 +30,6 @@ class WeNetMessageInterface(Resource):
             event = IncomingCustomEvent(self.instance_namespace, message.to_repr(), self.bot_id)
             self.mqtt_publisher.publish_data(self.mqtt_topic, event.to_repr())
             return {}, 200
-        except MessageTypeError as e:
-            logger.error(e.message)
-            return {"Error": e.message}, 400
-        except NotificationTypeError as e:
-            logger.exception("Unable to parse the notification", exc_info=e)
-            return {"Error": e.message}, 400
         except KeyError as e:
             logger.exception("Bad payload: parsing error. Received %s" % json.dumps(data), exc_info=e)
             return {"Error": "One or more required keys are missing"}, 400
@@ -68,7 +61,7 @@ class WeNetLoginCallbackInterface(Resource):
             abort(400, message="Missing authorization code or external id")
             return
 
-        message = WeNetAuthentication(external_id, code)
+        message = WeNetAuthenticationEvent(external_id, code)
         event = IncomingCustomEvent(self.instance_namespace, message.to_repr(), self.bot_id)
         self.mqtt_publisher.publish_data(self.mqtt_topic, event.to_repr())
 

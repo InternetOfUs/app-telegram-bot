@@ -1,70 +1,27 @@
+---
 image: docker:19.03.1
 
 services:
   - docker:19.03.1-dind
 
-before_script:
-  - apk add --update bash wget ca-certificates openssl git tar openssh-client curl
-  - apk add ansible ansible-lint
-  - export ANSIBLE_HOST_KEY_CHECKING=False
-
-  - docker login registry.u-hopper.com -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD
+cache:
+  key: ${CI_COMMIT_REF_SLUG}
 
 variables:
   DOCKER_TLS_CERTDIR: ""
   DOCKER_HOST: "tcp://docker:2375"
   GIT_SUBMODULE_STRATEGY: recursive
 
-cache:
-  key: ${CI_COMMIT_REF_SLUG}
+before_script:
+  - apk add --update bash wget ca-certificates openssl git tar openssh-client curl ansible ansible-lint
+  - docker login registry.u-hopper.com -u $REGISTRY_USERNAME -p $REGISTRY_PASSWORD
 
 stages:
   - build
   - test
   - push
-  - trigger-deploy
+  - deploy
   - notify
-
-build_dev:
-  stage: build
-  script:
-    - ./docker-support/runner.sh -bs latest
-  artifacts:
-    paths:
-      - bots_image.tar.gz
-    expire_in: 1 day
-  only:
-    - develop
-
-test_dev:
-  stage: test
-  script:
-    - docker load -i bots_image.tar.gz
-    - ./docker-support/runner.sh -t latest
-  dependencies:
-    - build_dev
-  only:
-    - develop
-
-push_dev:
-  stage: push
-  script:
-    - docker load -i bots_image.tar.gz
-    - ./docker-support/runner.sh -p latest
-  dependencies:
-    - build_dev
-    - test_dev
-  only:
-    - develop
-
-trigger-deploy_dev:
-  stage: trigger-deploy
-  script:
-    - curl --request POST --form "token=${CI_DEPLOY_TOKEN}" --form ref=develop https://lab.u-hopper.com/api/v4/projects/29/trigger/pipeline
-  dependencies:
-    - push_dev
-  only:
-    - develop
 
 build_prod:
   stage: build
@@ -72,7 +29,7 @@ build_prod:
     - ./docker-support/runner.sh -bs $CI_COMMIT_TAG
   artifacts:
     paths:
-      - bots_image.tar.gz
+      - docker_image.tar.gz
     expire_in: 1 day
   only:
     - tags
@@ -80,7 +37,7 @@ build_prod:
 test_prod:
   stage: test
   script:
-    - docker load -i bots_image.tar.gz
+    - docker load -i docker_image.tar.gz
     - ./docker-support/runner.sh -t $CI_COMMIT_TAG
   dependencies:
     - build_prod
@@ -90,7 +47,7 @@ test_prod:
 push_prod:
   stage: push
   script:
-    - docker load -i bots_image.tar.gz
+    - docker load -i docker_image.tar.gz
     - ./docker-support/runner.sh -p $CI_COMMIT_TAG
   dependencies:
     - build_prod
@@ -98,12 +55,158 @@ push_prod:
   only:
     - tags
 
-notify:
+
+notify_prod:
   stage: notify
   script:
-    - echo $ANSIBLE_VAULT_PASSWORD > ansible/password_file
-    - ansible-playbook --vault-password-file ansible/password_file notify-tag-push.yml
+    - export RELEASE_TAG="$CI_COMMIT_TAG"
+    - export BUILD_ENVIRONMENT="prod"
+    - export WITH_DEPLOY="yes"
+    - export DEPLOY_TRIGGERED="no"
+    - ansible-playbook ansible/notify.yml
   dependencies:
+    - build_prod
+    - test_prod
     - push_prod
+  allow_failure: true
   only:
     - tags
+
+build_dev:
+  stage: build
+  script:
+    - ./docker-support/runner.sh -bs latest
+  artifacts:
+    paths:
+      - docker_image.tar.gz
+    expire_in: 1 day
+  only:
+    - develop
+
+test_dev:
+  stage: test
+  script:
+    - docker load -i docker_image.tar.gz
+    - ./docker-support/runner.sh -t latest
+  dependencies:
+    - build_dev
+  only:
+    - develop
+
+push_dev:
+  stage: push
+  script:
+    - docker load -i docker_image.tar.gz
+    - ./docker-support/runner.sh -p latest
+  dependencies:
+    - build_dev
+    - test_dev
+  only:
+    - develop
+
+deploy_dev:
+  stage: deploy
+  script:
+    - export GIT_REF="develop"
+    - ansible-playbook ansible/trigger.yml
+  dependencies:
+    - build_dev
+    - test_dev
+    - push_dev
+  allow_failure: false
+  only:
+    - develop
+
+notify_dev:
+  stage: notify
+  script:
+    - export RELEASE_TAG="latest"
+    - export BUILD_ENVIRONMENT="dev"
+    - export WITH_DEPLOY="yes"
+    - export DEPLOY_TRIGGERED="yes"
+    - ansible-playbook ansible/notify.yml
+  dependencies:
+    - build_dev
+    - test_dev
+    - push_dev
+    - deploy_dev
+  allow_failure: true
+  only:
+    - develop
+
+build_issue:
+  stage: build
+  script:
+    - ./docker-support/runner.sh -bs latest
+  artifacts:
+    paths:
+      - docker_image.tar.gz
+    expire_in: 1 day
+  when: manual
+  allow_failure: false
+  only:
+    - /^feature.*$/i
+    - /^hotfix.*$/i
+    - /^milestone.*$/i
+
+test_issue:
+  stage: test
+  script:
+    - docker load -i docker_image.tar.gz
+    - ./docker-support/runner.sh -t latest
+  dependencies:
+    - build_issue
+  allow_failure: false
+  only:
+    - /^feature.*$/i
+    - /^hotfix.*$/i
+    - /^milestone.*$/i
+
+push_issue:
+  stage: push
+  script:
+    - docker load -i docker_image.tar.gz
+    - ./docker-support/runner.sh -p latest
+  dependencies:
+    - build_issue
+    - test_issue
+  allow_failure: false
+  only:
+    - /^feature.*$/i
+    - /^hotfix.*$/i
+    - /^milestone.*$/i
+
+deploy_issue:
+  stage: deploy
+  script:
+    - export GIT_REF="develop"
+    - ansible-playbook ansible/trigger.yml
+  dependencies:
+    - build_issue
+    - test_issue
+    - push_issue
+  allow_failure: false
+  only:
+    - /^feature.*$/i
+    - /^hotfix.*$/i
+    - /^milestone.*$/i
+
+notify_issue:
+  stage: notify
+  script:
+    - export RELEASE_TAG="latest"
+    - export BUILD_ENVIRONMENT="issue"
+    - export WITH_DEPLOY="yes"
+    - export DEPLOY_TRIGGERED="yes"
+    - ansible-playbook ansible/notify.yml
+  dependencies:
+    - build_issue
+    - test_issue
+    - push_issue
+    - deploy_issue
+  allow_failure: true
+  only:
+    - /^feature.*$/i
+    - /^hotfix.*$/i
+    - /^milestone.*$/i
+

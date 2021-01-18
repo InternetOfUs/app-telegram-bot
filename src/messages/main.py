@@ -2,12 +2,14 @@ import logging.config
 import os
 import uuid
 
-from log_config.logging_config import loggingConfiguration
+from common.logging_config import get_logging_configuration
 from messages.ws import MessageInterface
 from uhopper.utils.mqtt import MqttPublishHandler
 
-logging.config.dictConfig(loggingConfiguration)
-logger = logging.getLogger("uhopper.chatbot.wenet.eattogether.messages")
+bot_id = os.getenv("BOT_ID")
+
+logging.config.dictConfig(get_logging_configuration(f"{bot_id}-messages"))
+logger = logging.getLogger("uhopper.chatbot.wenet.messages")
 
 topic = os.getenv("MQTT_TOPIC")
 publisher = MqttPublishHandler(
@@ -23,7 +25,7 @@ oauth_success_url = f"{hub_url}/oauth/complete"
 
 publisher.connect()
 
-ws = MessageInterface(publisher, topic, instance_namespace, "wenet-eat-together", app_id, oauth_success_url)
+ws = MessageInterface(publisher, topic, instance_namespace, bot_id, app_id, oauth_success_url)
 bot_messages_app = ws.get_application()
 
 host = os.getenv("MESSAGES_HOST", "0.0.0.0")

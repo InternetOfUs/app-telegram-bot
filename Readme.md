@@ -1,13 +1,15 @@
 # _Let's eat together_ chatbot
 
 ## Introduction
-This chatbot is created in the context of `WeNet: the Internet of us`.
+These chatbots are created in the context of `WeNet: the Internet of us`.
 
-This Telegram chatbot is the first wenet application, allowing users to communicate with each other to organize shared meals with potential unknown people, in a strong privacy-oriented manner.
+These Telegram chatbots are the first wenet application, allowing users to communicate with each other to organize shared meals with potential unknown people, or to ask questions and generic help, in a strong privacy-oriented manner.
 
-The bot allows users to create a new _task_, representing a shared meal. The WeNet platform will select some users potentially interested in the newly created task, and the bot will ask them to candidate to participate to it. Subsequently, the task creator will be notified of a candidature, being asked whether to accept or reject it. Candidates will acknowledge the owner's decision. Eventually, the task is closed by the owner using the chatbot, providing also an outcome, either successfully or failed. 
+The _eat-together_ bot allows users to create a new _task_, representing a shared meal. The WeNet platform will select some users potentially interested in the newly created task, and the bot will ask them to candidate to participate to it. Subsequently, the task creator will be notified of a candidature, being asked whether to accept or reject it. Candidates will acknowledge the owner's decision. Eventually, the task is closed by the owner using the chatbot, providing also an outcome, either successfully or failed.
 
-The bot exposes an HTTP endpoint to receive messages and notifications from the WeNet platform.
+The _ask-for-help_ bot allows to create _tasks_ that are questions, to which other Wenet users will answer.
+
+The bots expose an HTTP endpoint to receive messages and notifications from the WeNet platform.
 
 ## Setup and configuration
 
@@ -43,9 +45,14 @@ will:
 
 ## Usage
 
-In order to run the chatbot, do the following:
+In order to run the _eat-together_ chatbot, do the following:
 ```bash
 python -m eat_together_bot.main
+```
+
+In order to run the _ask-for-help_ chatbot, do the following:
+```bash
+python -m ask_for_help_bot.main
 ```
 
 To run the endpoint:
@@ -54,6 +61,7 @@ python -m messages.main
 ```
 
 ### Chatbot env variables
+Both the chatbots use the following environment variables
 
 * `TELEGRAM_KEY`: secret key provided by Telegram to use the bot API
 * `MQTT_HOST`: MQTT host
@@ -76,13 +84,14 @@ python -m messages.main
 * `MESSAGES_HOST`: host running the APIs (default to `0.0.0.0`)
 * `MESSAGES_PORT`: port of the host (default to `12345`)
 * `MQTT_HOST`: MQTT host
-* `MQTT_SUBSCRIBER_ID`: MQTT publisher id for the client
+* `MQTT_PUBLISHER_ID`: MQTT publisher id for the client
 * `MQTT_USER`: MQTT user
 * `MQTT_PASSWORD`: MQTT password
 * `MQTT_TOPIC`: MQTT topic to write on
 * `INSTANCE_NAMESPACE`: bot instance namespace
 * `WENET_APP_ID`: WeNet App ID used by the bot
 * `WENET_HUB_URL`: url of the WeNet hub
+* `BOT_ID`: the bot ID associated with the EventHandler used by the bot itself.
 
 ## Instances
 
