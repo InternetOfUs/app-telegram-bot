@@ -255,12 +255,6 @@ class EatTogetherHandler(WenetEventHandler):
         try:
             context = user_account.context
             task = service_api.get_task(str(message.task_id))
-            # TODO remove next lines before the release
-            task.attributes["maxPeople"] = 4
-            task.attributes["startTs"] = 1234567890
-            task.attributes["deadlineTs"] = 1234567890
-            task.attributes["where"] = "Trento"
-            # end mock
             if isinstance(message, TaskProposalNotification):
                 # the system wants to propose a task to an user
                 try:
@@ -888,13 +882,6 @@ class EatTogetherHandler(WenetEventHandler):
             raise ValueError(error_message)
         wenet_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
         task_list = service_api.get_opened_tasks_of_user(str(wenet_id), self.app_id)
-        # TODO remove the following lines before release
-        for t in task_list:
-            t.attributes["maxPeople"] = 4
-            t.attributes["startTs"] = 1234567890
-            t.attributes["deadlineTs"] = 1234567890
-            t.attributes["where"] = "Trento"
-        # end mock
         # filter on the malformed tasks (those without "where" and "maxPeople" attributes)
         task_list = [x for x in task_list if "where" in x.attributes and "maxPeople" in x.attributes]
         if len(task_list) > 0:

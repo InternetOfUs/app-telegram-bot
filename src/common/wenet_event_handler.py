@@ -177,8 +177,8 @@ class WenetEventHandler(EventHandler, abc.ABC):
         """
         response = OutgoingEvent(social_details=message.social_details)
         response.with_context(message.context)
-        url = RapidAnswerResponse(TextualResponse("Hello! Welcome to the eat together bot. Before we start, "
-                                                  "I need you to login or register to WeNet"))
+        url = RapidAnswerResponse(TextualResponse("Hello! Welcome WeNet. Before we start, "
+                                                  "I need you to login or register into the platform"))
         url.with_option(UrlButton("Go to the WeNet Hub", self.wenet_hub_url))
         response.with_message(url)
         return response
