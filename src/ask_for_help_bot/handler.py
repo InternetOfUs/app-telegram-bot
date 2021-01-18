@@ -6,17 +6,19 @@ from typing import Optional, List
 from ask_for_help_bot.pending_conversations import PendingQuestionToAnswer
 from ask_for_help_bot.pending_messages_job import PendingMessagesJob
 from chatbot_core.model.context import ConversationContext
+from chatbot_core.model.details import TelegramDetails
 from chatbot_core.model.event import IncomingSocialEvent
 from chatbot_core.model.message import IncomingTextMessage
 from chatbot_core.model.user_context import UserConversationContext
 from chatbot_core.nlp.handler import NLPHandler
 from chatbot_core.translator.translator import Translator
 from chatbot_core.v3.connector.social_connector import SocialConnector
+from chatbot_core.v3.connector.social_connectors.telegram_connector import TelegramSocialConnector
 from chatbot_core.v3.handler.helpers.intent_manager import IntentFulfillerV3
 from chatbot_core.v3.job.job_manager import JobManager
 from chatbot_core.v3.logger.event_logger import LoggerConnector
 from chatbot_core.v3.model.messages import TextualResponse, RapidAnswerResponse, TelegramRapidAnswerResponse, \
-    UrlImageResponse
+    UrlImageResponse, ResponseMessage
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEvent
 from common.wenet_event_handler import WenetEventHandler
 from uhopper.utils.alert import AlertModule
@@ -232,18 +234,21 @@ class AskForHelpHandler(WenetEventHandler):
         response.with_message(TextualResponse(self._get_help_and_info_message(user_locale)))
         return response
 
-    def action_start(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
-        user_locale = self._get_user_locale(incoming_event)
-        response = OutgoingEvent(social_details=incoming_event.social_details)
+    def _get_start_messages(self, user_locale: str) -> List[ResponseMessage]:
         message_1 = self._translator.get_translation_instance(user_locale).with_text("start_text_1").translate()
         message_2 = self._translator.get_translation_instance(user_locale).with_text("start_text_2").translate()
         message_3 = self._get_help_and_info_message(user_locale)
         button_text = self._translator.get_translation_instance(user_locale).with_text("start_button").translate()
-        response.with_message(TextualResponse(message_1))
-        response.with_message(TextualResponse(message_2))
         final_message_with_button = RapidAnswerResponse(TextualResponse(message_3))
         final_message_with_button.with_textual_option(button_text, self.INTENT_QUESTION_FIRST)
-        response.with_message(final_message_with_button)
+        return [message_1, message_2, final_message_with_button]
+
+    def action_start(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+        user_locale = self._get_user_locale(incoming_event)
+        response = OutgoingEvent(
+            social_details=incoming_event.social_details,
+            messages=self._get_start_messages(user_locale)
+        )
         return response
 
     def _get_command_list(self) -> str:
@@ -359,8 +364,20 @@ class AskForHelpHandler(WenetEventHandler):
         return context
 
     def handle_wenet_authentication_result(self, message: WeNetAuthenticationEvent) -> NotificationEvent:
-        # get and put wenet user id into context here
-        pass
+        if not isinstance(self._connector, TelegramSocialConnector):
+            raise Exception("Expected telegram social connector")
+
+        social_details = TelegramDetails(int(message.external_id), int(message.external_id),
+                                         self._connector.get_telegram_bot_id())
+        try:
+            self._save_wenet_user_id_to_context(message, social_details)
+            messages = self._get_start_messages("en")   # TODO change user locale
+            return NotificationEvent(social_details=social_details, messages=messages)
+        except Exception as e:
+            logger.exception("Unable to complete the wenet login", exc_info=e)
+            return NotificationEvent(social_details).with_message(
+                TextualResponse("Unable to complete the WeNetAuthentication")
+            )
 
     def action_question(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
         """
