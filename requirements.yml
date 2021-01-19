@@ -2,5 +2,5 @@
 roles:
   - src: ssh://git@lab.u-hopper.com:4422/devops/ansible/project-template.git
     name: uh.project-template
-    version: develop # TODO use a tagged version
+    version: 3.0.1
     scm: git
