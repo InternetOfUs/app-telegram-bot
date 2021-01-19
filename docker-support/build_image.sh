@@ -11,6 +11,7 @@ clean () {
     rm -R -f ${SCRIPT_DIR}/src
     rm -R -f ${SCRIPT_DIR}/documentation
     rm -R ${SCRIPT_DIR}/requirements.txt
+    rm -R ${SCRIPT_DIR}/translations
 
     rm -R ${SCRIPT_DIR}/test
 
@@ -28,6 +29,7 @@ mkdir ${SCRIPT_DIR}/documentation
 cp -R ${PROJECT_DIR}/documentation/* ${SCRIPT_DIR}/documentation
 cp ${PROJECT_DIR}/requirements.txt ${SCRIPT_DIR}
 
+cp -r ${PROJECT_DIR}/translations ${SCRIPT_DIR}/translations
 
 mkdir ${SCRIPT_DIR}/test
 cp -R ${PROJECT_DIR}/test/* ${SCRIPT_DIR}/test
@@ -43,7 +45,8 @@ cp -R ${PROJECT_DIR}/chatbot-core/utils-py/requirements.txt ${SCRIPT_DIR}/utils-
 
 
 # Building image
-docker build --cache-from ${REGISTRY}/${IMAGE_NAME} -t ${IMAGE_NAME} ${SCRIPT_DIR}
+GIT_REF=`git rev-parse --short HEAD`
+docker build --build-arg GIT_REF=${GIT_REF} --cache-from ${REGISTRY}/${IMAGE_NAME} -t ${IMAGE_NAME} ${SCRIPT_DIR}
 if [[ $? == 0 ]]; then
     echo "Build successful: ${IMAGE_NAME}."
 

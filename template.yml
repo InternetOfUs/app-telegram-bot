@@ -14,7 +14,9 @@
     docker_python_image_base_image: public.registry.u-hopper.com/python:3.8
     project_python_test_folder: test
     docker_image_name: wenet/bots
-    docker_run_services:
+    docker_additional_files_to_add:
+      - translations
+    docker_python_services:
       - name: ws
         main_module: messages.main
         required_env_variables:
@@ -74,7 +76,7 @@
       - notify
     ci_environments:
       - prod
-      - dev
+      - staging
       - issue
     project_python_submodules:
       - name: wenet-common-models

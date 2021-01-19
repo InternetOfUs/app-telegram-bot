@@ -31,6 +31,7 @@ echo "Running ws..."
 # This will allow for an easier automatisation of the docker support creation.
 #
 
+
 DEFAULT_WORKERS=4
 if [[ -z "${GUNICORN_WORKERS}" ]]; then
     GUNICORN_WORKERS=${DEFAULT_WORKERS}

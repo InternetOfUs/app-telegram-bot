@@ -33,7 +33,10 @@ COPY run_tests.sh .
 COPY test.sh .
 
 
+ADD translations translations
 
 ENV PYTHONPATH /scripts
+
+ARG GIT_REF
 
 # Specific runners for each defined service need to be called explicitly

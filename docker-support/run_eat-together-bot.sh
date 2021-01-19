@@ -35,4 +35,5 @@ echo "Running eat-together-bot..."
 # This will allow for an easier automatisation of the docker support creation.
 #
 
+
 python -m eat_together_bot.main
