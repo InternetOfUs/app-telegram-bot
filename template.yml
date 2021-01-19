@@ -72,7 +72,7 @@
       - build
       - test
       - push
-      - deploy
+      - trigger
       - notify
     ci_environments:
       - prod

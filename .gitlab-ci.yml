@@ -114,8 +114,8 @@ stages:
   - build
   - test
   - push
+  - trigger
   - notify
-  - deploy
 
 #
 # Build stages.
@@ -196,27 +196,6 @@ push_issue:
 
 
 
-#
-# Deploy stages.
-# For deploying services using the deployment configuration present in
-# the local repository.
-#
-
-deploy_staging:
-  stage: deploy
-  allow_failure: false
-  dependencies:
-    - push_staging
-  script:
-    - *ansible-script
-    - *deploy-script
-    - cd deployment
-    - ansible-playbook -i inventory/staging/hosts --vault-password-file password_file playbook.yml
-  environment:
-    name: staging
-  extends: .common-staging
-
-
 
 
 #
@@ -228,7 +207,7 @@ notify_staging:
     - *ansible-script
     - export RELEASE_TAG="latest"
     - export BUILD_ENVIRONMENT="staging"
-    - export WITH_DEPLOY="no"
+    - export WITH_DEPLOY="yes"
     - export DEPLOY_TRIGGERED="no"
     - ansible-playbook ansible/notify.yml
   dependencies:
@@ -244,13 +223,14 @@ notify_issue:
     - *ansible-script
     - export RELEASE_TAG="latest"
     - export BUILD_ENVIRONMENT="issue"
-    - export WITH_DEPLOY="no"
-    - export DEPLOY_TRIGGERED="no"
+    - export WITH_DEPLOY="yes"
+    - export DEPLOY_TRIGGERED="yes"
     - ansible-playbook ansible/notify.yml
   dependencies:
     - build_issue
     - test_issue
     - push_issue
+    - deploy_issue
   allow_failure: true
   extends: .common-issue
 
