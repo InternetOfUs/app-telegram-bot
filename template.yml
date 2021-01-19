@@ -49,7 +49,7 @@
           - ${WENET_AUTHENTICATION_MANAGEMENT_URL}
           - ${REDIRECT_URL}
       - name: ask-for-help-bot
-        main_module: eat_together_bot.main
+        main_module: ask_for_help_bot.main
         required_env_variables:
           - ${TELEGRAM_KEY}
           - ${MQTT_HOST}

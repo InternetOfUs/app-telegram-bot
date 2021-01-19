@@ -35,4 +35,4 @@ echo "Running ask-for-help-bot..."
 # This will allow for an easier automatisation of the docker support creation.
 #
 
-python -m eat_together_bot.main
+python -m ask_for_help_bot.main
