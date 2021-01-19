@@ -121,6 +121,16 @@ stages:
 # Build stages.
 #
 
+build_production:
+  stage: build
+  script:
+    - ./docker-support/runner.sh -bs $CI_COMMIT_TAG
+  artifacts:
+    paths:
+      - docker_image.tar.gz
+    expire_in: 1 day
+  extends: .common-production
+
 build_staging:
   stage: build
   script:
@@ -150,6 +160,15 @@ build_issue:
 # for php/yii2 projects.
 #
 
+test_production:
+  stage: test
+  script:
+    - docker load -i docker_image.tar.gz
+    - ./docker-support/runner.sh -t $CI_COMMIT_TAG
+  dependencies:
+    - build_production
+  extends: .common-production
+
 test_staging:
   stage: test
   script:
@@ -174,6 +193,15 @@ test_issue:
 # Push stages.
 #
 
+push_production:
+  stage: push
+  script:
+    - docker load -i docker_image.tar.gz
+    - ./docker-support/runner.sh -p $CI_COMMIT_TAG
+  dependencies:
+    - build_production
+    - test_production
+  extends: .common-production
 push_staging:
   stage: push
   script:
@@ -195,12 +223,61 @@ push_issue:
   extends: .common-issue
 
 
+#
+# Trigger stages.
+# Allowing to trigger the deployment in another repository.
+#
+
+
+trigger_staging:
+  stage: trigger
+  script:
+    - *ansible-script
+    - export GIT_REF="develop"
+    - ansible-playbook ansible/trigger.yml
+  dependencies:
+    - build_staging
+    - test_staging
+    - push_staging
+  allow_failure: false
+  extends: .common-staging
+
+trigger_issue:
+  stage: trigger
+  script:
+    - *ansible-script
+    - export GIT_REF="develop"
+    - ansible-playbook ansible/trigger.yml
+  dependencies:
+    - build_issue
+    - test_issue
+    - push_issue
+  allow_failure: false
+  extends: .common-issue
+
+
 
 
 
 #
 # Notification stages.
 #
+notify_production:
+  stage: notify
+  script:
+    - *ansible-script
+    - export RELEASE_TAG="$CI_COMMIT_TAG"
+    - export BUILD_ENVIRONMENT="production"
+    - export WITH_DEPLOY="yes"
+    - export DEPLOY_TRIGGERED="no"
+    - ansible-playbook ansible/notify.yml
+  dependencies:
+    - build_production
+    - test_production
+    - push_production
+  allow_failure: true
+  extends: .common-production
+
 notify_staging:
   stage: notify
   script:
@@ -208,12 +285,13 @@ notify_staging:
     - export RELEASE_TAG="latest"
     - export BUILD_ENVIRONMENT="staging"
     - export WITH_DEPLOY="yes"
-    - export DEPLOY_TRIGGERED="no"
+    - export DEPLOY_TRIGGERED="yes"
     - ansible-playbook ansible/notify.yml
   dependencies:
     - build_staging
     - test_staging
     - push_staging
+    - trigger_staging
   allow_failure: true
   extends: .common-staging
 
@@ -230,7 +308,7 @@ notify_issue:
     - build_issue
     - test_issue
     - push_issue
-    - deploy_issue
+    - trigger_issue
   allow_failure: true
   extends: .common-issue
 

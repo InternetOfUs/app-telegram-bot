@@ -75,7 +75,7 @@
       - trigger
       - notify
     ci_environments:
-      - prod
+      - production
       - staging
       - issue
     project_python_submodules:
