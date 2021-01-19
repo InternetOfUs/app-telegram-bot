@@ -32,7 +32,8 @@ if __name__ == "__main__":
     client_secret = os.getenv("CLIENT_SECRET")
     wenet_authentication_management_url = os.getenv("WENET_AUTHENTICATION_MANAGEMENT_URL")
 
-    translator = Translator("wenet-ask-for-help", alert_module, "../../translations", fallback=False)
+    translation_folder_path = os.getenv("TRANSLATION_FOLDER_PATH", "../../translations")
+    translator = Translator("wenet-ask-for-help", alert_module, translation_folder_path, fallback=False)
     translator.with_language("en", is_default=True, aliases=["en_US", "en_GB"])
 
     handler = AskForHelpHandler(

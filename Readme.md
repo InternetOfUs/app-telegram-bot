@@ -79,6 +79,9 @@ Both the chatbots use the following environment variables
 * `WENET_AUTHENTICATION_MANAGEMENT_URL`: the URL that manages OAuth in WeNet
 * `REDIRECT_URL`: the redirection URL associated with the WeNet application
 
+The _ask for help_ bot has the following optional environment variable:
+* `TRANSLATION_FOLDER_PATH`, indicating the folder in which translations are stored.
+
 ### Endpoint env variables
 
 * `MESSAGES_HOST`: host running the APIs (default to `0.0.0.0`)
