@@ -117,6 +117,7 @@ stages:
 build_production:
   stage: build
   script:
+    - *docker-script
     - ./docker-support/runner.sh -bs $CI_COMMIT_TAG
   artifacts:
     paths:
@@ -127,6 +128,7 @@ build_production:
 build_staging:
   stage: build
   script:
+    - *docker-script
     - ./docker-support/runner.sh -bs latest
   artifacts:
     paths:
@@ -137,6 +139,7 @@ build_staging:
 build_issue:
   stage: build
   script:
+    - *docker-script
     - ./docker-support/runner.sh -bs latest
   artifacts:
     paths:
@@ -189,6 +192,7 @@ test_issue:
 push_production:
   stage: push
   script:
+    - *docker-script
     - docker load -i docker_image.tar.gz
     - ./docker-support/runner.sh -p $CI_COMMIT_TAG
   dependencies:
@@ -198,6 +202,7 @@ push_production:
 push_staging:
   stage: push
   script:
+    - *docker-script
     - docker load -i docker_image.tar.gz
     - ./docker-support/runner.sh -p latest
   dependencies:
@@ -207,6 +212,7 @@ push_staging:
 push_issue:
   stage: push
   script:
+    - *docker-script
     - docker load -i docker_image.tar.gz
     - ./docker-support/runner.sh -p latest
   dependencies:
