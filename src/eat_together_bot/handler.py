@@ -36,7 +36,6 @@ logger = logging.getLogger("uhopper.chatbot.wenet.eattogether.chatbot")
 
 class EatTogetherHandler(WenetEventHandler):
     # context keys
-    CONTEXT_CURRENT_STATE = "current_state"
     CONTEXT_ORGANIZE_TASK_OBJECT = 'organize_task_object'
     CONTEXT_PROPOSAL_TASK_DICT = 'proposal_task_dict'
     CONTEXT_VOLUNTEER_CANDIDATURE_DICT = 'volunteer_candidature_dict'

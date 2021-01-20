@@ -61,6 +61,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
     PREVIOUS_INTENT = "previous_message_intent"
 
     # context keys
+    CONTEXT_CURRENT_STATE = "current_state"
     CONTEXT_WENET_USER_ID = 'wenet_user_id'
     CONTEXT_ACCESS_TOKEN = 'access_token'
     CONTEXT_REFRESH_TOKEN = 'refresh_token'

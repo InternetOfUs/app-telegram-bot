@@ -41,7 +41,6 @@ class AskForHelpHandler(WenetEventHandler):
     the intent of the incoming event or both the two things.
     """
     # context keys
-    CONTEXT_CURRENT_STATE = "current_state"
     CONTEXT_DESIRED_ANSWERER = "desired_answerer"
     CONTEXT_ASKED_QUESTION = "asked_question"
     CONTEXT_QUESTION_TO_ANSWER = "question_to_answer"
