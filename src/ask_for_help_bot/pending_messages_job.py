@@ -19,8 +19,8 @@ class PendingMessagesJob(SocialJob):
     a user has not used the bot anymore - the message is removed
     """
     CONTEXT_PENDING_ANSWERS = "pending_answers"
-    REMINDER_MINUTES = 1
-    REMOVE_AFTER_MINUTES = 1
+    REMINDER_MINUTES = 60
+    REMOVE_AFTER_MINUTES = 15
 
     def __init__(self, job_id, instance_namespace: str, connector: SocialConnector,
                  logger_connectors: Optional[List[LoggerConnector]]):
