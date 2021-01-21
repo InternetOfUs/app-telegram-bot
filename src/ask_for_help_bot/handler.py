@@ -240,7 +240,7 @@ class AskForHelpHandler(WenetEventHandler):
         button_text = self._translator.get_translation_instance(user_locale).with_text("start_button").translate()
         final_message_with_button = RapidAnswerResponse(TextualResponse(message_3))
         final_message_with_button.with_textual_option(button_text, self.INTENT_QUESTION_FIRST)
-        return [message_1, message_2, final_message_with_button]
+        return [TextualResponse(message_1), TextualResponse(message_2), final_message_with_button]
 
     def action_start(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
         user_locale = self._get_user_locale(incoming_event)
