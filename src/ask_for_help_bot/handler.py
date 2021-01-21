@@ -484,6 +484,7 @@ class AskForHelpHandler(WenetEventHandler):
             finally:
                 context.delete_static_state(self.CONTEXT_ASKED_QUESTION)
                 context.delete_static_state(self.CONTEXT_DESIRED_ANSWERER)
+                context.delete_static_state(self.CONTEXT_CURRENT_STATE)
                 context = self._save_updated_token(context, service_api.client)
                 response.with_context(context)
         else:
@@ -788,7 +789,8 @@ class AskForHelpHandler(WenetEventHandler):
             service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
         else:
             raise Exception(f"Missing conversation context for event {incoming_event}")
-        tasks = service_api.get_tasks(self.app_id, has_close_ts=False, limit=3)
+        user_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
+        tasks = [t for t in service_api.get_tasks(self.app_id, has_close_ts=False, limit=3) if t.requester_id != user_id]
         context = self._save_updated_token(context, service_api.client)
         if not tasks:
             response.with_message(TextualResponse(
@@ -797,8 +799,7 @@ class AskForHelpHandler(WenetEventHandler):
             context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING)
             response.with_message(TextualResponse(
                 self._translator.get_translation_instance(user_locale).with_text("answers_tasks_intro").translate()))
-            # TODO put the array to empty
-            proposed_tasks = ["task1", "task3"]
+            proposed_tasks = []
             for task in tasks:
                 questioning_user = service_api.get_user_profile(str(task.requester_id))
                 context = self._save_updated_token(context, service_api.client)
