@@ -24,3 +24,9 @@ class BotCache(RedisCache):
         """
         r = BotCache._build_redis_from_env()
         return BotCache(r)
+
+    def remove(self, key: str):
+        """
+        Remove a key and its value from the cache
+        """
+        self._r.delete(key)

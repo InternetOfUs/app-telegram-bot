@@ -72,6 +72,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
     INTENT_CANCEL = '/cancel'
     INTENT_HELP = '/help'
     INTENT_INFO = '/info'
+    INTENT_BUTTON_WITH_PAYLOAD = "bwp--{}"
 
     def __init__(self,
                  instance_namespace: str,
@@ -174,6 +175,13 @@ class WenetEventHandler(EventHandler, abc.ABC):
         """
         return message.context.has_static_state(self.CONTEXT_WENET_USER_ID) and \
             message.context.has_static_state(self.CONTEXT_TELEGRAM_USER_ID)
+
+    @abc.abstractmethod
+    def handle_button_with_payload(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+        """
+        Handle a button with a payload saved into redis
+        """
+        pass
 
     def not_authenticated_response(self, message: IncomingSocialEvent) -> OutgoingEvent:
         """
