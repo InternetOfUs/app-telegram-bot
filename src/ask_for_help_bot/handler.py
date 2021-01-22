@@ -3,6 +3,8 @@ import logging
 from datetime import datetime
 from typing import Optional, List
 
+from emoji import emojize
+
 from ask_for_help_bot.pending_conversations import PendingQuestionToAnswer
 from ask_for_help_bot.pending_messages_job import PendingMessagesJob
 from chatbot_core.model.context import ConversationContext
@@ -68,6 +70,7 @@ class AskForHelpHandler(WenetEventHandler):
     INTENT_ANSWER = "/answer"
     INTENT_ANSWER_PICKED_QUESTION = "answering-{}"
     INTENT_BEST_ANSWER = "best_answer"
+    INTENT_PROFILE = '/profile'
     # available states
     STATE_QUESTION_1 = "question_1"
     STATE_QUESTION_2 = "question_2"
@@ -195,6 +198,10 @@ class AskForHelpHandler(WenetEventHandler):
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_ANSWER, self.action_answer).with_rule(intent=self.INTENT_ANSWER)
         )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_PROFILE, self.action_profile).with_rule(intent=self.INTENT_PROFILE)
+        )
+        # keep this as the last one!
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3("", self.handle_button_with_payload).with_rule(
                 regex=self.INTENT_BUTTON_WITH_PAYLOAD.format("[A-Za-z0-9-]+"))
@@ -880,3 +887,10 @@ class AskForHelpHandler(WenetEventHandler):
             response.with_message(rapid_answer)
         response.with_context(context)
         return response
+
+    def action_profile(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+        response = OutgoingEvent(incoming_event.social_details)
+        response.with_message(TextualResponse(emojize("I'm sorry, this command is not implemented yet :grimacing:",
+                                                      use_aliases=True)))
+        return response
+
