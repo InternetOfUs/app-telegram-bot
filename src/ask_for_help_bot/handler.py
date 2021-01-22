@@ -20,6 +20,7 @@ from chatbot_core.v3.logger.event_logger import LoggerConnector
 from chatbot_core.v3.model.messages import TextualResponse, RapidAnswerResponse, TelegramRapidAnswerResponse, \
     UrlImageResponse, ResponseMessage
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEvent
+from common.cache import BotCache
 from common.wenet_event_handler import WenetEventHandler
 from uhopper.utils.alert import AlertModule
 from wenet.common.interface.exceptions import TaskCreationError, RefreshTokenExpiredError, TaskTransactionCreationError, \
@@ -93,6 +94,10 @@ class AskForHelpHandler(WenetEventHandler):
                          client_secret, redirect_url, wenet_authentication_url, wenet_authentication_management_url,
                          task_type_id, alert_module, connector, nlp_handler, translator, delay_between_messages_sec,
                          delay_between_text_sec, logger_connectors)
+
+        # TODO should be passed from outer scope?
+        self.cache = BotCache.build_from_env()
+
         JobManager.instance().add_job(PendingMessagesJob("wenet_ask_for_help_pending_messages_job",
                                                          self._instance_namespace, self._connector, None))
         self.intent_manager.with_fulfiller(
@@ -808,9 +813,13 @@ class AskForHelpHandler(WenetEventHandler):
                     proposed_tasks.append(task.task_id)
             context.with_static_state(self.CONTEXT_PROPOSED_TASKS, proposed_tasks)
             rapid_answer = RapidAnswerResponse(TextualResponse(self._translator.get_translation_instance(user_locale).with_text("answers_tasks_choose").translate()))
-            for i in range(len(proposed_tasks)):
-                rapid_answer.with_textual_option(f"#{1 + i}", self.INTENT_ANSWER_PICKED_QUESTION.format(i))
+            # for i in range(len(proposed_tasks)):
+            #     rapid_answer.with_textual_option(f"#{1 + i}", self.INTENT_ANSWER_PICKED_QUESTION.format(i))
+            for task in tasks:
+                identifier = self.cache.cache({
+                    "taskId": task.task_id
+                })
+                rapid_answer.with_textual_option(f"#{1 + i}", self.INTENT_ANSWER_PICKED_QUESTION.format(identifier))
             response.with_message(rapid_answer)
         response.with_context(context)
         return response
-
