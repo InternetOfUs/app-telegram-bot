@@ -18,6 +18,7 @@ from chatbot_core.v3.logger.event_logger import LoggerConnector
 from chatbot_core.v3.model.actions import UrlButton
 from chatbot_core.v3.model.messages import RapidAnswerResponse, TextualResponse, TelegramTextualResponse
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEvent
+from common.cache import BotCache
 from uhopper.utils.alert import AlertModule
 from wenet.common.interface.client import Oauth2Client
 from wenet.common.interface.exceptions import TaskNotFound, RefreshTokenExpiredError
@@ -25,6 +26,7 @@ from wenet.common.interface.service_api import ServiceApiInterface
 from wenet.common.model.message.builder import MessageBuilder
 from wenet.common.model.message.event import WeNetAuthenticationEvent
 from wenet.common.model.message.message import TextualMessage, Message
+from wenet.common.storage.cache import RedisCache
 
 logger = logging.getLogger("uhopper.chatbot.wenet")
 
@@ -93,6 +95,10 @@ class WenetEventHandler(EventHandler, abc.ABC):
                  logger_connectors: Optional[List[LoggerConnector]] = None):
         super().__init__(instance_namespace, bot_id, handler_id, alert_module, connector, nlp_handler, translator,
                          delay_between_messages_sec, delay_between_text_sec, logger_connectors)
+
+        self.cache = BotCache.build_from_env()
+        self.oauth_cache = RedisCache.build_from_env()
+
         self.telegram_id = telegram_id
         # getting information about the bot
         info = requests.get(self.TELEGRAM_GET_ME_API.format(self.telegram_id)).json()
@@ -202,7 +208,9 @@ class WenetEventHandler(EventHandler, abc.ABC):
             raise Exception("Missing refresh or access token")
         token = context.get_static_state(self.CONTEXT_ACCESS_TOKEN, None)
         refresh_token = context.get_static_state(self.CONTEXT_REFRESH_TOKEN, None)
-        oauth_client = Oauth2Client.initialize_with_token(self.wenet_authentication_management_url, self.app_id, self.client_secret, token, refresh_token)
+
+        # TODO use social_details.unique_id
+        oauth_client = Oauth2Client(self.wenet_authentication_management_url, self.oauth_cache, ???, self.app_id, self.client_secret, token, refresh_token)
         return ServiceApiInterface(self.wenet_backend_url, oauth_client)
 
     def _save_updated_token(self, context: ConversationContext, client: Oauth2Client) -> ConversationContext:
@@ -321,7 +329,8 @@ class WenetEventHandler(EventHandler, abc.ABC):
         """
         Get from Wenet the user ID and saves it into the context
         """
-        client = Oauth2Client.initialize_with_code(self.wenet_authentication_management_url, self.app_id,
+        client = Oauth2Client.initialize_with_code(self.wenet_authentication_management_url,
+                                                   self.oauth_cache, social_details.unique_id(), self.app_id,
                                                    self.client_secret, message.code, self.redirect_url)
 
         context = self._interface_connector.get_user_context(social_details)

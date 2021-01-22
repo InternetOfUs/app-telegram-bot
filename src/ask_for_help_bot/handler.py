@@ -20,7 +20,6 @@ from chatbot_core.v3.logger.event_logger import LoggerConnector
 from chatbot_core.v3.model.messages import TextualResponse, RapidAnswerResponse, TelegramRapidAnswerResponse, \
     UrlImageResponse, ResponseMessage
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEvent
-from common.cache import BotCache
 from common.wenet_event_handler import WenetEventHandler
 from uhopper.utils.alert import AlertModule
 from wenet.common.interface.exceptions import TaskCreationError, RefreshTokenExpiredError, TaskTransactionCreationError, \
@@ -95,8 +94,6 @@ class AskForHelpHandler(WenetEventHandler):
                          task_type_id, alert_module, connector, nlp_handler, translator, delay_between_messages_sec,
                          delay_between_text_sec, logger_connectors)
 
-        # TODO should be passed from outer scope?
-        self.cache = BotCache.build_from_env()
 
         JobManager.instance().add_job(PendingMessagesJob("wenet_ask_for_help_pending_messages_job",
                                                          self._instance_namespace, self._connector, None))
