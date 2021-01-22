@@ -143,6 +143,11 @@ Both the chatbots use the following environment variables
 * `WENET_AUTHENTICATION_MANAGEMENT_URL`: the URL that manages OAuth in WeNet
 * `REDIRECT_URL`: the redirection URL associated with the WeNet application
 
+Optional variables (to setup Redis):
+- `REDIS_HOST` (default is `localhost`)
+- `REDIS_PORT` (default is 6379)
+- `REDIS_DB` (default is 0)
+
 The _ask for help_ bot has the following optional environment variable:
 * `TRANSLATION_FOLDER_PATH`, indicating the folder in which translations are stored.
 

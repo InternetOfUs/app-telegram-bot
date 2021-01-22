@@ -12,6 +12,7 @@ from chatbot_core.model.user_context import UserConversationContext
 from chatbot_core.nlp.handler import NLPHandler
 from chatbot_core.translator.translator import Translator
 from chatbot_core.v3.connector.social_connector import SocialConnector
+from chatbot_core.v3.connector.social_connectors.telegram_connector import TelegramSocialConnector
 from chatbot_core.v3.handler.event_handler import EventHandler
 from chatbot_core.v3.handler.helpers.intent_manager import IntentManagerV3, IntentFulfillerV3
 from chatbot_core.v3.logger.event_logger import LoggerConnector
@@ -65,8 +66,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
     # context keys
     CONTEXT_CURRENT_STATE = "current_state"
     CONTEXT_WENET_USER_ID = 'wenet_user_id'
-    CONTEXT_ACCESS_TOKEN = 'access_token'
-    CONTEXT_REFRESH_TOKEN = 'refresh_token'
+    CONTEXT_TELEGRAM_USER_ID = "telegram_user_id"
     # all the recognize intents
     INTENT_START = '/start'
     INTENT_CANCEL = '/cancel'
@@ -123,10 +123,6 @@ class WenetEventHandler(EventHandler, abc.ABC):
             IntentFulfillerV3(self.INTENT_START, self.action_start).with_rule(intent=self.INTENT_START)
         )
         self.intent_manager.with_fulfiller(
-            IntentFulfillerV3("TOKEN", self.handle_oauth_login).with_rule(
-                static_context=(self.CONTEXT_ACCESS_TOKEN, None))
-        )
-        self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_HELP, self.handle_help).with_rule(intent=self.INTENT_HELP)
         )
         self.intent_manager.with_fulfiller(
@@ -176,7 +172,8 @@ class WenetEventHandler(EventHandler, abc.ABC):
         Check whether the user is authenticated
         :return: True if the user is authenticated, False otherwise
         """
-        return message.context.has_static_state(self.CONTEXT_WENET_USER_ID) and message.context.has_static_state(self.CONTEXT_ACCESS_TOKEN) and message.context.has_static_state(self.CONTEXT_REFRESH_TOKEN)
+        return message.context.has_static_state(self.CONTEXT_WENET_USER_ID) and \
+            message.context.has_static_state(self.CONTEXT_TELEGRAM_USER_ID)
 
     def not_authenticated_response(self, message: IncomingSocialEvent) -> OutgoingEvent:
         """
@@ -200,24 +197,19 @@ class WenetEventHandler(EventHandler, abc.ABC):
         return response
 
     def _get_service_connector_from_social_details(self, social_details: TelegramDetails) -> ServiceApiInterface:
-        context = self._interface_connector.get_user_context(social_details)
-        return self._get_service_api_interface_connector_from_context(context.context)
-
-    def _get_service_api_interface_connector_from_context(self, context: ConversationContext) -> ServiceApiInterface:
-        if not context.has_static_state(self.CONTEXT_ACCESS_TOKEN) or not context.has_static_state(self.CONTEXT_REFRESH_TOKEN):
-            raise Exception("Missing refresh or access token")
-        token = context.get_static_state(self.CONTEXT_ACCESS_TOKEN, None)
-        refresh_token = context.get_static_state(self.CONTEXT_REFRESH_TOKEN, None)
-
-        # TODO use social_details.unique_id
-        oauth_client = Oauth2Client(self.wenet_authentication_management_url, self.oauth_cache, ???, self.app_id, self.client_secret, token, refresh_token)
+        oauth_client = Oauth2Client(self.wenet_authentication_management_url, self.oauth_cache,
+                                    social_details.unique_id(), self.app_id, self.client_secret)
         return ServiceApiInterface(self.wenet_backend_url, oauth_client)
 
-    def _save_updated_token(self, context: ConversationContext, client: Oauth2Client) -> ConversationContext:
-        logger.debug("Saving client status")
-        context.with_static_state(self.CONTEXT_ACCESS_TOKEN, client.token)
-        context.with_static_state(self.CONTEXT_REFRESH_TOKEN, client.refresh_token)
-        return context
+    def _get_service_api_interface_connector_from_context(self, context: ConversationContext) -> ServiceApiInterface:
+        if not context.has_static_state(self.CONTEXT_TELEGRAM_USER_ID):
+            raise Exception("Missing Telegram user ID in the context")
+        if not isinstance(self._connector, TelegramSocialConnector):
+            raise Exception("Expected telegram social connector")
+        telegram_id = context.get_static_state(self.CONTEXT_TELEGRAM_USER_ID)
+        social_details = TelegramDetails(int(telegram_id), int(telegram_id),
+                                         self._connector.get_telegram_bot_id())
+        return self._get_service_connector_from_social_details(social_details)
 
     def get_user_accounts(self, wenet_id) -> List[UserConversationContext]:
         result = self._interface_connector.get_user_contexts(
@@ -325,7 +317,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
         logger.debug(f"Created response {outgoing_event}")
         return outgoing_event
 
-    def _save_wenet_user_id_to_context(self, message: WeNetAuthenticationEvent, social_details: TelegramDetails) -> None:
+    def _save_wenet_and_telegram_user_id_to_context(self, message: WeNetAuthenticationEvent, social_details: TelegramDetails) -> None:
         """
         Get from Wenet the user ID and saves it into the context
         """
@@ -334,13 +326,10 @@ class WenetEventHandler(EventHandler, abc.ABC):
                                                    self.client_secret, message.code, self.redirect_url)
 
         context = self._interface_connector.get_user_context(social_details)
-
-        context.context.with_static_state(self.CONTEXT_ACCESS_TOKEN, client.token)
-        context.context.with_static_state(self.CONTEXT_REFRESH_TOKEN, client.refresh_token)
+        context.context.with_static_state(self.CONTEXT_TELEGRAM_USER_ID, social_details.user_id)
 
         # get wenet user ID
-        wenet_user_id_request = requests.get(self.wenet_backend_url + '/token',
-                                             headers={"Authorization": f"bearer {client.token}"})
+        wenet_user_id_request = client.get(self.wenet_backend_url + '/token')
         if wenet_user_id_request.status_code != 200:
             raise Exception(wenet_user_id_request.json()['error_description'])
         wenet_user_id = wenet_user_id_request.json()['profileId']

@@ -295,7 +295,6 @@ class AskForHelpHandler(WenetEventHandler):
                     context=context,
                     version=UserConversationContext.VERSION_V3
                 ))
-                context = self._save_updated_token(context, service_api.client)
                 return NotificationEvent(user_account.social_details, [response], context)
             elif isinstance(message, AnsweredQuestionMessage):
                 answerer_id = message.user_id
@@ -323,19 +322,16 @@ class AskForHelpHandler(WenetEventHandler):
                         context=context,
                         version=UserConversationContext.VERSION_V3
                     ))
-                    context = self._save_updated_token(context, service_api.client)
                     return NotificationEvent(user_account.social_details, [answer], context)
                 except TaskNotFound as e:
                     logger.error(e.message)
                     raise Exception(e.message)
             elif isinstance(message, IncentiveMessage):
                 answer = TextualResponse(message.content)
-                context = self._save_updated_token(context, service_api.client)
                 return NotificationEvent(user_account.social_details, [answer], context)
             elif isinstance(message, IncentiveBadge):
                 answer = TextualResponse(message.message)
                 image = UrlImageResponse(message.image_url)
-                context = self._save_updated_token(context, service_api.client)
                 return NotificationEvent(user_account.social_details, [answer, image], context)
             else:
                 logger.warning(f"Received unrecognized message of type {type(message)}: {message.to_repr()}")
@@ -371,7 +367,7 @@ class AskForHelpHandler(WenetEventHandler):
         social_details = TelegramDetails(int(message.external_id), int(message.external_id),
                                          self._connector.get_telegram_bot_id())
         try:
-            self._save_wenet_user_id_to_context(message, social_details)
+            self._save_wenet_and_telegram_user_id_to_context(message, social_details)
             messages = self._get_start_messages("en")   # TODO change user locale
             return NotificationEvent(social_details=social_details, messages=messages)
         except Exception as e:
@@ -487,7 +483,6 @@ class AskForHelpHandler(WenetEventHandler):
                 context.delete_static_state(self.CONTEXT_ASKED_QUESTION)
                 context.delete_static_state(self.CONTEXT_DESIRED_ANSWERER)
                 context.delete_static_state(self.CONTEXT_CURRENT_STATE)
-                context = self._save_updated_token(context, service_api.client)
                 response.with_context(context)
         else:
             error_message = self._translator.get_translation_instance(user_locale).with_text("answerer_details_are_not_text").translate()
@@ -553,7 +548,6 @@ class AskForHelpHandler(WenetEventHandler):
                 context = self._remove_pending_answer(question_id, context)
                 context.delete_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
                 context.delete_static_state(self.CONTEXT_CURRENT_STATE)
-                context = self._save_updated_token(context, service_api.client)
                 response.with_context(context)
         else:
             error_message = self._translator.get_translation_instance(user_locale).with_text("answerer_is_not_text").translate()
@@ -590,7 +584,6 @@ class AskForHelpHandler(WenetEventHandler):
             context = self._remove_pending_answer(question_id, context)
             context.delete_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
             context.delete_static_state(self.CONTEXT_CURRENT_STATE)
-            context = self._save_updated_token(context, service_api.client)
             response.with_context(context)
         return response
 
@@ -745,7 +738,6 @@ class AskForHelpHandler(WenetEventHandler):
                 context.delete_static_state(self.CONTEXT_REPORTING_IS_QUESTION)
                 context.delete_static_state(self.CONTEXT_REPORTING_REASON)
                 context.delete_static_state(self.CONTEXT_CURRENT_STATE)
-                context = self._save_updated_token(context, service_api.client)
                 response.with_context(context)
         else:
             error_message = self._translator.get_translation_instance(user_locale).with_text(
@@ -793,7 +785,6 @@ class AskForHelpHandler(WenetEventHandler):
             raise Exception(f"Missing conversation context for event {incoming_event}")
         user_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
         tasks = [t for t in service_api.get_tasks(self.app_id, has_close_ts=False, limit=3) if t.requester_id != user_id]
-        context = self._save_updated_token(context, service_api.client)
         if not tasks:
             response.with_message(TextualResponse(
                 self._translator.get_translation_instance(user_locale).with_text("answers_no_tasks").translate()))
@@ -804,19 +795,18 @@ class AskForHelpHandler(WenetEventHandler):
             proposed_tasks = []
             for task in tasks:
                 questioning_user = service_api.get_user_profile(str(task.requester_id))
-                context = self._save_updated_token(context, service_api.client)
                 if questioning_user:
                     response.with_message(TextualResponse(f"#{1 + len(proposed_tasks)}: {task.goal.name} - {questioning_user.name.first}"))
                     proposed_tasks.append(task.task_id)
             context.with_static_state(self.CONTEXT_PROPOSED_TASKS, proposed_tasks)
             rapid_answer = RapidAnswerResponse(TextualResponse(self._translator.get_translation_instance(user_locale).with_text("answers_tasks_choose").translate()))
-            # for i in range(len(proposed_tasks)):
-            #     rapid_answer.with_textual_option(f"#{1 + i}", self.INTENT_ANSWER_PICKED_QUESTION.format(i))
-            for task in tasks:
-                identifier = self.cache.cache({
-                    "taskId": task.task_id
-                })
-                rapid_answer.with_textual_option(f"#{1 + i}", self.INTENT_ANSWER_PICKED_QUESTION.format(identifier))
+            for i in range(len(proposed_tasks)):
+                rapid_answer.with_textual_option(f"#{1 + i}", self.INTENT_ANSWER_PICKED_QUESTION.format(i))
+            # for task in tasks:
+            #     identifier = self.cache.cache({
+            #         "taskId": task.task_id
+            #     })
+            #     rapid_answer.with_textual_option(f"#{1 + i}", self.INTENT_ANSWER_PICKED_QUESTION.format(identifier))
             response.with_message(rapid_answer)
         response.with_context(context)
         return response

@@ -290,7 +290,6 @@ class EatTogetherHandler(WenetEventHandler):
                                                  self.INTENT_CONFIRM_TASK_PROPOSAL.format(proposal_id))
                     logger.info(f"Sent proposal to user [{message.receiver_id}] regarding task [{task.task_id}]")
 
-                    context = self._save_updated_token(context, service_api.client)
                     return NotificationEvent(user_account.social_details, [response_message, response], context)
                 except KeyError:
                     error_message = "Wrong parsing of the task representation. Not able to find either the location" \
@@ -331,8 +330,6 @@ class EatTogetherHandler(WenetEventHandler):
                         version=UserConversationContext.VERSION_V3
                     ))
                 logger.info(f"Sent volunteer [{message.volunteer_id}] candidature to task [{task.task_id}] created by user [{message.receiver_id}]")
-
-                context = self._save_updated_token(context, service_api.client)
                 return NotificationEvent(user_account.social_details, [response], context)
             elif isinstance(message, TaskSelectionNotification):
                 if message.outcome == TaskSelectionNotification.OUTCOME_ACCEPTED:
@@ -373,7 +370,7 @@ class EatTogetherHandler(WenetEventHandler):
 
         social_details = TelegramDetails(int(message.external_id), int(message.external_id), self._connector.get_telegram_bot_id())
         try:
-            self._save_wenet_user_id_to_context(message, social_details)
+            self._save_wenet_and_telegram_user_id_to_context(message, social_details)
 
             text_0 = TextualResponse(emojize("Hello, welcome to the Wenet eat together chatbot :hugging_face:", use_aliases=True))
 
@@ -628,7 +625,6 @@ class EatTogetherHandler(WenetEventHandler):
             response.with_message(TextualResponse("I'm sorry, but something went wrong with the creation of your task."
                                                   " Try again later"))
         finally:
-            context = self._save_updated_token(context, service_api.client)
             response.with_context(context)
             return response
 
@@ -668,7 +664,6 @@ class EatTogetherHandler(WenetEventHandler):
                             " [%s] to task [%s]. The service API resonded with code %d and message %s" \
                             % (volunteer_id, task.task_id, e.http_status, json.dumps(e.json_response))
             logger.error(error_message)
-        self._save_updated_token(response.context, service_api.client)
         return response
 
     def action_delete_task_proposal(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
@@ -703,7 +698,6 @@ class EatTogetherHandler(WenetEventHandler):
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_message(TextualResponse(emojize("All right :+1:", use_aliases=True)))
         response.with_context(context)
-        self._save_updated_token(response.context, service_api.client)
         return response
 
     def handle_help(self, message: IncomingSocialEvent, _: str) -> OutgoingEvent:
@@ -753,7 +747,6 @@ class EatTogetherHandler(WenetEventHandler):
                                  self.INTENT_CONFIRM_VOLUNTEER_PROPOSAL.format(candidature_id))
         response.with_message(menu)
         response.with_context(message.context)
-        response.context = self._save_updated_token(response.context, service_api.client)
         return response
 
     def _handle_volunteer_proposal(self, message: IncomingSocialEvent, decision: bool) -> (bool, ConversationContext):
@@ -789,9 +782,7 @@ class EatTogetherHandler(WenetEventHandler):
         finally:
             candidatures.pop(candidature_id, None)
             message.context.with_static_state(self.CONTEXT_VOLUNTEER_CANDIDATURE_DICT, candidatures)
-
-        context = self._save_updated_token(message.context, service_api.client)
-        return outcome, context
+        return outcome, message.context
 
     def handle_confirm_candidature(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         """
@@ -856,7 +847,6 @@ class EatTogetherHandler(WenetEventHandler):
         creator_info_message.with_textual_option(emojize(":white_check_mark: I'm interested", use_aliases=True),
                                                  self.INTENT_CONFIRM_TASK_PROPOSAL.format(proposal_id))
         response.with_message(creator_info_message)
-        self._save_updated_token(response.context, service_api.client)
         return response
 
     def _select_task(self, incoming_event: IncomingSocialEvent, initial_message: str, action: str) -> OutgoingEvent:
@@ -898,7 +888,6 @@ class EatTogetherHandler(WenetEventHandler):
         else:
             response.with_message(TextualResponse("There are no tasks created by you"))
 
-        self._save_updated_token(response.context, service_api.client)
         return response
 
     def action_conclude_select_task(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
@@ -1063,7 +1052,6 @@ class EatTogetherHandler(WenetEventHandler):
             logger.error("Error in the creation of the transaction for concluding the task [%s]. The service API resonded with code %d and message %s"
                          % (task_list[current_index].task_id, e.http_status, json.dumps(e.json_response)))
 
-        context = self._save_updated_token(context, service_api.client)
         response.with_context(context)
         return response
 
