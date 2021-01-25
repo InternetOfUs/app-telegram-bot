@@ -1,5 +1,6 @@
 import json
 import logging
+import uuid
 from datetime import datetime
 from typing import Optional, List
 
@@ -290,21 +291,24 @@ class AskForHelpHandler(WenetEventHandler):
                     .with_substitution("question", message.question)\
                     .with_substitution("user", questioning_user.name.first)\
                     .translate()
+                # we create ids of all buttons, to know which buttons invalidate when one of them is clicked
+                button_ids = [str(uuid.uuid4()) for _ in range(4)]
                 button_data = {
                     "task_id": message.task_id,
                     "question": message.question,
-                    "username": questioning_user.name.first
+                    "username": questioning_user.name.first,
+                    "related_buttons": button_ids,
                 }
                 response = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1, 1])
 
-                answer_button_id = self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_QUESTION).to_repr())
-                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_question_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(answer_button_id))
-                remind_button_id = self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_REMIND_LATER).to_repr())
-                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_remind_later_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(remind_button_id))
-                not_answer_button_id = self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_NOT).to_repr())
-                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_not_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(not_answer_button_id))
-                report_button_id = self.cache.cache(ButtonPayload(button_data, self.INTENT_QUESTION_REPORT).to_repr())
-                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(report_button_id))
+                self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_QUESTION).to_repr(), key=button_ids[0])
+                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_question_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
+                self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_REMIND_LATER).to_repr(), key=button_ids[1])
+                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_remind_later_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[1]))
+                self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_NOT).to_repr(), key=button_ids[2])
+                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_not_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
+                self.cache.cache(ButtonPayload(button_data, self.INTENT_QUESTION_REPORT).to_repr(), key=button_ids[3])
+                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[3]))
                 return NotificationEvent(user_account.social_details, [response], context)
             elif isinstance(message, AnsweredQuestionMessage):
                 answerer_id = message.user_id
@@ -323,16 +327,18 @@ class AskForHelpHandler(WenetEventHandler):
                     button_report_text = self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate()
                     button_more_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("more_answers_button").translate()
                     button_best_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("best_answers_button").translate()
+                    button_ids = [str(uuid.uuid4()) for _ in range(3)]
                     button_data = {
                         "transaction_id": message.transaction_id,
                         "task_id": question_task.task_id,
+                        "related_buttons": button_ids,
                     }
-                    best_answer_button_id = self.cache.cache(ButtonPayload(button_data, self.INTENT_BEST_ANSWER).to_repr())
-                    answer.with_textual_option(button_best_answers_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(best_answer_button_id))
-                    ask_more_answer_button_id = self.cache.cache(ButtonPayload(button_data, self.INTENT_ASK_MORE_ANSWERS).to_repr())
-                    answer.with_textual_option(button_more_answers_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(ask_more_answer_button_id))
-                    report_answer_button_id = self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_REPORT).to_repr())
-                    answer.with_textual_option(button_report_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(report_answer_button_id))
+                    self.cache.cache(ButtonPayload(button_data, self.INTENT_BEST_ANSWER).to_repr(), key=button_ids[0])
+                    answer.with_textual_option(button_best_answers_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
+                    self.cache.cache(ButtonPayload(button_data, self.INTENT_ASK_MORE_ANSWERS).to_repr(), key=button_ids[1])
+                    answer.with_textual_option(button_more_answers_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[1]))
+                    self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_REPORT).to_repr(), key=button_ids[2])
+                    answer.with_textual_option(button_report_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
 
                     self._interface_connector.update_user_context(UserConversationContext(
                         social_details=user_account.social_details,
@@ -374,7 +380,9 @@ class AskForHelpHandler(WenetEventHandler):
                 self._translator.get_translation_instance(user_locale).with_text("expired_button_message").translate()))
             return response
         button_payload = ButtonPayload.from_repr(raw_button_payload)
-        self.cache.remove(button_id)
+        # removing the button and all the related buttons from the cache
+        for button_to_remove in button_payload.payload["related_buttons"]:
+            self.cache.remove(button_to_remove)
         if button_payload.intent == self.INTENT_ASK_MORE_ANSWERS:
             return self.action_more_answers(incoming_event, button_payload)
         elif button_payload.intent == self.INTENT_QUESTION_REPORT or button_payload.intent == self.INTENT_ANSWER_REPORT:
@@ -650,25 +658,27 @@ class AskForHelpHandler(WenetEventHandler):
             .with_substitution("question", button_payload.payload["question"]) \
             .with_substitution("user", button_payload.payload["username"]) \
             .translate()
+        button_ids = [str(uuid.uuid4()) for _ in range(4)]
         button_data = {
             "task_id": question_id,
+            "related_buttons": button_ids,
         }
         response_to_store = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1, 1])
 
-        answer_button_id = self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_QUESTION).to_repr())
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_QUESTION).to_repr(), key=button_ids[0])
         response_to_store.with_textual_option(self._translator.get_translation_instance(user_locale).with_text(
-            "answer_question_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(answer_button_id))
-        remind_button_id = self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_REMIND_LATER).to_repr())
+            "answer_question_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_REMIND_LATER).to_repr(), key=button_ids[1])
         response_to_store.with_textual_option(self._translator.get_translation_instance(user_locale).with_text(
-            "answer_remind_later_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(remind_button_id))
-        not_answer_button_id = self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_NOT).to_repr())
+            "answer_remind_later_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[1]))
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_NOT).to_repr(), key=button_ids[2])
         response_to_store.with_textual_option(
             self._translator.get_translation_instance(user_locale).with_text("answer_not_button").translate(),
-            self.INTENT_BUTTON_WITH_PAYLOAD.format(not_answer_button_id))
-        report_button_id = self.cache.cache(ButtonPayload(button_data, self.INTENT_QUESTION_REPORT).to_repr())
+            self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_QUESTION_REPORT).to_repr(), key=button_ids[3])
         response_to_store.with_textual_option(
             self._translator.get_translation_instance(user_locale).with_text("answer_report_button").translate(),
-            self.INTENT_BUTTON_WITH_PAYLOAD.format(report_button_id))
+            self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[3]))
         pending_answer = PendingQuestionToAnswer(question_id, response_to_store, incoming_event.social_details,
                                                  sent=datetime.now())
         pending_answers[question_id] = pending_answer.to_repr()
@@ -693,10 +703,13 @@ class AskForHelpHandler(WenetEventHandler):
         button_why_reporting_2_text = self._translator.get_translation_instance(user_locale).with_text("button_why_reporting_2_text").translate()
         button_why_reporting_3_text = self._translator.get_translation_instance(user_locale).with_text("button_why_reporting_3_text").translate()
         message = TelegramRapidAnswerResponse(TextualResponse(message_text), row_displacement=[1, 1, 1])
-        abusive_button_id = self.cache.cache(ButtonPayload(button_payload.payload, self.INTENT_REPORT_ABUSIVE).to_repr())
-        spam_button_id = self.cache.cache(ButtonPayload(button_payload.payload, self.INTENT_REPORT_SPAM).to_repr())
-        message.with_textual_option(button_why_reporting_1_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(abusive_button_id))
-        message.with_textual_option(button_why_reporting_2_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(spam_button_id))
+        button_ids = [str(uuid.uuid4()) for _ in range(2)]
+        payload = button_payload.payload
+        payload.update({"related_buttons": button_ids})
+        self.cache.cache(ButtonPayload(button_payload.payload, self.INTENT_REPORT_ABUSIVE).to_repr(), key=button_ids[0])
+        self.cache.cache(ButtonPayload(button_payload.payload, self.INTENT_REPORT_SPAM).to_repr(), key=button_ids[1])
+        message.with_textual_option(button_why_reporting_1_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
+        message.with_textual_option(button_why_reporting_2_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[1]))
         message.with_textual_option(button_why_reporting_3_text, self.INTENT_CANCEL)
         response.with_message(message)
         return response
