@@ -399,19 +399,6 @@ class AskForHelpHandler(WenetEventHandler):
             return self.action_answer_remind_later(incoming_event, button_payload)
         raise ValueError(f"No action associated with intent [{button_payload.intent}]")
 
-    def _remove_pending_answer(self, question_id: str, context: ConversationContext) -> ConversationContext:
-        """
-        Remove the question with `question_id` from the dictionary of pending answers in the context
-        """
-        pending_answers = context.get_static_state(self.CONTEXT_PENDING_ANSWERS, dict())
-        if question_id in pending_answers:
-            pending_answers.pop(question_id)
-        if pending_answers:
-            context.with_static_state(self.CONTEXT_PENDING_ANSWERS, pending_answers)
-        else:
-            context.delete_static_state(self.CONTEXT_PENDING_ANSWERS)
-        return context
-
     def handle_wenet_authentication_result(self, message: WeNetAuthenticationEvent) -> NotificationEvent:
         if not isinstance(self._connector, TelegramSocialConnector):
             raise Exception("Expected telegram social connector")
@@ -610,7 +597,6 @@ class AskForHelpHandler(WenetEventHandler):
                     "Error in the creation of the transaction for answering the task [%s]. The service API resonded with code %d and message %s"
                     % (question_id, e.http_status, json.dumps(e.json_response)))
             finally:
-                context = self._remove_pending_answer(question_id, context)
                 context.delete_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
                 context.delete_static_state(self.CONTEXT_CURRENT_STATE)
                 response.with_context(context)
@@ -662,6 +648,8 @@ class AskForHelpHandler(WenetEventHandler):
         button_data = {
             "task_id": question_id,
             "related_buttons": button_ids,
+            "question": button_payload.payload["question"],
+            "username": button_payload.payload["username"],
         }
         response_to_store = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1, 1])
 
@@ -696,7 +684,6 @@ class AskForHelpHandler(WenetEventHandler):
         # context = incoming_event.context
         # question_id = button_payload.payload["task_id"]
         # context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_REPORT_1)
-        # context = self._remove_pending_answer(question_id, context)
         # response.with_context(context)
         message_text = self._translator.get_translation_instance(user_locale).with_text("why_reporting_message").translate()
         button_why_reporting_1_text = self._translator.get_translation_instance(user_locale).with_text("button_why_reporting_1_text").translate()
