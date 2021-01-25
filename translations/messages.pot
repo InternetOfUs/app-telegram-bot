@@ -134,3 +134,12 @@ msgstr ""
 
 msgid "answers_tasks_choose"
 msgstr ""
+
+msgid "best_answer_final_message"
+msgstr ""
+
+msgid "expired_button_message"
+msgstr ""
+
+msgid "best_answers_button"
+msgstr ""

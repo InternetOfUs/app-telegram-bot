@@ -322,7 +322,7 @@ class AskForHelpHandler(WenetEventHandler):
                     answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1])
                     button_report_text = self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate()
                     button_more_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("more_answers_button").translate()
-                    button_best_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("best_answers_button").translate()   # TODO add transation
+                    button_best_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("best_answers_button").translate()
                     button_data = {
                         "transaction_id": message.transaction_id,
                         "task_id": question_task.task_id,
@@ -369,8 +369,9 @@ class AskForHelpHandler(WenetEventHandler):
         raw_button_payload = self.cache.get(button_id)
         if raw_button_payload is None:
             response = OutgoingEvent(social_details=incoming_event.social_details)
-            # TODO change with translations
-            response.with_message(TextualResponse("I'm sorry, you clicked on an expired button"))
+            user_locale = self._get_user_locale(incoming_event)
+            response.with_message(TextualResponse(
+                self._translator.get_translation_instance(user_locale).with_text("expired_button_message").translate()))
             return response
         button_payload = ButtonPayload.from_repr(raw_button_payload)
         self.cache.remove(button_id)
@@ -848,7 +849,7 @@ class AskForHelpHandler(WenetEventHandler):
             service_api.create_task_transaction(transaction)
             logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
             message = self._translator.get_translation_instance(user_locale).with_text(
-                "best_answer_final_message").translate()    # TODO translation
+                "best_answer_final_message").translate()
             response.with_message(TextualResponse(message))
         except TaskTransactionCreationError as e:
             response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
