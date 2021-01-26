@@ -308,6 +308,14 @@ class WenetEventHandler(EventHandler, abc.ABC):
         if not self.is_user_authenticated(incoming_event):  # authentication adds wenet id in the context
             return self.handle_oauth_login(incoming_event, "")
         try:
+            # logging incoming event
+            try:
+                if not service_api.log_message(self.message_parser_for_logs.create_request(
+                        incoming_event.incoming_message, context.get_static_state(self.CONTEXT_WENET_USER_ID))):
+                    logger.warning("Unable to log the incoming message to the service API")
+            except TypeError as e:
+                logger.warning("Unsupported message to log", exc_info=e)
+
             outgoing_event, fulfiller, satisfying_rule = self.intent_manager.manage(incoming_event)
             context.with_dynamic_state(self.PREVIOUS_INTENT, fulfiller.intent_id)
             outgoing_event.with_context(context)
