@@ -241,6 +241,19 @@ class WenetEventHandler(EventHandler, abc.ABC):
                 message = MessageBuilder.build(custom_event.payload)
             else:
                 raise ValueError(f"Unable to handle an event of type [{type(custom_event)}]")
+
+            user_accounts = self.get_user_accounts(message.receiver_id)
+            if len(user_accounts) != 1:
+                raise Exception(f"No context associated with Wenet user {message.receiver_id}")
+            service_api = self._get_service_api_interface_connector_from_context(user_accounts[0].context)
+            # logging incoming notification
+            logged_notification = self.message_parser_for_logs.create_notification(message, message.receiver_id)
+            try:
+                if not service_api.log_message(logged_notification):
+                    logger.warning("Unable to log the incoming message to the service API")
+            except TypeError as e:
+                logger.warning("Unsupported message to log", exc_info=e)
+
             if isinstance(message, TextualMessage):
                 notification = self.handle_wenet_textual_message(message)
                 self.send_notification(notification)
@@ -253,6 +266,16 @@ class WenetEventHandler(EventHandler, abc.ABC):
             else:
                 raise ValueError(f"Unable to handle an event of type [{type(custom_event)}]")
 
+            # logging outgoing messages
+            for outgoing_message in notification.messages:
+                try:
+                    if not service_api.log_message(self.message_parser_for_logs.create_response(
+                            outgoing_message, user_accounts[0].context.get_static_state(self.CONTEXT_WENET_USER_ID),
+                            logged_notification.message_id)):
+                        logger.warning("Unable to send logs to the service API")
+                except TypeError as e:
+                    logger.warning("Unsupported message to log", exc_info=e)
+
             if notification.context is not None:
                 self._interface_connector.update_user_context(UserConversationContext(
                     notification.social_details,
@@ -262,7 +285,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
         except (KeyError, ValueError) as e:
             logger.error(
                 "Malformed message from WeNet, the parser raised the following exception: %s \n event: [%s]" % (
-                e, custom_event.to_repr()))
+                 e, custom_event.to_repr()))
         except TaskNotFound as e:
             logger.error(e.message)
         except Exception as e:
@@ -307,11 +330,13 @@ class WenetEventHandler(EventHandler, abc.ABC):
         context = incoming_event.context
         if not self.is_user_authenticated(incoming_event):  # authentication adds wenet id in the context
             return self.handle_oauth_login(incoming_event, "")
+
+        logged_incoming_message = self.message_parser_for_logs.create_request(
+                        incoming_event.incoming_message, context.get_static_state(self.CONTEXT_WENET_USER_ID))
         try:
             # logging incoming event
             try:
-                if not service_api.log_message(self.message_parser_for_logs.create_request(
-                        incoming_event.incoming_message, context.get_static_state(self.CONTEXT_WENET_USER_ID))):
+                if not service_api.log_message(logged_incoming_message):
                     logger.warning("Unable to log the incoming message to the service API")
             except TypeError as e:
                 logger.warning("Unsupported message to log", exc_info=e)
@@ -333,7 +358,8 @@ class WenetEventHandler(EventHandler, abc.ABC):
         for outgoing_message in outgoing_event.messages:
             try:
                 if not service_api.log_message(self.message_parser_for_logs.create_response(
-                        outgoing_message, context.get_static_state(self.CONTEXT_WENET_USER_ID))):
+                        outgoing_message, context.get_static_state(self.CONTEXT_WENET_USER_ID),
+                        logged_incoming_message.message_id)):
                     logger.warning("Unable to send logs to the service API")
             except TypeError as e:
                 logger.warning("Unsupported message to log", exc_info=e)
