@@ -1,5 +1,6 @@
 import json
 import logging
+import random
 import uuid
 from datetime import datetime
 from typing import Optional, List
@@ -68,7 +69,7 @@ class AskForHelpHandler(WenetEventHandler):
     INTENT_ASK_MORE_ANSWERS = "ask_more_answers"
     INTENT_ANSWER_REPORT = "answer_report"
     INTENT_ANSWER = "/answer"
-    INTENT_ANSWER_PICKED_QUESTION = "answering-{}"
+    INTENT_ANSWER_PICKED_QUESTION = "picked_answer"
     INTENT_BEST_ANSWER = "best_answer"
     INTENT_PROFILE = '/profile'
     # available states
@@ -134,11 +135,6 @@ class AskForHelpHandler(WenetEventHandler):
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.STATE_QUESTION_3, self.action_question_4)
                 .with_rule(static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_3))
-        )
-        self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_ANSWER_PICKED_QUESTION, self.action_answer_picked_question).with_rule(
-                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING)
-            )
         )
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3("", self.action_answer_question_2).with_rule(
@@ -320,6 +316,9 @@ class AskForHelpHandler(WenetEventHandler):
             return notification_event
 
     def handle_button_with_payload(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+        """
+        Handle a button with a payload saved into redis
+        """
         button_id = incoming_event.incoming_message.intent.value.split("--")[-1]
         raw_button_payload = self.cache.get(button_id)
         if raw_button_payload is None:
@@ -329,9 +328,14 @@ class AskForHelpHandler(WenetEventHandler):
                 self._translator.get_translation_instance(user_locale).with_text("expired_button_message").translate()))
             return response
         button_payload = ButtonPayload.from_repr(raw_button_payload)
-        # removing the button and all the related buttons from the cache
-        for button_to_remove in button_payload.payload["related_buttons"]:
-            self.cache.remove(button_to_remove)
+        if "related_buttons" in button_payload.payload:
+            # removing the button and all the related buttons from the cache
+            for button_to_remove in button_payload.payload["related_buttons"]:
+                self.cache.remove(button_to_remove)
+        else:
+            # in case the button is not related with any other buttons, just remove it from the cache
+            self.cache.remove(button_id)
+
         if button_payload.intent == self.INTENT_ASK_MORE_ANSWERS:
             return self.action_more_answers(incoming_event, button_payload)
         elif button_payload.intent == self.INTENT_QUESTION_REPORT or button_payload.intent == self.INTENT_ANSWER_REPORT:
@@ -346,6 +350,8 @@ class AskForHelpHandler(WenetEventHandler):
             return self.action_answer_question(incoming_event, button_payload)
         elif button_payload.intent == self.INTENT_ANSWER_REMIND_LATER:
             return self.action_answer_remind_later(incoming_event, button_payload)
+        elif button_payload.intent == self.INTENT_ANSWER_PICKED_QUESTION:
+            return self.action_answer_picked_question(incoming_event, button_payload)
         raise ValueError(f"No action associated with intent [{button_payload.intent}]")
 
     def handle_wenet_authentication_result(self, message: WeNetAuthenticationEvent) -> NotificationEvent:
@@ -491,20 +497,14 @@ class AskForHelpHandler(WenetEventHandler):
         response.with_message(TextualResponse(message))
         return response
 
-    def action_answer_picked_question(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+    def action_answer_picked_question(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
         """
         /answer flow, when the user picks an answer
         """
         user_locale = self._get_user_locale(incoming_event)
         context = incoming_event.context
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWER_2)
-        question_index = int(incoming_event.incoming_message.intent.value.split("-")[1])
-        if not context.has_static_state(self.CONTEXT_PROPOSED_TASKS):
-            error_message = "Illegal state, expected the proposed question ID in the context, but it does not exist"
-            logger.error(error_message)
-            raise ValueError(error_message)
-        proposed_questions = context.get_static_state(self.CONTEXT_PROPOSED_TASKS)
-        context.with_static_state(self.CONTEXT_QUESTION_TO_ANSWER, proposed_questions[question_index])
+        context.with_static_state(self.CONTEXT_QUESTION_TO_ANSWER, button_payload.payload["task_id"])
         context.delete_static_state(self.CONTEXT_PROPOSED_TASKS)
         message = self._translator.get_translation_instance(user_locale).with_text("question_0").translate()
         response = OutgoingEvent(social_details=incoming_event.social_details)
@@ -744,24 +744,30 @@ class AskForHelpHandler(WenetEventHandler):
         else:
             raise Exception(f"Missing conversation context for event {incoming_event}")
         user_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
-        tasks = [t for t in service_api.get_tasks(self.app_id, has_close_ts=False, limit=3) if t.requester_id != user_id]
+        tasks = [t for t in service_api.get_all_tasks_of_application(self.app_id)
+                 if t.requester_id != user_id and user_id not in set(
+                [transaction.actioneer_id for transaction in t.transactions])]
         if not tasks:
             response.with_message(TextualResponse(
                 self._translator.get_translation_instance(user_locale).with_text("answers_no_tasks").translate()))
         else:
-            context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING)
-            response.with_message(TextualResponse(
-                self._translator.get_translation_instance(user_locale).with_text("answers_tasks_intro").translate()))
+            if len(tasks) > 3:
+                # if more than 3 tasks, pick 3 random
+                tasks = random.sample(tasks, k=3)
+            text = self._translator.get_translation_instance(user_locale).with_text("answers_tasks_intro").translate()
             proposed_tasks = []
+            tasks_texts = []
             for task in tasks:
                 questioning_user = service_api.get_user_profile(str(task.requester_id))
                 if questioning_user:
-                    response.with_message(TextualResponse(f"#{1 + len(proposed_tasks)}: {task.goal.name} - {questioning_user.name.first}"))
+                    tasks_texts.append(f"#{1 + len(proposed_tasks)}: *{task.goal.name}* - {questioning_user.name.first}")
                     proposed_tasks.append(task.task_id)
             context.with_static_state(self.CONTEXT_PROPOSED_TASKS, proposed_tasks)
-            rapid_answer = RapidAnswerResponse(TextualResponse(self._translator.get_translation_instance(user_locale).with_text("answers_tasks_choose").translate()))
+            message_text = '\n'.join([text] + tasks_texts + [self._translator.get_translation_instance(user_locale).with_text("answers_tasks_choose").translate()])
+            rapid_answer = RapidAnswerResponse(TextualResponse(message_text))
             for i in range(len(proposed_tasks)):
-                rapid_answer.with_textual_option(f"#{1 + i}", self.INTENT_ANSWER_PICKED_QUESTION.format(i))
+                button_id = self.cache.cache(ButtonPayload({"task_id": proposed_tasks[i]}, self.INTENT_ANSWER_PICKED_QUESTION).to_repr())
+                rapid_answer.with_textual_option(f"#{1 + i}", self.INTENT_BUTTON_WITH_PAYLOAD.format(button_id))
             response.with_message(rapid_answer)
         response.with_context(context)
         return response
