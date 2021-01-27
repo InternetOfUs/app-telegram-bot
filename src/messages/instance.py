@@ -61,6 +61,7 @@ class WeNetLoginCallbackInterface(Resource):
             abort(400, message="Missing authorization code or external id")
             return
 
+        logger.info(f"Authentication credentials received: code [{code}] and external id [{external_id}]")
         message = WeNetAuthenticationEvent(external_id, code)
         event = IncomingCustomEvent(self.instance_namespace, message.to_repr(), self.bot_id)
         self.mqtt_publisher.publish_data(self.mqtt_topic, event.to_repr())

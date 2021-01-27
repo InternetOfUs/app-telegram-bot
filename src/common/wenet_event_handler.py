@@ -242,46 +242,48 @@ class WenetEventHandler(EventHandler, abc.ABC):
             else:
                 raise ValueError(f"Unable to handle an event of type [{type(custom_event)}]")
 
-            user_accounts = self.get_user_accounts(message.receiver_id)
-            if len(user_accounts) != 1:
-                raise Exception(f"No context associated with Wenet user {message.receiver_id}")
-            service_api = self._get_service_api_interface_connector_from_context(user_accounts[0].context)
-            # logging incoming notification
-            logged_notification = self.message_parser_for_logs.create_notification(message, message.receiver_id)
-            try:
-                if not service_api.log_message(logged_notification):
-                    logger.warning("Unable to log the incoming message to the service API")
-            except TypeError as e:
-                logger.warning("Unsupported message to log", exc_info=e)
-
-            if isinstance(message, TextualMessage):
-                notification = self.handle_wenet_textual_message(message)
-                self.send_notification(notification)
-            elif isinstance(message, Message):
-                notification = self.handle_wenet_message(message)
-                self.send_notification(notification)
-            elif isinstance(message, WeNetAuthenticationEvent):
+            if isinstance(message, WeNetAuthenticationEvent):
                 notification = self.handle_wenet_authentication_result(message)
                 self.send_notification(notification)
             else:
-                raise ValueError(f"Unable to handle an event of type [{type(custom_event)}]")
-
-            # logging outgoing messages
-            for outgoing_message in notification.messages:
+                # getting service api handler
+                user_accounts = self.get_user_accounts(message.receiver_id)
+                if len(user_accounts) != 1:
+                    raise Exception(f"No context associated with Wenet user {message.receiver_id}")
+                service_api = self._get_service_api_interface_connector_from_context(user_accounts[0].context)
+                # logging incoming notification
+                logged_notification = self.message_parser_for_logs.create_notification(message, message.receiver_id)
                 try:
-                    if not service_api.log_message(self.message_parser_for_logs.create_response(
-                            outgoing_message, user_accounts[0].context.get_static_state(self.CONTEXT_WENET_USER_ID),
-                            logged_notification.message_id)):
-                        logger.warning("Unable to send logs to the service API")
+                    if not service_api.log_message(logged_notification):
+                        logger.warning("Unable to log the incoming message to the service API")
                 except TypeError as e:
                     logger.warning("Unsupported message to log", exc_info=e)
 
-            if notification.context is not None:
-                self._interface_connector.update_user_context(UserConversationContext(
-                    notification.social_details,
-                    context=notification.context,
-                    version=UserConversationContext.VERSION_V3)
-                )
+                if isinstance(message, TextualMessage):
+                    notification = self.handle_wenet_textual_message(message)
+                    self.send_notification(notification)
+                elif isinstance(message, Message):
+                    notification = self.handle_wenet_message(message)
+                    self.send_notification(notification)
+                else:
+                    raise ValueError(f"Unable to handle an event of type [{type(custom_event)}]")
+
+                # logging outgoing messages
+                for outgoing_message in notification.messages:
+                    try:
+                        if not service_api.log_message(self.message_parser_for_logs.create_response(
+                                outgoing_message, user_accounts[0].context.get_static_state(self.CONTEXT_WENET_USER_ID),
+                                logged_notification.message_id)):
+                            logger.warning("Unable to send logs to the service API")
+                    except TypeError as e:
+                        logger.warning("Unsupported message to log", exc_info=e)
+
+                if notification.context is not None:
+                    self._interface_connector.update_user_context(UserConversationContext(
+                        notification.social_details,
+                        context=notification.context,
+                        version=UserConversationContext.VERSION_V3)
+                    )
         except (KeyError, ValueError) as e:
             logger.error(
                 "Malformed message from WeNet, the parser raised the following exception: %s \n event: [%s]" % (
