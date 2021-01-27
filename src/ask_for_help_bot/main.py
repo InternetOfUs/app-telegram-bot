@@ -1,3 +1,5 @@
+from __future__ import absolute_import, annotations
+
 import logging.config
 import os
 

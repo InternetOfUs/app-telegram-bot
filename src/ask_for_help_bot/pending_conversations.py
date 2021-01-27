@@ -16,21 +16,17 @@ class PendingQuestionToAnswer:
     """
 
     def __init__(self, question_id: str, response: ResponseMessage, social_details: SocialDetails,
-                 added: Optional[datetime] = None, sent: Optional[datetime] = None) -> None:
+                 sent: Optional[datetime] = None) -> None:
         self.question_id = question_id
         self.response = response
         self.sent = sent
         self.social_details = social_details
-        self.added = added
-        if not self.added:
-            self.added = datetime.now()
 
     def to_repr(self) -> dict:
         return {
             "question_id": self.question_id,
             "response": self.response.to_repr(),
             "sent": self.sent.isoformat() if self.sent else None,
-            "added": self.added.isoformat() if self.added else None,
             "social_details": self.social_details.to_repr(),
         }
 
@@ -40,7 +36,6 @@ class PendingQuestionToAnswer:
             raw["question_id"],
             ResponseMessage.from_repr(raw["response"]),
             SocialDetails.from_repr(raw["social_details"]),
-            datetime.fromisoformat(raw["added"]) if raw["added"] else None,
             datetime.fromisoformat(raw["sent"]) if raw["sent"] else None
         )
 
@@ -48,4 +43,4 @@ class PendingQuestionToAnswer:
         if not isinstance(o, PendingQuestionToAnswer):
             return False
         return self.question_id == o.question_id and self.response == o.response and \
-            self.social_details == o.social_details and self.added == o.added and self.sent == o.sent
+            self.social_details == o.social_details and self.sent == o.sent

@@ -20,7 +20,6 @@ class PendingMessagesJob(SocialJob):
     """
     CONTEXT_PENDING_ANSWERS = "pending_answers"
     REMINDER_MINUTES = 60
-    REMOVE_AFTER_MINUTES = 15
 
     def __init__(self, job_id, instance_namespace: str, connector: SocialConnector,
                  logger_connectors: Optional[List[LoggerConnector]]):
@@ -56,10 +55,6 @@ class PendingMessagesJob(SocialJob):
                 pending_answer.sent = None
                 pending_answers[question_id] = pending_answer.to_repr()
                 notifications.append(NotificationEvent(pending_answer.social_details, [pending_answer.response]))
-                modified = True
-            elif pending_answer.added and pending_answer.added + datetime.timedelta(
-                    minutes=self.REMOVE_AFTER_MINUTES) > datetime.datetime.now():
-                to_remove.add(question_id)
                 modified = True
         for question_id in to_remove:
             pending_answers.pop(question_id)

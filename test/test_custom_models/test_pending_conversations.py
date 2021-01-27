@@ -11,6 +11,5 @@ class TestPendingQuestionToAnswer(TestCase):
         message = TelegramRapidAnswerResponse(TextualResponse("message"))
         message.with_textual_option("text", "payload")
         social_details = TelegramDetails(1, 1, "bot_id")
-        pending_conversation = PendingQuestionToAnswer("question_id", message, social_details, datetime.now(),
-                                                       datetime.now())
+        pending_conversation = PendingQuestionToAnswer("question_id", message, social_details, datetime.now())
         self.assertEqual(PendingQuestionToAnswer.from_repr(pending_conversation.to_repr()), pending_conversation)

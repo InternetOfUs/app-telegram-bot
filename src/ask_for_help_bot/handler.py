@@ -1,11 +1,14 @@
 import json
 import logging
+import random
+import uuid
 from datetime import datetime
 from typing import Optional, List
 
+from emoji import emojize
+
 from ask_for_help_bot.pending_conversations import PendingQuestionToAnswer
 from ask_for_help_bot.pending_messages_job import PendingMessagesJob
-from chatbot_core.model.context import ConversationContext
 from chatbot_core.model.details import TelegramDetails
 from chatbot_core.model.event import IncomingSocialEvent
 from chatbot_core.model.message import IncomingTextMessage
@@ -20,6 +23,7 @@ from chatbot_core.v3.logger.event_logger import LoggerConnector
 from chatbot_core.v3.model.messages import TextualResponse, RapidAnswerResponse, TelegramRapidAnswerResponse, \
     UrlImageResponse, ResponseMessage
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEvent
+from common.button_payload import ButtonPayload
 from common.wenet_event_handler import WenetEventHandler
 from uhopper.utils.alert import AlertModule
 from wenet.common.interface.exceptions import TaskCreationError, RefreshTokenExpiredError, TaskTransactionCreationError, \
@@ -65,7 +69,9 @@ class AskForHelpHandler(WenetEventHandler):
     INTENT_ASK_MORE_ANSWERS = "ask_more_answers"
     INTENT_ANSWER_REPORT = "answer_report"
     INTENT_ANSWER = "/answer"
-    INTENT_ANSWER_PICKED_QUESTION = "answering-{}"
+    INTENT_ANSWER_PICKED_QUESTION = "picked_answer"
+    INTENT_BEST_ANSWER = "best_answer"
+    INTENT_PROFILE = '/profile'
     # available states
     STATE_QUESTION_1 = "question_1"
     STATE_QUESTION_2 = "question_2"
@@ -82,6 +88,7 @@ class AskForHelpHandler(WenetEventHandler):
     LABEL_REPORT_QUESTION_TRANSACTION = "reportQuestionTransaction"
     LABEL_REPORT_ANSWER_TRANSACTION = "reportAnswerTransaction"
     LABEL_MORE_ANSWER_TRANSACTION = "moreAnswerTransaction"
+    LABEL_BEST_ANSWER_TRANSACTION = "bestAnswerTransaction"
 
     def __init__(self, instance_namespace: str, bot_id: str, handler_id: str, telegram_id: str, wenet_backend_url: str,
                  wenet_hub_url: str, app_id: str, client_secret: str, redirect_url: str, wenet_authentication_url: str,
@@ -93,6 +100,7 @@ class AskForHelpHandler(WenetEventHandler):
                          client_secret, redirect_url, wenet_authentication_url, wenet_authentication_management_url,
                          task_type_id, alert_module, connector, nlp_handler, translator, delay_between_messages_sec,
                          delay_between_text_sec, logger_connectors)
+
         JobManager.instance().add_job(PendingMessagesJob("wenet_ask_for_help_pending_messages_job",
                                                          self._instance_namespace, self._connector, None))
         self.intent_manager.with_fulfiller(
@@ -129,67 +137,20 @@ class AskForHelpHandler(WenetEventHandler):
                 .with_rule(static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_3))
         )
         self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_ANSWER_QUESTION, self.action_answer_question).with_rule(
-                intent=self.INTENT_ANSWER_QUESTION,
-                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWER_1)
-            )
-        )
-        self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_ANSWER_PICKED_QUESTION, self.action_answer_question).with_rule(
-                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING)
-            )
-        )
-        self.intent_manager.with_fulfiller(
             IntentFulfillerV3("", self.action_answer_question_2).with_rule(
                 static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWER_2)
             )
         )
         self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_ANSWER_NOT, self.action_not_answer_question).with_rule(
-                intent=self.INTENT_ANSWER_NOT,
-                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWER_1)
-            )
-        )
-        self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_ANSWER_REMIND_LATER, self.action_answer_remind_later).with_rule(
-                intent=self.INTENT_ANSWER_REMIND_LATER,
-                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWER_1)
-            )
-        )
-        self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_QUESTION_REPORT, self.action_report_message).with_rule(
-                intent=self.INTENT_QUESTION_REPORT,
-                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWER_1)
-            )
-        )
-        self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_ANSWER_REPORT, self.action_report_message).with_rule(
-                intent=self.INTENT_ANSWER_REPORT,
-                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_RECEIVED_ANSWER)
-            )
-        )
-        self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_REPORT_ABUSIVE, self.action_report_message_1).with_rule(
-                intent=self.INTENT_REPORT_ABUSIVE,
-                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_REPORT_1)
-            ).with_rule(
-                intent=self.INTENT_REPORT_SPAM,
-                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_REPORT_1)
-            )
-        )
-        self.intent_manager.with_fulfiller(
-            IntentFulfillerV3("", self.action_report_message_2).with_rule(
-                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_REPORT_2)
-            )
-        )
-        self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_ASK_MORE_ANSWERS, self.action_more_answers).with_rule(
-                intent=self.INTENT_ASK_MORE_ANSWERS,
-                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_RECEIVED_ANSWER)
-            )
-        )
-        self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_ANSWER, self.action_answer).with_rule(intent=self.INTENT_ANSWER)
+        )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_PROFILE, self.action_profile).with_rule(intent=self.INTENT_PROFILE)
+        )
+        # keep this as the last one!
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3("", self.handle_button_with_payload).with_rule(
+                regex=self.INTENT_BUTTON_WITH_PAYLOAD.format("[A-Za-z0-9-]+"))
         )
 
     def _get_user_locale(self, incoming_event: IncomingSocialEvent) -> str:
@@ -269,31 +230,30 @@ class AskForHelpHandler(WenetEventHandler):
         try:
             user_object = service_api.get_user_profile(str(message.receiver_id))
             if isinstance(message, QuestionToAnswerMessage):
-                question_id = message.task_id
-                context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWER_1)
-                context.with_static_state(self.CONTEXT_QUESTION_TO_ANSWER, question_id)
                 questioning_user = service_api.get_user_profile(str(message.user_id))
                 message_string = self._translator.get_translation_instance(user_object.locale)\
                     .with_text("answer_message_0")\
                     .with_substitution("question", message.question)\
                     .with_substitution("user", questioning_user.name.first)\
                     .translate()
-                response = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[2, 2])
-                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_question_button").translate(), self.INTENT_ANSWER_QUESTION)
-                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_remind_later_button").translate(), self.INTENT_ANSWER_REMIND_LATER)
-                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_not_button").translate(), self.INTENT_ANSWER_NOT)
-                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate(), self.INTENT_QUESTION_REPORT)
-                # pending answers: dict question_id -> PendingQuestionToAnswer
-                # in this way we recycle the message to show to the user
-                pending_answers = context.get_static_state(self.CONTEXT_PENDING_ANSWERS, dict())
-                pending_answers[question_id] = PendingQuestionToAnswer(question_id, response, user_account.social_details).to_repr()
-                context.with_static_state(self.CONTEXT_PENDING_ANSWERS, pending_answers)
-                self._interface_connector.update_user_context(UserConversationContext(
-                    social_details=user_account.social_details,
-                    context=context,
-                    version=UserConversationContext.VERSION_V3
-                ))
-                context = self._save_updated_token(context, service_api.client)
+                # we create ids of all buttons, to know which buttons invalidate when one of them is clicked
+                button_ids = [str(uuid.uuid4()) for _ in range(4)]
+                button_data = {
+                    "task_id": message.task_id,
+                    "question": message.question,
+                    "username": questioning_user.name.first,
+                    "related_buttons": button_ids,
+                }
+                response = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1, 1])
+
+                self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_QUESTION).to_repr(), key=button_ids[0])
+                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_question_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
+                self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_REMIND_LATER).to_repr(), key=button_ids[1])
+                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_remind_later_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[1]))
+                self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_NOT).to_repr(), key=button_ids[2])
+                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_not_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
+                self.cache.cache(ButtonPayload(button_data, self.INTENT_QUESTION_REPORT).to_repr(), key=button_ids[3])
+                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[3]))
                 return NotificationEvent(user_account.social_details, [response], context)
             elif isinstance(message, AnsweredQuestionMessage):
                 answerer_id = message.user_id
@@ -308,32 +268,38 @@ class AskForHelpHandler(WenetEventHandler):
                         .with_substitution("answer", answer_text) \
                         .with_substitution("username", answerer_user.name.first) \
                         .translate()
-                    answer = RapidAnswerResponse(TextualResponse(message_string))
+                    answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1])
                     button_report_text = self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate()
                     button_more_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("more_answers_button").translate()
-                    answer.with_textual_option(button_more_answers_text, self.INTENT_ASK_MORE_ANSWERS)
-                    answer.with_textual_option(button_report_text, self.INTENT_ANSWER_REPORT)
-                    context.with_static_state(self.CONTEXT_MESSAGE_TO_REPORT, message.transaction_id)
-                    context.with_static_state(self.CONTEXT_ORIGINAL_QUESTION_REPORTING, question_task.task_id)
-                    context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_RECEIVED_ANSWER)
+                    button_best_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("best_answers_button").translate()
+                    button_ids = [str(uuid.uuid4()) for _ in range(3)]
+                    button_data = {
+                        "transaction_id": message.transaction_id,
+                        "task_id": question_task.task_id,
+                        "related_buttons": button_ids,
+                    }
+                    self.cache.cache(ButtonPayload(button_data, self.INTENT_BEST_ANSWER).to_repr(), key=button_ids[0])
+                    answer.with_textual_option(button_best_answers_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
+                    self.cache.cache(ButtonPayload(button_data, self.INTENT_ASK_MORE_ANSWERS).to_repr(), key=button_ids[1])
+                    answer.with_textual_option(button_more_answers_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[1]))
+                    self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_REPORT).to_repr(), key=button_ids[2])
+                    answer.with_textual_option(button_report_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
+
                     self._interface_connector.update_user_context(UserConversationContext(
                         social_details=user_account.social_details,
                         context=context,
                         version=UserConversationContext.VERSION_V3
                     ))
-                    context = self._save_updated_token(context, service_api.client)
                     return NotificationEvent(user_account.social_details, [answer], context)
                 except TaskNotFound as e:
                     logger.error(e.message)
                     raise Exception(e.message)
             elif isinstance(message, IncentiveMessage):
                 answer = TextualResponse(message.content)
-                context = self._save_updated_token(context, service_api.client)
                 return NotificationEvent(user_account.social_details, [answer], context)
             elif isinstance(message, IncentiveBadge):
                 answer = TextualResponse(message.message)
                 image = UrlImageResponse(message.image_url)
-                context = self._save_updated_token(context, service_api.client)
                 return NotificationEvent(user_account.social_details, [answer, image], context)
             else:
                 logger.warning(f"Received unrecognized message of type {type(message)}: {message.to_repr()}")
@@ -349,18 +315,44 @@ class AskForHelpHandler(WenetEventHandler):
             )
             return notification_event
 
-    def _remove_pending_answer(self, question_id: str, context: ConversationContext) -> ConversationContext:
+    def handle_button_with_payload(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
         """
-        Remove the question with `question_id` from the dictionary of pending answers in the context
+        Handle a button with a payload saved into redis
         """
-        pending_answers = context.get_static_state(self.CONTEXT_PENDING_ANSWERS, dict())
-        if question_id in pending_answers:
-            pending_answers.pop(question_id)
-        if pending_answers:
-            context.with_static_state(self.CONTEXT_PENDING_ANSWERS, pending_answers)
+        button_id = incoming_event.incoming_message.intent.value.split("--")[-1]
+        raw_button_payload = self.cache.get(button_id)
+        if raw_button_payload is None:
+            response = OutgoingEvent(social_details=incoming_event.social_details)
+            user_locale = self._get_user_locale(incoming_event)
+            response.with_message(TextualResponse(
+                self._translator.get_translation_instance(user_locale).with_text("expired_button_message").translate()))
+            return response
+        button_payload = ButtonPayload.from_repr(raw_button_payload)
+        if "related_buttons" in button_payload.payload:
+            # removing the button and all the related buttons from the cache
+            for button_to_remove in button_payload.payload["related_buttons"]:
+                self.cache.remove(button_to_remove)
         else:
-            context.delete_static_state(self.CONTEXT_PENDING_ANSWERS)
-        return context
+            # in case the button is not related with any other buttons, just remove it from the cache
+            self.cache.remove(button_id)
+
+        if button_payload.intent == self.INTENT_ASK_MORE_ANSWERS:
+            return self.action_more_answers(incoming_event, button_payload)
+        elif button_payload.intent == self.INTENT_QUESTION_REPORT or button_payload.intent == self.INTENT_ANSWER_REPORT:
+            return self.action_report_message(incoming_event, button_payload)
+        elif button_payload.intent == self.INTENT_REPORT_ABUSIVE or button_payload.intent == self.INTENT_REPORT_SPAM:
+            return self.action_report_message_1(incoming_event, button_payload)
+        elif button_payload.intent == self.INTENT_BEST_ANSWER:
+            return self.action_best_answer(incoming_event, button_payload)
+        elif button_payload.intent == self.INTENT_ANSWER_NOT:
+            return self.action_not_answer_question(incoming_event, button_payload)
+        elif button_payload.intent == self.INTENT_ANSWER_QUESTION:
+            return self.action_answer_question(incoming_event, button_payload)
+        elif button_payload.intent == self.INTENT_ANSWER_REMIND_LATER:
+            return self.action_answer_remind_later(incoming_event, button_payload)
+        elif button_payload.intent == self.INTENT_ANSWER_PICKED_QUESTION:
+            return self.action_answer_picked_question(incoming_event, button_payload)
+        raise ValueError(f"No action associated with intent [{button_payload.intent}]")
 
     def handle_wenet_authentication_result(self, message: WeNetAuthenticationEvent) -> NotificationEvent:
         if not isinstance(self._connector, TelegramSocialConnector):
@@ -369,7 +361,7 @@ class AskForHelpHandler(WenetEventHandler):
         social_details = TelegramDetails(int(message.external_id), int(message.external_id),
                                          self._connector.get_telegram_bot_id())
         try:
-            self._save_wenet_user_id_to_context(message, social_details)
+            self._save_wenet_and_telegram_user_id_to_context(message, social_details)
             messages = self._get_start_messages("en")   # TODO change user locale
             return NotificationEvent(social_details=social_details, messages=messages)
         except Exception as e:
@@ -485,29 +477,35 @@ class AskForHelpHandler(WenetEventHandler):
                 context.delete_static_state(self.CONTEXT_ASKED_QUESTION)
                 context.delete_static_state(self.CONTEXT_DESIRED_ANSWERER)
                 context.delete_static_state(self.CONTEXT_CURRENT_STATE)
-                context = self._save_updated_token(context, service_api.client)
                 response.with_context(context)
         else:
             error_message = self._translator.get_translation_instance(user_locale).with_text("answerer_details_are_not_text").translate()
             response.with_message(TextualResponse(error_message))
         return response
 
-    def action_answer_question(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+    def action_answer_question(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
         """
         QuestionToAnswerMessage flow, when user click on the answer button
         """
         user_locale = self._get_user_locale(incoming_event)
         context = incoming_event.context
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWER_2)
-        if intent.startswith(self.INTENT_ANSWER_PICKED_QUESTION):
-            question_index = int(incoming_event.incoming_message.intent.value.split("-")[1])
-            if not context.has_static_state(self.CONTEXT_PROPOSED_TASKS):
-                error_message = "Illegal state, expected the proposed question ID in the context, but it does not exist"
-                logger.error(error_message)
-                raise ValueError(error_message)
-            proposed_questions = context.get_static_state(self.CONTEXT_PROPOSED_TASKS)
-            context.with_static_state(self.CONTEXT_QUESTION_TO_ANSWER, proposed_questions[question_index])
-            context.delete_static_state(self.CONTEXT_PROPOSED_TASKS)
+        context.with_static_state(self.CONTEXT_QUESTION_TO_ANSWER, button_payload.payload["task_id"])
+        message = self._translator.get_translation_instance(user_locale).with_text("question_0").translate()
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        response.with_context(context)
+        response.with_message(TextualResponse(message))
+        return response
+
+    def action_answer_picked_question(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
+        """
+        /answer flow, when the user picks an answer
+        """
+        user_locale = self._get_user_locale(incoming_event)
+        context = incoming_event.context
+        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWER_2)
+        context.with_static_state(self.CONTEXT_QUESTION_TO_ANSWER, button_payload.payload["task_id"])
+        context.delete_static_state(self.CONTEXT_PROPOSED_TASKS)
         message = self._translator.get_translation_instance(user_locale).with_text("question_0").translate()
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_context(context)
@@ -548,17 +546,15 @@ class AskForHelpHandler(WenetEventHandler):
                     "Error in the creation of the transaction for answering the task [%s]. The service API resonded with code %d and message %s"
                     % (question_id, e.http_status, json.dumps(e.json_response)))
             finally:
-                context = self._remove_pending_answer(question_id, context)
                 context.delete_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
                 context.delete_static_state(self.CONTEXT_CURRENT_STATE)
-                context = self._save_updated_token(context, service_api.client)
                 response.with_context(context)
         else:
             error_message = self._translator.get_translation_instance(user_locale).with_text("answerer_is_not_text").translate()
             response.with_message(TextualResponse(error_message))
         return response
 
-    def action_not_answer_question(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+    def action_not_answer_question(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
         user_locale = self._get_user_locale(incoming_event)
         if incoming_event.context is not None:
@@ -566,11 +562,7 @@ class AskForHelpHandler(WenetEventHandler):
         else:
             raise Exception(f"Missing conversation context for event {incoming_event}")
         context = incoming_event.context
-        if not context.has_static_state(self.CONTEXT_QUESTION_TO_ANSWER):
-            error_message = "Illegal state, expected the question ID in the context, but it does not exist"
-            logger.error(error_message)
-            raise ValueError(error_message)
-        question_id = context.get_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
+        question_id = button_payload.payload["task_id"]
         actioneer_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
         try:
             transaction = TaskTransaction(None, question_id, self.LABEL_NOT_ANSWER_TRANSACTION,
@@ -584,174 +576,112 @@ class AskForHelpHandler(WenetEventHandler):
             logger.error(
                 "Error in the creation of the transaction for not answering the task [%s]. The service API resonded with code %d and message %s"
                 % (question_id, e.http_status, json.dumps(e.json_response)))
-        finally:
-            context = self._remove_pending_answer(question_id, context)
-            context.delete_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
-            context.delete_static_state(self.CONTEXT_CURRENT_STATE)
-            context = self._save_updated_token(context, service_api.client)
-            response.with_context(context)
+        response.with_context(context)
         return response
 
-    def action_answer_remind_later(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+    def action_answer_remind_later(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
         user_locale = self._get_user_locale(incoming_event)
         context = incoming_event.context
-        if not context.has_static_state(self.CONTEXT_QUESTION_TO_ANSWER):
-            error_message = "Illegal state, expected the question ID in the context, but it does not exist"
-            logger.error(error_message)
-            raise ValueError(error_message)
-        if not context.has_static_state(self.CONTEXT_PENDING_ANSWERS):
-            error_message = "Illegal state, expected the pending questions in the context, but it does not exist"
-            logger.error(error_message)
-            raise ValueError(error_message)
         message = self._translator.get_translation_instance(user_locale).with_text("answer_remind_later_message").translate()
         response.with_message(TextualResponse(message))
-        pending_answers = context.get_static_state(self.CONTEXT_PENDING_ANSWERS)
-        question_id = context.get_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
-        if question_id not in pending_answers:
-            error_message = f"Illegal state, expected the question [{question_id}] in the pending questions, but it does not exist"
-            logger.error(error_message)
-            raise ValueError(error_message)
-        pending_answer = PendingQuestionToAnswer.from_repr(pending_answers[question_id])
-        pending_answer.sent = datetime.now()
+        pending_answers = context.get_static_state(self.CONTEXT_PENDING_ANSWERS, {})
+        question_id = button_payload.payload["task_id"]
+        # recreating the message
+        message_string = self._translator.get_translation_instance(user_locale) \
+            .with_text("answer_message_0") \
+            .with_substitution("question", button_payload.payload["question"]) \
+            .with_substitution("user", button_payload.payload["username"]) \
+            .translate()
+        button_ids = [str(uuid.uuid4()) for _ in range(4)]
+        button_data = {
+            "task_id": question_id,
+            "related_buttons": button_ids,
+            "question": button_payload.payload["question"],
+            "username": button_payload.payload["username"],
+        }
+        response_to_store = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1, 1])
+
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_QUESTION).to_repr(), key=button_ids[0])
+        response_to_store.with_textual_option(self._translator.get_translation_instance(user_locale).with_text(
+            "answer_question_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_REMIND_LATER).to_repr(), key=button_ids[1])
+        response_to_store.with_textual_option(self._translator.get_translation_instance(user_locale).with_text(
+            "answer_remind_later_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[1]))
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_NOT).to_repr(), key=button_ids[2])
+        response_to_store.with_textual_option(
+            self._translator.get_translation_instance(user_locale).with_text("answer_not_button").translate(),
+            self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_QUESTION_REPORT).to_repr(), key=button_ids[3])
+        response_to_store.with_textual_option(
+            self._translator.get_translation_instance(user_locale).with_text("answer_report_button").translate(),
+            self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[3]))
+        pending_answer = PendingQuestionToAnswer(question_id, response_to_store, incoming_event.social_details,
+                                                 sent=datetime.now())
         pending_answers[question_id] = pending_answer.to_repr()
         context.with_static_state(self.CONTEXT_PENDING_ANSWERS, pending_answers)
-        context.delete_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
-        context.delete_static_state(self.CONTEXT_CURRENT_STATE)
         response.with_context(context)
         return response
 
-    def action_report_message(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+    def action_report_message(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
         """
         First step of reporting a single message (either a question or an answer).
-        The decision of what to report is taken by the context:
-        - intent == self.INTENT_QUESTION_REPORT: we are reporting a question, and the question is already in the context
-        - intent == self.INTENT_ANSWER_REPORT: we are reporting an answer
+        The payload must have the task id, and in case of reporting an answer it has also the transaction id
         """
         response = OutgoingEvent(social_details=incoming_event.social_details)
         user_locale = self._get_user_locale(incoming_event)
-        context = incoming_event.context
-        if intent == self.INTENT_QUESTION_REPORT:
-            if not context.has_static_state(self.CONTEXT_QUESTION_TO_ANSWER):
-                error_message = "Illegal state, expected the question ID in the context, but it does not exist"
-                logger.error(error_message)
-                raise ValueError(error_message)
-            question_id = context.get_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
-            is_question = True
-            context.delete_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
-        elif intent == self.INTENT_ANSWER_REPORT:
-            if not context.has_static_state(self.CONTEXT_ORIGINAL_QUESTION_REPORTING):
-                error_message = "Illegal state, expected the question ID in the context, but it does not exist"
-                logger.error(error_message)
-                raise ValueError(error_message)
-            if not context.has_static_state(self.CONTEXT_MESSAGE_TO_REPORT):
-                error_message = "Illegal state, expected the transaction ID in the context, but it does not exist"
-                logger.error(error_message)
-                raise ValueError(error_message)
-            question_id = context.get_static_state(self.CONTEXT_MESSAGE_TO_REPORT)
-            is_question = False
-            context.delete_static_state(self.CONTEXT_MESSAGE_TO_REPORT)
-        else:
-            error_message = f"Illegal state, received unexpected intent [{intent}] in reporting a message"
-            logger.error(error_message)
-            raise ValueError(error_message)
-        context.with_static_state(self.CONTEXT_MESSAGE_TO_REPORT, question_id)
-        context.with_static_state(self.CONTEXT_REPORTING_IS_QUESTION, is_question)
-        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_REPORT_1)
-        context = self._remove_pending_answer(question_id, context)
-        response.with_context(context)
         message_text = self._translator.get_translation_instance(user_locale).with_text("why_reporting_message").translate()
         button_why_reporting_1_text = self._translator.get_translation_instance(user_locale).with_text("button_why_reporting_1_text").translate()
         button_why_reporting_2_text = self._translator.get_translation_instance(user_locale).with_text("button_why_reporting_2_text").translate()
         button_why_reporting_3_text = self._translator.get_translation_instance(user_locale).with_text("button_why_reporting_3_text").translate()
         message = TelegramRapidAnswerResponse(TextualResponse(message_text), row_displacement=[1, 1, 1])
-        message.with_textual_option(button_why_reporting_1_text, self.INTENT_REPORT_ABUSIVE)
-        message.with_textual_option(button_why_reporting_2_text, self.INTENT_REPORT_SPAM)
+        button_ids = [str(uuid.uuid4()) for _ in range(2)]
+        payload = button_payload.payload
+        payload.update({"related_buttons": button_ids})
+        self.cache.cache(ButtonPayload(button_payload.payload, self.INTENT_REPORT_ABUSIVE).to_repr(), key=button_ids[0])
+        self.cache.cache(ButtonPayload(button_payload.payload, self.INTENT_REPORT_SPAM).to_repr(), key=button_ids[1])
+        message.with_textual_option(button_why_reporting_1_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
+        message.with_textual_option(button_why_reporting_2_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[1]))
         message.with_textual_option(button_why_reporting_3_text, self.INTENT_CANCEL)
         response.with_message(message)
         return response
 
-    def action_report_message_1(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+    def action_report_message_1(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
         """
         Second step of reporting a single message (either a question or an answer).
-        We collect the reason of the reporting, and we ask for some more details
+        A transaction is sent
         """
         response = OutgoingEvent(social_details=incoming_event.social_details)
         user_locale = self._get_user_locale(incoming_event)
-        context = incoming_event.context
-        context.with_static_state(self.CONTEXT_REPORTING_REASON, intent)
-        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_REPORT_2)
-        message = self._translator.get_translation_instance(user_locale).with_text("report_comment_text").translate()
-        response.with_message(TextualResponse(message))
-        return response
-
-    def action_report_message_2(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
-        """
-        Final step of reporting a message. The comment of the user is saved and a transaction is sent
-        """
-        response = OutgoingEvent(social_details=incoming_event.social_details)
-        user_locale = self._get_user_locale(incoming_event)
-        if isinstance(incoming_event.incoming_message, IncomingTextMessage):
-            context = incoming_event.context
-            if context is not None:
-                service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
-            else:
-                raise Exception(f"Missing conversation context for event {incoming_event}")
-            if not context.has_static_state(self.CONTEXT_MESSAGE_TO_REPORT):
-                error_message = "Illegal state, expected the question to report in the context, but it does not exist"
-                logger.error(error_message)
-                raise ValueError(error_message)
-            if not context.has_static_state(self.CONTEXT_REPORTING_IS_QUESTION):
-                error_message = "Illegal state, expected whether the message to report is a question in the context, but it does not exist"
-                logger.error(error_message)
-                raise ValueError(error_message)
-            if not context.has_static_state(self.CONTEXT_REPORTING_REASON):
-                error_message = "Illegal state, expected the reporting reason in the context, but it does not exist"
-                logger.error(error_message)
-                raise ValueError(error_message)
-            message_to_report = context.get_static_state(self.CONTEXT_MESSAGE_TO_REPORT)
-            is_question = bool(context.get_static_state(self.CONTEXT_REPORTING_IS_QUESTION))
-            reporting_reason = context.get_static_state(self.CONTEXT_REPORTING_REASON)
-            attributes = {
-                "reason": reporting_reason,
-                "comment": message_to_report,
-            }
-            if is_question:
-                transaction_label = self.LABEL_REPORT_QUESTION_TRANSACTION
-            else:
-                transaction_label = self.LABEL_REPORT_ANSWER_TRANSACTION
-                attributes.update({"transactionId": message_to_report})
-                message_to_report = context.get_static_state(self.CONTEXT_ORIGINAL_QUESTION_REPORTING)
-                context.delete_static_state(self.CONTEXT_ORIGINAL_QUESTION_REPORTING)
-            actioneer_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
-            try:
-                transaction = TaskTransaction(None, message_to_report, transaction_label,
-                                              int(datetime.now().timestamp()), int(datetime.now().timestamp()),
-                                              actioneer_id, attributes, [])
-                service_api.create_task_transaction(transaction)
-                logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
-                message = self._translator.get_translation_instance(user_locale).with_text(
-                    "report_final_message").translate()
-                response.with_message(TextualResponse(message))
-            except TaskTransactionCreationError as e:
-                response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
-                logger.error(
-                    "Error in the creation of the transaction for reporting the task [%s]. The service API resonded with code %d and message %s"
-                    % (message_to_report, e.http_status, json.dumps(e.json_response)))
-            finally:
-                context.delete_static_state(self.CONTEXT_MESSAGE_TO_REPORT)
-                context.delete_static_state(self.CONTEXT_REPORTING_IS_QUESTION)
-                context.delete_static_state(self.CONTEXT_REPORTING_REASON)
-                context.delete_static_state(self.CONTEXT_CURRENT_STATE)
-                context = self._save_updated_token(context, service_api.client)
-                response.with_context(context)
+        task_id = button_payload.payload["task_id"]
+        transaction_id = button_payload.payload.get("transaction_id", None)
+        service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
+        attributes = {
+            "reason": button_payload.intent,
+        }
+        if transaction_id is None:
+            transaction_label = self.LABEL_REPORT_QUESTION_TRANSACTION
         else:
-            error_message = self._translator.get_translation_instance(user_locale).with_text(
-                "answerer_is_not_text").translate()
-            response.with_message(TextualResponse(error_message))
+            transaction_label = self.LABEL_REPORT_ANSWER_TRANSACTION
+            attributes.update({"transactionId": transaction_id})
+        actioneer_id = incoming_event.context.get_static_state(self.CONTEXT_WENET_USER_ID)
+        try:
+            transaction = TaskTransaction(None, task_id, transaction_label,
+                                          int(datetime.now().timestamp()), int(datetime.now().timestamp()),
+                                          actioneer_id, attributes, [])
+            service_api.create_task_transaction(transaction)
+            logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
+            message = self._translator.get_translation_instance(user_locale).with_text(
+                "report_final_message").translate()
+            response.with_message(TextualResponse(message))
+        except TaskTransactionCreationError as e:
+            response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
+            logger.error(
+                "Error in the creation of the transaction for reporting the task [%s]. The service API resonded with code %d and message %s"
+                % (task_id, e.http_status, json.dumps(e.json_response)))
         return response
 
-    def action_more_answers(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+    def action_more_answers(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
         user_locale = self._get_user_locale(incoming_event)
         context = incoming_event.context
@@ -759,7 +689,7 @@ class AskForHelpHandler(WenetEventHandler):
             service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
         else:
             raise Exception(f"Missing conversation context for event {incoming_event}")
-        task_id = context.get_static_state(self.CONTEXT_ORIGINAL_QUESTION_REPORTING)
+        task_id = button_payload.payload["task_id"]
         actioneer_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
         try:
             transaction = TaskTransaction(None, task_id, self.LABEL_MORE_ANSWER_TRANSACTION,
@@ -775,10 +705,34 @@ class AskForHelpHandler(WenetEventHandler):
                 "Error in the creation of the transaction to ask more responses for the task [%s]. The service API resonded with code %d and message %s"
                 % (task_id, e.http_status, json.dumps(e.json_response)))
         finally:
-            context.delete_static_state(self.CONTEXT_ORIGINAL_QUESTION_REPORTING)
             context.delete_static_state(self.CONTEXT_CURRENT_STATE)
-            context.delete_static_state(self.CONTEXT_MESSAGE_TO_REPORT)
             response.with_context(context)
+        return response
+
+    def action_best_answer(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        user_locale = self._get_user_locale(incoming_event)
+        task_id = button_payload.payload["task_id"]
+        transaction_id = button_payload.payload["transaction_id"]
+        service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
+        attributes = {
+            "transactionId": transaction_id
+        }
+        actioneer_id = incoming_event.context.get_static_state(self.CONTEXT_WENET_USER_ID)
+        try:
+            transaction = TaskTransaction(None, task_id, self.LABEL_BEST_ANSWER_TRANSACTION,
+                                          int(datetime.now().timestamp()), int(datetime.now().timestamp()),
+                                          actioneer_id, attributes, [])
+            service_api.create_task_transaction(transaction)
+            logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
+            message = self._translator.get_translation_instance(user_locale).with_text(
+                "best_answer_final_message").translate()
+            response.with_message(TextualResponse(message))
+        except TaskTransactionCreationError as e:
+            response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
+            logger.error(
+                "Error in the creation of the transaction for reporting the task [%s]. The service API resonded with code %d and message %s"
+                % (task_id, e.http_status, json.dumps(e.json_response)))
         return response
 
     def action_answer(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
@@ -790,27 +744,37 @@ class AskForHelpHandler(WenetEventHandler):
         else:
             raise Exception(f"Missing conversation context for event {incoming_event}")
         user_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
-        tasks = [t for t in service_api.get_tasks(self.app_id, has_close_ts=False, limit=3) if t.requester_id != user_id]
-        context = self._save_updated_token(context, service_api.client)
+        tasks = [t for t in service_api.get_all_tasks_of_application(self.app_id)
+                 if t.requester_id != user_id and user_id not in set(
+                [transaction.actioneer_id for transaction in t.transactions])]
         if not tasks:
             response.with_message(TextualResponse(
                 self._translator.get_translation_instance(user_locale).with_text("answers_no_tasks").translate()))
         else:
-            context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING)
-            response.with_message(TextualResponse(
-                self._translator.get_translation_instance(user_locale).with_text("answers_tasks_intro").translate()))
+            if len(tasks) > 3:
+                # if more than 3 tasks, pick 3 random
+                tasks = random.sample(tasks, k=3)
+            text = self._translator.get_translation_instance(user_locale).with_text("answers_tasks_intro").translate()
             proposed_tasks = []
+            tasks_texts = []
             for task in tasks:
                 questioning_user = service_api.get_user_profile(str(task.requester_id))
-                context = self._save_updated_token(context, service_api.client)
                 if questioning_user:
-                    response.with_message(TextualResponse(f"#{1 + len(proposed_tasks)}: {task.goal.name} - {questioning_user.name.first}"))
+                    tasks_texts.append(f"#{1 + len(proposed_tasks)}: *{task.goal.name}* - {questioning_user.name.first}")
                     proposed_tasks.append(task.task_id)
             context.with_static_state(self.CONTEXT_PROPOSED_TASKS, proposed_tasks)
-            rapid_answer = RapidAnswerResponse(TextualResponse(self._translator.get_translation_instance(user_locale).with_text("answers_tasks_choose").translate()))
+            message_text = '\n'.join([text] + tasks_texts + [self._translator.get_translation_instance(user_locale).with_text("answers_tasks_choose").translate()])
+            rapid_answer = RapidAnswerResponse(TextualResponse(message_text))
             for i in range(len(proposed_tasks)):
-                rapid_answer.with_textual_option(f"#{1 + i}", self.INTENT_ANSWER_PICKED_QUESTION.format(i))
+                button_id = self.cache.cache(ButtonPayload({"task_id": proposed_tasks[i]}, self.INTENT_ANSWER_PICKED_QUESTION).to_repr())
+                rapid_answer.with_textual_option(f"#{1 + i}", self.INTENT_BUTTON_WITH_PAYLOAD.format(button_id))
             response.with_message(rapid_answer)
         response.with_context(context)
+        return response
+
+    def action_profile(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+        response = OutgoingEvent(incoming_event.social_details)
+        response.with_message(TextualResponse(emojize("I'm sorry, this command is not implemented yet :grimacing:",
+                                                      use_aliases=True)))
         return response
 

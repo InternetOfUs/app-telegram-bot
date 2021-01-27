@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-01-08 15:35+0100\n"
+"PO-Revision-Date: 2021-01-25 10:24+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -68,7 +68,7 @@ msgid "question_is_not_text"
 msgstr "Please write your question"
 
 msgid "specify_answerer"
-msgstr "Could you specify?"
+msgstr "Can you specify why this kind of person?"
 
 msgid "question_4"
 msgstr ""
@@ -168,6 +168,17 @@ msgstr "Here are the questions available to answer:"
 
 msgid "answers_tasks_choose"
 msgstr "Choose a question to answer"
+
+msgid "best_answer_final_message"
+msgstr ""
+"Glad I could help! If you need to ask another question, just use the /"
+"question command"
+
+msgid "expired_button_message"
+msgstr "I’m sorry, but you clicked on an expired button"
+
+msgid "best_answers_button"
+msgstr "I like this answer"
 
 #~ msgid "not_inclusive"
 #~ msgstr "Please use more "
