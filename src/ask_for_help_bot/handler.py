@@ -9,6 +9,7 @@ from emoji import emojize
 
 from ask_for_help_bot.pending_conversations import PendingQuestionToAnswer
 from ask_for_help_bot.pending_messages_job import PendingMessagesJob
+from chatbot_core.model.context import ConversationContext
 from chatbot_core.model.details import TelegramDetails
 from chatbot_core.model.event import IncomingSocialEvent
 from chatbot_core.model.message import IncomingTextMessage
@@ -89,6 +90,8 @@ class AskForHelpHandler(WenetEventHandler):
     LABEL_REPORT_ANSWER_TRANSACTION = "reportAnswerTransaction"
     LABEL_MORE_ANSWER_TRANSACTION = "moreAnswerTransaction"
     LABEL_BEST_ANSWER_TRANSACTION = "bestAnswerTransaction"
+    # keys used in Redis cache
+    CACHE_LOCALE = "locale-{}"
 
     def __init__(self, instance_namespace: str, bot_id: str, handler_id: str, telegram_id: str, wenet_backend_url: str,
                  wenet_hub_url: str, app_id: str, client_secret: str, redirect_url: str, wenet_authentication_url: str,
@@ -153,21 +156,42 @@ class AskForHelpHandler(WenetEventHandler):
                 regex=self.INTENT_BUTTON_WITH_PAYLOAD.format("[A-Za-z0-9-]+"))
         )
 
-    def _get_user_locale(self, incoming_event: IncomingSocialEvent) -> str:
-        # TODO implement this
-        return 'en'
+    def _get_user_locale_from_wenet_id(self, wenet_user_id: str, context: Optional[ConversationContext] = None) -> str:
+        if not context:
+            user_accounts = self.get_user_accounts(wenet_user_id)
+            if len(user_accounts) != 1:
+                raise Exception(f"No context associated with Wenet user {wenet_user_id}")
+            context = user_accounts[0].context
+        cached_locale = self.cache.get(self.CACHE_LOCALE.format(wenet_user_id))
+        if not cached_locale:
+            service_api = self._get_service_api_interface_connector_from_context(context)
+            user_object = service_api.get_user_profile(wenet_user_id)
+            if not user_object:
+                logger.info(f"Unable to retrieve user profile [{wenet_user_id}]")
+                return 'en'
+            locale = user_object.locale if user_object.locale else 'en'
+            self.cache.cache({"locale": locale}, ttl=86400, key=self.CACHE_LOCALE.format(wenet_user_id))
+            return locale
+        return cached_locale.get("locale", "en")
+
+    def _get_user_locale_from_incoming_event(self, incoming_event: IncomingSocialEvent) -> str:
+        wenet_user_id = incoming_event.context.get_static_state(self.CONTEXT_WENET_USER_ID, None)
+        if not wenet_user_id:
+            logger.info(f"Impossible to get user locale from incoming event. The Wenet user ID is not in the context")
+            return 'en'
+        return self._get_user_locale_from_wenet_id(wenet_user_id, incoming_event.context)
 
     def _get_help_and_info_message(self, locale: str) -> str:
         return self._translator.get_translation_instance(locale).with_text("info_text").translate()
 
     def action_info(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
-        user_locale = self._get_user_locale(incoming_event)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_message(TextualResponse(self._get_help_and_info_message(user_locale)))
         return response
 
     def action_error(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
-        user_locale = self._get_user_locale(incoming_event)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         response = OutgoingEvent(social_details=incoming_event.social_details)
         message = self._translator.get_translation_instance(user_locale).with_text("error_text").translate()
         response.with_message(TextualResponse(message))
@@ -181,7 +205,7 @@ class AskForHelpHandler(WenetEventHandler):
         context = incoming_event.context
         for context_key in context_to_remove:
             context.delete_static_state(context_key)
-        user_locale = self._get_user_locale(incoming_event)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         message = self._translator.get_translation_instance(user_locale).with_text("cancel_text").translate()
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_message(TextualResponse(message))
@@ -189,7 +213,7 @@ class AskForHelpHandler(WenetEventHandler):
         return response
 
     def handle_help(self, message: IncomingSocialEvent, intent: str) -> OutgoingEvent:
-        user_locale = self._get_user_locale(message)
+        user_locale = self._get_user_locale_from_incoming_event(message)
         response = OutgoingEvent(social_details=message.social_details)
         response.with_message(TextualResponse(self._get_help_and_info_message(user_locale)))
         return response
@@ -204,15 +228,12 @@ class AskForHelpHandler(WenetEventHandler):
         return [TextualResponse(message_1), TextualResponse(message_2), final_message_with_button]
 
     def action_start(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
-        user_locale = self._get_user_locale(incoming_event)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         response = OutgoingEvent(
             social_details=incoming_event.social_details,
             messages=self._get_start_messages(user_locale)
         )
         return response
-
-    def _get_command_list(self) -> str:
-        return self._translator.get_translation_instance('en').with_text("info_text").translate()
 
     def handle_wenet_textual_message(self, message: TextualMessage) -> NotificationEvent:
         pass
@@ -323,7 +344,7 @@ class AskForHelpHandler(WenetEventHandler):
         raw_button_payload = self.cache.get(button_id)
         if raw_button_payload is None:
             response = OutgoingEvent(social_details=incoming_event.social_details)
-            user_locale = self._get_user_locale(incoming_event)
+            user_locale = self._get_user_locale_from_incoming_event(incoming_event)
             response.with_message(TextualResponse(
                 self._translator.get_translation_instance(user_locale).with_text("expired_button_message").translate()))
             return response
@@ -362,7 +383,9 @@ class AskForHelpHandler(WenetEventHandler):
                                          self._connector.get_telegram_bot_id())
         try:
             self._save_wenet_and_telegram_user_id_to_context(message, social_details)
-            messages = self._get_start_messages("en")   # TODO change user locale
+            context = self._interface_connector.get_user_context(social_details)
+            messages = self._get_start_messages(self._get_user_locale_from_wenet_id(
+                context.context.get_static_state(self.CONTEXT_WENET_USER_ID), context.context))
             return NotificationEvent(social_details=social_details, messages=messages)
         except Exception as e:
             logger.exception("Unable to complete the wenet login", exc_info=e)
@@ -376,7 +399,7 @@ class AskForHelpHandler(WenetEventHandler):
         """
         context = incoming_event.context
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_1)
-        user_locale = self._get_user_locale(incoming_event)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         preamble_message = None
         if intent == self.INTENT_QUESTION_FIRST:
             preamble_message = self._translator.get_translation_instance(user_locale).with_text("question_0").translate()
@@ -393,7 +416,7 @@ class AskForHelpHandler(WenetEventHandler):
         Either ask for the person that should answer the question, or tell the user to be more inclusive
         """
         response = OutgoingEvent(social_details=incoming_event.social_details)
-        user_locale = self._get_user_locale(incoming_event)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         if isinstance(incoming_event.incoming_message, IncomingTextMessage):
             question = incoming_event.incoming_message.text
             context = incoming_event.context
@@ -418,7 +441,7 @@ class AskForHelpHandler(WenetEventHandler):
         """
         Save the type of desired answerer, and ask for some more details about her. The intent contains the desired answerer
         """
-        user_locale = self._get_user_locale(incoming_event)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         context = incoming_event.context
         context.with_static_state(self.CONTEXT_DESIRED_ANSWERER, intent)
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_3)
@@ -436,7 +459,7 @@ class AskForHelpHandler(WenetEventHandler):
             service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
         else:
             raise Exception(f"Missing conversation context for event {incoming_event}")
-        user_locale = self._get_user_locale(incoming_event)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         response = OutgoingEvent(social_details=incoming_event.social_details)
         if isinstance(incoming_event.incoming_message, IncomingTextMessage):
             context = incoming_event.context
@@ -487,7 +510,7 @@ class AskForHelpHandler(WenetEventHandler):
         """
         QuestionToAnswerMessage flow, when user click on the answer button
         """
-        user_locale = self._get_user_locale(incoming_event)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         context = incoming_event.context
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWER_2)
         context.with_static_state(self.CONTEXT_QUESTION_TO_ANSWER, button_payload.payload["task_id"])
@@ -501,7 +524,7 @@ class AskForHelpHandler(WenetEventHandler):
         """
         /answer flow, when the user picks an answer
         """
-        user_locale = self._get_user_locale(incoming_event)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         context = incoming_event.context
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWER_2)
         context.with_static_state(self.CONTEXT_QUESTION_TO_ANSWER, button_payload.payload["task_id"])
@@ -521,7 +544,7 @@ class AskForHelpHandler(WenetEventHandler):
         else:
             raise Exception(f"Missing conversation context for event {incoming_event}")
 
-        user_locale = self._get_user_locale(incoming_event)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         context = incoming_event.context
         if not context.has_static_state(self.CONTEXT_QUESTION_TO_ANSWER):
             error_message = "Illegal state, expected the question ID in the context, but it does not exist"
@@ -556,7 +579,7 @@ class AskForHelpHandler(WenetEventHandler):
 
     def action_not_answer_question(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
-        user_locale = self._get_user_locale(incoming_event)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         if incoming_event.context is not None:
             service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
         else:
@@ -581,7 +604,7 @@ class AskForHelpHandler(WenetEventHandler):
 
     def action_answer_remind_later(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
-        user_locale = self._get_user_locale(incoming_event)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         context = incoming_event.context
         message = self._translator.get_translation_instance(user_locale).with_text("answer_remind_later_message").translate()
         response.with_message(TextualResponse(message))
@@ -629,7 +652,7 @@ class AskForHelpHandler(WenetEventHandler):
         The payload must have the task id, and in case of reporting an answer it has also the transaction id
         """
         response = OutgoingEvent(social_details=incoming_event.social_details)
-        user_locale = self._get_user_locale(incoming_event)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         message_text = self._translator.get_translation_instance(user_locale).with_text("why_reporting_message").translate()
         button_why_reporting_1_text = self._translator.get_translation_instance(user_locale).with_text("button_why_reporting_1_text").translate()
         button_why_reporting_2_text = self._translator.get_translation_instance(user_locale).with_text("button_why_reporting_2_text").translate()
@@ -652,7 +675,7 @@ class AskForHelpHandler(WenetEventHandler):
         A transaction is sent
         """
         response = OutgoingEvent(social_details=incoming_event.social_details)
-        user_locale = self._get_user_locale(incoming_event)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         task_id = button_payload.payload["task_id"]
         transaction_id = button_payload.payload.get("transaction_id", None)
         service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
@@ -683,7 +706,7 @@ class AskForHelpHandler(WenetEventHandler):
 
     def action_more_answers(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
-        user_locale = self._get_user_locale(incoming_event)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         context = incoming_event.context
         if context is not None:
             service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
@@ -711,7 +734,7 @@ class AskForHelpHandler(WenetEventHandler):
 
     def action_best_answer(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
-        user_locale = self._get_user_locale(incoming_event)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         task_id = button_payload.payload["task_id"]
         transaction_id = button_payload.payload["transaction_id"]
         service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
@@ -737,7 +760,7 @@ class AskForHelpHandler(WenetEventHandler):
 
     def action_answer(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
-        user_locale = self._get_user_locale(incoming_event)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         context = incoming_event.context
         if context is not None:
             service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)

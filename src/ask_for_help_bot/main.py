@@ -37,6 +37,9 @@ if __name__ == "__main__":
     translation_folder_path = os.getenv("TRANSLATION_FOLDER_PATH", "../../translations")
     translator = Translator("wenet-ask-for-help", alert_module, translation_folder_path, fallback=False)
     translator.with_language("en", is_default=True, aliases=["en_US", "en_GB"])
+    translator.with_language("it", is_default=True, aliases=["it_IT", "it_CH"])
+    translator.with_language("nl", is_default=True, aliases=["nl_BE", "nl_NL"])
+    translator.with_language("es", is_default=True, aliases=["es_ES", "es_PY", "es_AR", "es_MX"])
 
     handler = AskForHelpHandler(
         instance_namespace,

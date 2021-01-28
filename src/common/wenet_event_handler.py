@@ -45,7 +45,6 @@ class WenetEventHandler(EventHandler, abc.ABC):
     - handle_wenet_textual_message(message: TextualMessage) -> NotificationEvent
     - handle_wenet_notification_message(message: TaskNotification) -> NotificationEvent
     - handle_wenet_authentication_result(message: WeNetAuthentication) -> NotificationEvent
-    - _get_command_list() -> str:
 
     Attributes:
         - instance_namespace, bot_id, handler_id, alert_module, connector, nlp_handler, translator,
@@ -311,14 +310,6 @@ class WenetEventHandler(EventHandler, abc.ABC):
 
     @abc.abstractmethod
     def handle_wenet_authentication_result(self, message: WeNetAuthenticationEvent) -> NotificationEvent:
-        pass
-
-    @staticmethod
-    @abc.abstractmethod
-    def _get_command_list() -> str:
-        """
-        :return: a markdown string with all the commands available in the chatbot
-        """
         pass
 
     def _create_response(self, incoming_event: IncomingSocialEvent) -> OutgoingEvent:
