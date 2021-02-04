@@ -796,8 +796,9 @@ class AskForHelpHandler(WenetEventHandler):
         return response
 
     def action_profile(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         response = OutgoingEvent(incoming_event.social_details)
-        response.with_message(TextualResponse(emojize("I'm sorry, this command is not implemented yet :grimacing:",
-                                                      use_aliases=True)))
+        text = self._translator.get_translation_instance(user_locale).with_text("not_implemented").translate()
+        response.with_message(TextualResponse(text))
         return response
 

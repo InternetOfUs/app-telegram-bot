@@ -143,3 +143,6 @@ msgstr ""
 
 msgid "best_answers_button"
 msgstr ""
+
+msgid "not_implemented"
+msgstr ""

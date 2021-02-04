@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-02-03 16:35+0100\n"
+"PO-Revision-Date: 2021-02-04 10:16+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -176,6 +176,9 @@ msgstr "Уучлаарай, энэ товч идэвхгүй байна"
 
 msgid "best_answers_button"
 msgstr "Энэ хариулт таалагдлаа"
+
+msgid "not_implemented"
+msgstr "Уучлаарай, энэ комманд одоогоор байхгүй байна :grimacing:"
 
 #~ msgid "not_inclusive"
 #~ msgstr "Please use more "
