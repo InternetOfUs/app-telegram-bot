@@ -1,0 +1,184 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2019-08-22 14:46+0200\n"
+"PO-Revision-Date: 2021-02-04 10:16+0100\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 2.4.2\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/ask_for_help/handler.py:32
+msgid "info_text"
+msgstr ""
+"/question командаар асуулт асууж болно. /answer командаар нээлттэй байгаа "
+"асуултуудыг шалган хариулж болно. /profile командаар өөрийн профайлыг "
+"шалгана уу."
+
+#: src/ask_for_help/handler.py:58
+msgid "start_text_1"
+msgstr ""
+"Холбогдсонд баярлалаа! :wave: *AskAAU* чатбот байна. Би оюутнуудын хоорондох "
+"асуултуудад туслах зорилготой юм."
+
+#: src/ask_for_help/handler.py:59
+msgid "start_text_2"
+msgstr ""
+"Би өөр өөрөөр сэтгэдэг хүмүүсийг холбохоор бүтээгдсэн - Эсрэг туйлууд бие "
+"биеээ татдаг гэдгийг та мэднэ дээ, гэхдээ заримдаа тантай ойролцоо сэтгэдэг "
+"хүмүүс таныг сонсож байх нь илүү тухтай байх үе ч байна."
+
+#: src/ask_for_help/handler.py:63
+msgid "start_button"
+msgstr "Асуулт асууна уу! :thinking_face:"
+
+#: src/ask_for_help/handler.py:46
+msgid "error_text"
+msgstr "Уучлаарай, ойлгосонгүй :pensive:"
+
+#: src/ask_for_help/handler.py:52
+msgid "cancel_text"
+msgstr "Үйл ажиллагаа амжилттай цуцлагдлаа"
+
+msgid "question_1"
+msgstr "Хамт олноос юу асуумаар байна?"
+
+msgid "question_2"
+msgstr "Хэнээс асуух вэ? Дэлгэрэнгүй мэдээлэл өгнө үү?"
+
+msgid "type_answer_1"
+msgstr "Надаас өөр"
+
+msgid "type_answer_2"
+msgstr "Надтай ойролцоо"
+
+msgid "type_answer_3"
+msgstr "Хэн ч байж болно"
+
+msgid "question_is_not_text"
+msgstr "Асуултаа бичнэ үү"
+
+msgid "specify_answerer"
+msgstr "Яагаад тэр гэж? Дэлгэрэнгүй мэдээлэл өгөхгүй биз?"
+
+msgid "question_4"
+msgstr ""
+"За, бусад хэрэглэгчдээс таны асуултыг асууя! Хариулт авбал танд мэдэгднэ ээ."
+
+msgid "answerer_details_are_not_text"
+msgstr "Ямар төрлийн хүнээс хариулт авмаар байна?"
+
+msgid "question_0"
+msgstr ""
+"Би хэдийгээр чатбот ч гэсэн :robot_face: таныг бодит хүмүүстэй холбож байгаа "
+"гэдгийг санаарай.\n"
+"\n"
+":one: Харилцаандаа хүндлэлтэй хандна уу. Таны асуулт хариулт бусдад нөлөөлж "
+"байгааг бодож үзээрэй.\n"
+":two: Арьс өнгөөр, хүйсээр болон бусад зүй зохисгүй байдлаар ялгаварлан "
+"гадуурхахыг бид тэвчихгүй.\n"
+":three: /report командаар зүй зохисгүй байдлыг мэдээллэж болно\n"
+"\n"
+"Ok? Let’s go!"
+
+msgid "error_task_creation"
+msgstr ""
+"Уучлаарай, ямар нэг зүйлд алдаа гарлаа :pensive: Дараа дахин оролдно уу"
+
+msgid "answer_message_0"
+msgstr ""
+"Асуулт байна гэнэ, та л хариулж чадах юм шиг байна!\n"
+"\n"
+"*{question}* - {user}\n"
+"\n"
+"Гялс хариулаад өгч чадах уу?"
+
+msgid "answer_question_button"
+msgstr "Хариулт"
+
+msgid "answer_remind_later_button"
+msgstr ":clock2: Дараа сануулах"
+
+msgid "answer_not_button"
+msgstr ":x: Тусалж чадахгүй"
+
+msgid "answer_report_button"
+msgstr "Мэдээллэх"
+
+msgid "answerer_is_not_text"
+msgstr "Таны хариулт текст хэлбэртэй байх хэрэгтэй"
+
+msgid "answered_message"
+msgstr "Баярлалаа! Таны хариултыг асуулт асуусан хүнд нь уламжилъя"
+
+msgid "not_answer_response"
+msgstr "За"
+
+msgid "answer_remind_later_message"
+msgstr "За, дараа сануулна аа"
+
+msgid "why_reporting_message"
+msgstr "Яагаад үүнийг мэдээллэх болов?"
+
+msgid "button_why_reporting_1_text"
+msgstr "Доромжлох болон хор хөнөөлийн агуулгатай"
+
+msgid "button_why_reporting_2_text"
+msgstr "Спам байна"
+
+msgid "button_why_reporting_3_text"
+msgstr ":x: Би бодлоо өөрчиллөө"
+
+msgid "report_comment_text"
+msgstr "Тайлбар нэмэх:"
+
+msgid "report_final_message"
+msgstr "Баярлалаа! Бид хайж үзье"
+
+msgid "new_answer_message"
+msgstr ""
+"Асуусан: “*{question}*”\n"
+"\n"
+"Шинэ хариулт байна:\n"
+"\n"
+"{answer} - {username}"
+
+msgid "more_answers_button"
+msgstr "Илүү олон хүнээс асуух"
+
+msgid "ask_more_answers_text"
+msgstr "За, таны асуултыг илүү олон хүнээс асууя"
+
+msgid "answers_no_tasks"
+msgstr "Нээлттэй асуулт одоогоор байхгүй байна, дараа дахин шалгана уу"
+
+msgid "answers_tasks_intro"
+msgstr "Одоогоор байгаа асуултууд:"
+
+msgid "answers_tasks_choose"
+msgstr "Хариулах асуултаа сонгоно уу"
+
+msgid "best_answer_final_message"
+msgstr ""
+"Тусалсандаа баяртай байна! Өөр асуулт байгаа бол /question команд ашиглана уу"
+
+msgid "expired_button_message"
+msgstr "Уучлаарай, энэ товч идэвхгүй байна"
+
+msgid "best_answers_button"
+msgstr "Энэ хариулт таалагдлаа"
+
+msgid "not_implemented"
+msgstr "Уучлаарай, энэ комманд одоогоор байхгүй байна :grimacing:"
+
+#~ msgid "not_inclusive"
+#~ msgstr "Please use more "

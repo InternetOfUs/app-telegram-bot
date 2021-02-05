@@ -1,0 +1,148 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2019-08-22 14:46+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: src/ask_for_help/handler.py:32
+msgid "info_text"
+msgstr ""
+
+#: src/ask_for_help/handler.py:58
+msgid "start_text_1"
+msgstr ""
+
+#: src/ask_for_help/handler.py:59
+msgid "start_text_2"
+msgstr ""
+
+#: src/ask_for_help/handler.py:63
+msgid "start_button"
+msgstr ""
+
+#: src/ask_for_help/handler.py:46
+msgid "error_text"
+msgstr ""
+
+#: src/ask_for_help/handler.py:52
+msgid "cancel_text"
+msgstr ""
+
+msgid "question_1"
+msgstr ""
+
+msgid "question_2"
+msgstr ""
+
+msgid "type_answer_1"
+msgstr ""
+
+msgid "type_answer_2"
+msgstr ""
+
+msgid "type_answer_3"
+msgstr ""
+
+msgid "question_is_not_text"
+msgstr ""
+
+msgid "specify_answerer"
+msgstr ""
+
+msgid "question_4"
+msgstr ""
+
+msgid "answerer_details_are_not_text"
+msgstr ""
+
+msgid "question_0"
+msgstr ""
+
+msgid "error_task_creation"
+msgstr ""
+
+msgid "answer_message_0"
+msgstr ""
+
+msgid "answer_question_button"
+msgstr ""
+
+msgid "answer_remind_later_button"
+msgstr ""
+
+msgid "answer_not_button"
+msgstr ""
+
+msgid "answer_report_button"
+msgstr ""
+
+msgid "answerer_is_not_text"
+msgstr ""
+
+msgid "answered_message"
+msgstr ""
+
+msgid "not_answer_response"
+msgstr ""
+
+msgid "answer_remind_later_message"
+msgstr ""
+
+msgid "why_reporting_message"
+msgstr ""
+
+msgid "button_why_reporting_1_text"
+msgstr ""
+
+msgid "button_why_reporting_2_text"
+msgstr ""
+
+msgid "button_why_reporting_3_text"
+msgstr ""
+
+msgid "report_comment_text"
+msgstr ""
+
+msgid "report_final_message"
+msgstr ""
+
+msgid "new_answer_message"
+msgstr ""
+
+msgid "more_answers_button"
+msgstr ""
+
+msgid "ask_more_answers_text"
+msgstr ""
+
+msgid "answers_no_tasks"
+msgstr ""
+
+msgid "answers_tasks_intro"
+msgstr ""
+
+msgid "answers_tasks_choose"
+msgstr ""
+
+msgid "best_answer_final_message"
+msgstr ""
+
+msgid "expired_button_message"
+msgstr ""
+
+msgid "best_answers_button"
+msgstr ""
+
+msgid "not_implemented"
+msgstr ""

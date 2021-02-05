@@ -1,7 +1,6 @@
 #!/bin/bash
 
-DEFAULT_VERSION="1.0.0"
-
+DEFAULT_VERSION="latest"
 
 SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
@@ -11,12 +10,30 @@ DELETE_IF_FAILED=0
 SAVE_IMAGE_TO_TARGZ=0
 PUSH_IMAGE=0
 
+usage() {
+  echo '''Usage: ...
+
+  runner.sh [-flags] [imageVersion]
+
+  -b  build image
+  -t  run tests within image
+  -d  delete image if tests fail
+  -s  save image to tar.gz
+  -p  push image to registry
+  -i  pull image from registry
+
+Example:
+
+  ./runner.sh -btp 1.0.0
+  '''
+}
+
 args=`getopt btdsp $*`
 # you should not use `getopt abo: "$@"` since that would parse
 # the arguments differently from what the set command below does.
 if [[ $? != 0 ]]
 then
-  echo 'Usage: ...'
+  usage
   exit 2
 fi
 set -- ${args}
@@ -47,40 +64,42 @@ done
 VERSION=$2
 if [[ -z "${VERSION}" ]]; then
     VERSION=${DEFAULT_VERSION}
-    echo "Version not specified: building with default version [${VERSION}]"
+    echo "Version not specified: building with default version [${VERSION}]."
 else
-    echo "Using specified version [${VERSION}]"
+    echo "Using specified version [${VERSION}]."
 fi
 
-# Exporting image name for the build and test script
+# Exporting image name for the build and test scripts
 REGISTRY=registry.u-hopper.com
 export IMAGE_NAME=wenet/bots:${VERSION}
 export REGISTRY=${REGISTRY}
 
-
+# Build step
 if [[ ${BUILD} == 1 ]]; then
-  echo "Building image"
+  echo "Building image."
   ${SCRIPT_DIR}/build_image.sh
 
   if [[ $? != 0 ]]; then
-    echo "Build Failed"
+    echo "Error: Build Failed"
     exit 1
   fi
 
+  # Save step
   if [[ ${SAVE_IMAGE_TO_TARGZ} == 1 ]]; then
-    echo "Saving image to bots_image.tar.gz"
-    docker save ${REGISTRY}/${IMAGE_NAME} | gzip > bots_image.tar.gz
+    echo "Saving image to docker_image.tar.gz."
+    docker save ${REGISTRY}/${IMAGE_NAME} | gzip > docker_image.tar.gz
   fi
 fi
 
+# Test step
 if [[ ${TEST} == 1 ]]; then
-  echo "Running tests"
+  echo "Running tests."
   ${SCRIPT_DIR}/test.sh
 
   if [[ $? != 0 ]]; then
-      echo "Error: One or more tests are failing"
+      echo "Error: One or more tests are failed."
       if [[ ${DELETE_IF_FAILED} == 1 ]]; then
-        docker rmi ${IMAGE_NAME}
+        docker rmi ${REGISTRY}/${IMAGE_NAME}  # TODO check if correct
       fi
       exit 1
   fi
@@ -93,6 +112,7 @@ if [[ ${PUSH_IMAGE} == 1 ]]; then
 fi
 
 if [[ ${BUILD} == 0 ]] && [[ ${TEST} == 0 ]] && [[ ${PUSH_IMAGE} == 0 ]]; then
-  echo "Need to specify at least one parameter (-b, -t, -p)"
+  echo "Need to specify at least one parameter"
+  usage
   exit 1
 fi

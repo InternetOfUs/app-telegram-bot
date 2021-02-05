@@ -1,5 +1,6 @@
 .idea
 venv3
 *.pyc
-
+*.log
 ansible/password_file
+/roles

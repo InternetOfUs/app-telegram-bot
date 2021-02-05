@@ -1,0 +1,187 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2019-08-22 14:46+0200\n"
+"PO-Revision-Date: 2021-02-04 10:13+0100\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 2.4.2\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/ask_for_help/handler.py:32
+msgid "info_text"
+msgstr ""
+"You can ask a question with the /question command. With /answer you can "
+"check open questions and answer them. Use /profile to check your personal "
+"profile."
+
+#: src/ask_for_help/handler.py:58
+msgid "start_text_1"
+msgstr ""
+"Thanks for connecting! :wave: This is the *AskAAU* chatbot. My aim is to "
+"help students to help other students with questions and answers."
+
+#: src/ask_for_help/handler.py:59
+msgid "start_text_2"
+msgstr ""
+"I’m designed to connect people with diversity in mind - you know, opposites "
+"attract each other, but sometimes it’s comfortable to have a similar person "
+"listening to you."
+
+#: src/ask_for_help/handler.py:63
+msgid "start_button"
+msgstr "Ask a question! :thinking_face:"
+
+#: src/ask_for_help/handler.py:46
+msgid "error_text"
+msgstr "I’m very sorry but I didn’t understand :pensive:"
+
+#: src/ask_for_help/handler.py:52
+msgid "cancel_text"
+msgstr "The current operation has been cancelled successfully"
+
+msgid "question_1"
+msgstr "What would you like to ask from the community members?"
+
+msgid "question_2"
+msgstr "Tell me more about what kind of person should I ask?"
+
+msgid "type_answer_1"
+msgstr "Different than me"
+
+msgid "type_answer_2"
+msgstr "Similar to me"
+
+msgid "type_answer_3"
+msgstr "Anyone"
+
+msgid "question_is_not_text"
+msgstr "Please write your question"
+
+msgid "specify_answerer"
+msgstr "Can you specify why this kind of person?"
+
+msgid "question_4"
+msgstr ""
+"Alright, I will ask other users to answer your question! When I receive an "
+"answer, I will notify you."
+
+msgid "answerer_details_are_not_text"
+msgstr "Please specify what kind of person you would like to be answered by."
+
+msgid "question_0"
+msgstr ""
+"Please be mindful, that while I’m just a chatbot :robot_face:, I connect you "
+"to real humans.\n"
+"\n"
+":one: Be respectful in your communication. Consider how your questions and "
+"answers impact others.\n"
+":two: The community does not tolerate racist, sexist and other demeaning "
+"conduct.\n"
+":three: You have the opportunity to report abusive behavior with the /report "
+"command.\n"
+"\n"
+"Ok? Let’s go!"
+
+msgid "error_task_creation"
+msgstr ""
+"I’m very sorry but something went wrong :pensive: Please try again later"
+
+msgid "answer_message_0"
+msgstr ""
+"There is a question I think you can answer best!\n"
+"\n"
+"*{question}* - {user}\n"
+"\n"
+"Can you answer it real quick?"
+
+msgid "answer_question_button"
+msgstr "Answer"
+
+msgid "answer_remind_later_button"
+msgstr ":clock2: Remind me later"
+
+msgid "answer_not_button"
+msgstr ":x: Can’t help"
+
+msgid "answer_report_button"
+msgstr "Report"
+
+msgid "answerer_is_not_text"
+msgstr "You answer must be a text and not an attachment"
+
+msgid "answered_message"
+msgstr "Thanks! I will forward your answer to the person that asked it."
+
+msgid "not_answer_response"
+msgstr "Allright"
+
+msgid "answer_remind_later_message"
+msgstr "Ok, I will remind you later"
+
+msgid "why_reporting_message"
+msgstr "Why are you reporting the message?"
+
+msgid "button_why_reporting_1_text"
+msgstr "It’s abusive or harmful"
+
+msgid "button_why_reporting_2_text"
+msgstr "It’s spam"
+
+msgid "button_why_reporting_3_text"
+msgstr ":x: I changed my mind"
+
+msgid "report_comment_text"
+msgstr "Add a comment:"
+
+msgid "report_final_message"
+msgstr "Thank you, we will look into it!"
+
+msgid "new_answer_message"
+msgstr ""
+"You asked: “*{question}*”\n"
+"\n"
+"I have a new answer for you:\n"
+"\n"
+"{answer} - {username}"
+
+msgid "more_answers_button"
+msgstr "Ask more people"
+
+msgid "ask_more_answers_text"
+msgstr "Ok, I will ask your question to more users"
+
+msgid "answers_no_tasks"
+msgstr "There are no open questions at time moment, try again later"
+
+msgid "answers_tasks_intro"
+msgstr "Here are the questions available to answer:"
+
+msgid "answers_tasks_choose"
+msgstr "Choose a question to answer"
+
+msgid "best_answer_final_message"
+msgstr ""
+"Glad I could help! If you need to ask another question, just use the /"
+"question command"
+
+msgid "expired_button_message"
+msgstr "I’m sorry, but you clicked on an expired button"
+
+msgid "best_answers_button"
+msgstr "I like this answer"
+
+msgid "not_implemented"
+msgstr "I’m sorry, this command is not implemented yet :grimacing:"
+
+#~ msgid "not_inclusive"
+#~ msgstr "Please use more "

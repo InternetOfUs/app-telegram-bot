@@ -1,0 +1,188 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2019-08-22 14:46+0200\n"
+"PO-Revision-Date: 2021-02-04 10:15+0100\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 2.4.2\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: src/ask_for_help/handler.py:32
+msgid "info_text"
+msgstr ""
+"Puoi fare una domanda con il comando /question. Usando /answer puoi vedere "
+"le risposte aperte e rispondere. Usa /profile per controllare il tuo profilo "
+"personale"
+
+#: src/ask_for_help/handler.py:58
+msgid "start_text_1"
+msgstr ""
+"Grazie per esserti connesso! :wave: Io sono il chatbot *AskAAU*, il mio "
+"scopo è aiutare gli studenti con domande e risposte"
+
+#: src/ask_for_help/handler.py:59
+msgid "start_text_2"
+msgstr ""
+"Sono progettato per connettere le persone tenendo in considerazione la "
+"diversità - sai com’è, gli opposti si attraggono, ma alle volte è anche "
+"bello avere persone simili a te pronte ad ascoltarti."
+
+#: src/ask_for_help/handler.py:63
+msgid "start_button"
+msgstr "Fai una domanda! :thinking_face:"
+
+#: src/ask_for_help/handler.py:46
+msgid "error_text"
+msgstr "Mi dispiace ma non ho capito :pensive:"
+
+#: src/ask_for_help/handler.py:52
+msgid "cancel_text"
+msgstr "L’operazione corrente è stata cancellata"
+
+msgid "question_1"
+msgstr "Cosa vorresti chiedere ai componenti della community?"
+
+msgid "question_2"
+msgstr "A quale tipo di persona dovrei chiedere?"
+
+msgid "type_answer_1"
+msgstr "Diversa da me"
+
+msgid "type_answer_2"
+msgstr "Simile a me"
+
+msgid "type_answer_3"
+msgstr "A chiunque"
+
+msgid "question_is_not_text"
+msgstr "Per piacere scrivi la tua domanda"
+
+msgid "specify_answerer"
+msgstr "Puoi dirmi perchè hai scelto questo tipo di persona?"
+
+msgid "question_4"
+msgstr ""
+"Bene, inoltrerò la tua domanda ad altri utenti. Appena avrò risposta ti faro "
+"sapere"
+
+msgid "answerer_details_are_not_text"
+msgstr ""
+"Per piacere specifica a parole a che tipo di persona dovrei proporre la tua "
+"domanda"
+
+msgid "question_0"
+msgstr ""
+"Per cortesia tieni presente che anche se io sia soltanto un chatbot :"
+"robot_face:, ti metto in comunicazione con altri esseri umani.\n"
+"\n"
+":one: Sii rispettoso, e considera quanto le tue domande e le tue risposte "
+"possano essere d’impatto su altre persone.\n"
+":two: La comunity non tollera razzismo, sessismo o altre condotte "
+"deplorevoli.\n"
+":three: Puoi sempre segnalare cattivi comportamenti nelle domande o risposte "
+"che ricevi.\n"
+"\n"
+"Ok? Partiamo allora!"
+
+msgid "error_task_creation"
+msgstr "Qualcosa è andato storto :pensive: Riprova più tardi"
+
+msgid "answer_message_0"
+msgstr ""
+"C’è una domanda alla quale potresti rispondere!\n"
+"\n"
+"*{question}* - {user}\n"
+"\n"
+"Puoi rispondere velocemente?"
+
+msgid "answer_question_button"
+msgstr "Rispondi"
+
+msgid "answer_remind_later_button"
+msgstr ":clock2: Ricordamelo dopo"
+
+msgid "answer_not_button"
+msgstr ":x: Non so aiutare"
+
+msgid "answer_report_button"
+msgstr "Segnala"
+
+msgid "answerer_is_not_text"
+msgstr "La tua risposta deve essere un testo, e non un allegato"
+
+msgid "answered_message"
+msgstr "Grazie! Ora invio la tua risposta alla persona interessata"
+
+msgid "not_answer_response"
+msgstr "Ok"
+
+msgid "answer_remind_later_message"
+msgstr "Ok, te lo ricorderò più tardi"
+
+msgid "why_reporting_message"
+msgstr "Perchè stai segnalando il messaggio?"
+
+msgid "button_why_reporting_1_text"
+msgstr "È pericoloso"
+
+msgid "button_why_reporting_2_text"
+msgstr "È spam"
+
+msgid "button_why_reporting_3_text"
+msgstr ":x:Ho cambiato idea"
+
+msgid "report_comment_text"
+msgstr "Aggiungi un commento:"
+
+msgid "report_final_message"
+msgstr "Grazie, ci guarderò!"
+
+msgid "new_answer_message"
+msgstr ""
+"Hai chiesto: “*{question}*”\n"
+"\n"
+"Ho una nuova risposta alla tua domanda:\n"
+"\n"
+"{answer} - {username}"
+
+msgid "more_answers_button"
+msgstr "Chiedi a più persone"
+
+msgid "ask_more_answers_text"
+msgstr "Ok, chiederò a più persone"
+
+msgid "answers_no_tasks"
+msgstr "Non ci sono domande aperte al momento, riprova più tardi"
+
+msgid "answers_tasks_intro"
+msgstr "Queste sono le domande a cui puoi rispondere:"
+
+msgid "answers_tasks_choose"
+msgstr "Scegli una domanda a cui rispondere"
+
+msgid "best_answer_final_message"
+msgstr ""
+"Sono contento di essere stato d’aiuto. Se devi chiedere altro, usa il "
+"comando /question"
+
+msgid "expired_button_message"
+msgstr "Mi dispiace ma hai premuto su un bottone scaduto"
+
+msgid "best_answers_button"
+msgstr "Mi piace!"
+
+msgid "not_implemented"
+msgstr "Mi dispiace, ma questo comando non è ancora disponibile :grimacing:"
+
+#~ msgid "not_inclusive"
+#~ msgstr "Please use more "

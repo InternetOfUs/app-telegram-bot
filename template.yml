@@ -1,0 +1,87 @@
+---
+
+- name: Setup Python project.
+  hosts: 127.0.0.1
+  connection: local
+  vars:
+    project_path: .
+    project_type: python
+    project_features:
+      - test
+      - docker
+      - ci_cd
+
+    docker_python_image_base_image: public.registry.u-hopper.com/python:3.8
+    project_python_test_folder: test
+    docker_image_name: wenet/bots
+    docker_additional_files_to_add:
+      - translations
+    docker_python_services:
+      - name: ws
+        main_module: messages.main
+        required_env_variables:
+          - ${MESSAGES_HOST}/
+          - ${MESSAGES_PORT}/
+          - ${MQTT_HOST}/
+          - ${MQTT_PUBLISHER_ID}
+          - ${MQTT_USER}
+          - ${MQTT_PASSWORD}
+          - ${MQTT_TOPIC}
+          - ${INSTANCE_NAMESPACE}/
+          - ${WENET_APP_ID}
+          - ${WENET_HUB_URL}
+          - ${BOT_ID}
+        gunicorn_app: bot_messages_app
+      - name: eat-together-bot
+        main_module: eat_together_bot.main
+        required_env_variables:
+          - ${TELEGRAM_KEY}
+          - ${MQTT_HOST}
+          - ${MQTT_SUBSCRIBER_ID}
+          - ${MQTT_USER}
+          - ${MQTT_PASSWORD}
+          - ${MQTT_TOPIC}
+          - ${INTERFACE_APIKEY}
+          - ${INSTANCE_NAMESPACE}
+          - ${WENET_BACKEND_URL}
+          - ${WENET_APP_ID}
+          - ${WENET_HUB_URL}
+          - ${TASK_TYPE_ID}
+          - ${CLIENT_SECRET}
+          - ${WENET_AUTHENTICATION_MANAGEMENT_URL}
+          - ${REDIRECT_URL}
+      - name: ask-for-help-bot
+        main_module: ask_for_help_bot.main
+        required_env_variables:
+          - ${TELEGRAM_KEY}
+          - ${MQTT_HOST}
+          - ${MQTT_SUBSCRIBER_ID}
+          - ${MQTT_USER}
+          - ${MQTT_PASSWORD}
+          - ${MQTT_TOPIC}
+          - ${INTERFACE_APIKEY}
+          - ${INSTANCE_NAMESPACE}
+          - ${WENET_BACKEND_URL}
+          - ${WENET_APP_ID}
+          - ${WENET_HUB_URL}
+          - ${TASK_TYPE_ID}
+          - ${CLIENT_SECRET}
+          - ${WENET_AUTHENTICATION_MANAGEMENT_URL}
+          - ${REDIRECT_URL}
+    ci_stages:
+      - build
+      - test
+      - push
+      - trigger
+      - notify
+    ci_environments:
+      - production
+      - staging
+      - issue
+    project_python_submodules:
+      - name: wenet-common-models
+      - name: chatbot-core
+      - name: utils
+        path: chatbot-core/utils-py
+  roles:
+    - uh.project-template
