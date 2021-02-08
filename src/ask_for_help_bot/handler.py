@@ -5,8 +5,6 @@ import uuid
 from datetime import datetime
 from typing import Optional, List
 
-from emoji import emojize
-
 from ask_for_help_bot.pending_conversations import PendingQuestionToAnswer
 from ask_for_help_bot.pending_messages_job import PendingMessagesJob
 from chatbot_core.model.context import ConversationContext
@@ -22,7 +20,7 @@ from chatbot_core.v3.handler.helpers.intent_manager import IntentFulfillerV3
 from chatbot_core.v3.job.job_manager import JobManager
 from chatbot_core.v3.logger.event_logger import LoggerConnector
 from chatbot_core.v3.model.messages import TextualResponse, RapidAnswerResponse, TelegramRapidAnswerResponse, \
-    UrlImageResponse, ResponseMessage
+    UrlImageResponse, ResponseMessage, TelegramTextualResponse
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEvent
 from common.button_payload import ButtonPayload
 from common.wenet_event_handler import WenetEventHandler
@@ -329,9 +327,10 @@ class AskForHelpHandler(WenetEventHandler):
             logger.exception("Refresh token is not longer valid")
             notification_event = NotificationEvent(social_details=user_account.social_details)
             notification_event.with_message(
-                TextualResponse(
+                TelegramTextualResponse(
                     f"Sorry, the login credential are no longer valid, please login again in order to continue to use the bot:\n "
-                    f"{self.wenet_authentication_url}/login?client_id={self.app_id}&external_id={user_account.social_details.get_user_id()}"
+                    f"{self.wenet_authentication_url}/login?client_id={self.app_id}&external_id={user_account.social_details.get_user_id()}",
+                    parse_mode=None
                 )
             )
             return notification_event
