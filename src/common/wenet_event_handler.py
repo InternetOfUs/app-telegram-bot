@@ -338,11 +338,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
             context.with_dynamic_state(self.PREVIOUS_INTENT, fulfiller.intent_id)
             outgoing_event.with_context(context)
         except RefreshTokenExpiredError:
-            logger.exception("Refresh token is not longer valid")
-            outgoing_event = OutgoingEvent(social_details=incoming_event.social_details)
-            outgoing_event.with_message(
-                TelegramTextualResponse(f"Sorry, the login credential are not longer valid, please perform the login again in order to continue to use the bot:\n {self.wenet_authentication_url}/login?client_id={self.app_id}&external_id={incoming_event.social_details.get_user_id()}", parse_mode=None)
-            )
+            return self.handle_oauth_login(incoming_event, "")
         except Exception as e:
             logger.exception("Something went wrong while handling incoming message", exc_info=e)
             outgoing_event = self.action_error(incoming_event, "error")
@@ -356,6 +352,8 @@ class WenetEventHandler(EventHandler, abc.ABC):
                     logger.warning("Unable to send logs to the service API")
             except TypeError as e:
                 logger.warning("Unsupported message to log", exc_info=e)
+            except RefreshTokenExpiredError:
+                outgoing_event = self.handle_oauth_login(incoming_event, "")
         return outgoing_event
 
     def _save_wenet_and_telegram_user_id_to_context(self, message: WeNetAuthenticationEvent, social_details: TelegramDetails) -> None:
