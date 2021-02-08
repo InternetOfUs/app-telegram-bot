@@ -2,6 +2,9 @@
 
 # Versions
 
+## 1.0.3
+- Updated the wenet common models to version `1.0.2`, that contain a major bug fix on OAuth token refresh
+
 ## 1.0.2
 - Added language support
 - Added caching system relying on Redis, to allow users to click on all the buttons
