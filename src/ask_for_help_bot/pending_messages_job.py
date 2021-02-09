@@ -46,7 +46,7 @@ class PendingMessagesJob(SocialJob):
         for question_id in pending_answers:
             pending_answer = PendingQuestionToAnswer.from_repr(pending_answers[question_id])
             if pending_answer.sent is not None and pending_answer.sent + \
-                    datetime.timedelta(minutes=self.REMINDER_MINUTES) > datetime.datetime.now():
+                    datetime.timedelta(minutes=self.REMINDER_MINUTES) <= datetime.datetime.now():
                 # pretending to be in the same state as if the bot receives a new message from Wenet
                 context.context.with_static_state("current_state", "answer_1")
                 # adding the question id in the context

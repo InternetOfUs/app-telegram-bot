@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-02-04 10:15+0100\n"
+"PO-Revision-Date: 2021-02-09 11:16+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -22,7 +22,8 @@ msgid "info_text"
 msgstr ""
 "Puoi fare una domanda con il comando /question. Usando /answer puoi vedere "
 "le risposte aperte e rispondere. Usa /profile per controllare il tuo profilo "
-"personale"
+"personale. Se vuoi interrompere un’azione che stai facendo, usa il comando /"
+"cancel"
 
 #: src/ask_for_help/handler.py:58
 msgid "start_text_1"
@@ -183,6 +184,9 @@ msgstr "Mi piace!"
 
 msgid "not_implemented"
 msgstr "Mi dispiace, ma questo comando non è ancora disponibile :grimacing:"
+
+msgid "you_are_answering_to"
+msgstr "Stai rispondendo alla seguente domanda:"
 
 #~ msgid "not_inclusive"
 #~ msgstr "Please use more "

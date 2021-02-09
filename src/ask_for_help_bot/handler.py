@@ -90,6 +90,7 @@ class AskForHelpHandler(WenetEventHandler):
     LABEL_BEST_ANSWER_TRANSACTION = "bestAnswerTransaction"
     # keys used in Redis cache
     CACHE_LOCALE = "locale-{}"
+    FIRST_ANSWER = "first-answer-{}"
 
     def __init__(self, instance_namespace: str, bot_id: str, handler_id: str, telegram_id: str, wenet_backend_url: str,
                  wenet_hub_url: str, app_id: str, client_secret: str, redirect_url: str, wenet_authentication_url: str,
@@ -505,15 +506,36 @@ class AskForHelpHandler(WenetEventHandler):
             response.with_message(TextualResponse(error_message))
         return response
 
+    def is_first_answer(self, wenet_user_id: str) -> bool:
+        """
+        Use Redis to keep track of the fact that a Wenet user has already answered someone else's question.
+        This piece of information is used to decide whether or not showing the conduct instructions
+        """
+        first_answer = self.cache.get(self.FIRST_ANSWER.format(wenet_user_id))
+        if first_answer is None:
+            self.cache.cache({"has_answered": True}, key=self.FIRST_ANSWER.format(wenet_user_id))
+            return True
+        return False
+
     def action_answer_question(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
         """
         QuestionToAnswerMessage flow, when user click on the answer button
         """
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         context = incoming_event.context
+        user_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
+        show_conduct_message = True
+        if user_id:
+            is_first_answer = self.is_first_answer(user_id)
+            show_conduct_message = is_first_answer or random.randint(1, 10) <= 2
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWER_2)
         context.with_static_state(self.CONTEXT_QUESTION_TO_ANSWER, button_payload.payload["task_id"])
-        message = self._translator.get_translation_instance(user_locale).with_text("question_0").translate()
+        if show_conduct_message:
+            message = self._translator.get_translation_instance(user_locale).with_text("question_0").translate()
+        else:
+            # just show a simple "Ok, answer" translated in the various languages
+            message = "Ok, " + self._translator.get_translation_instance(user_locale)\
+                .with_text("answer_question_button").translate().lower()
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_context(context)
         response.with_message(TextualResponse(message))
@@ -523,15 +545,30 @@ class AskForHelpHandler(WenetEventHandler):
         """
         /answer flow, when the user picks an answer
         """
+        if incoming_event.context is not None:
+            service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
+        else:
+            raise Exception(f"Missing conversation context for event {incoming_event}")
+
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         context = incoming_event.context
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWER_2)
         context.with_static_state(self.CONTEXT_QUESTION_TO_ANSWER, button_payload.payload["task_id"])
         context.delete_static_state(self.CONTEXT_PROPOSED_TASKS)
-        message = self._translator.get_translation_instance(user_locale).with_text("question_0").translate()
+        user_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
+        task = service_api.get_task(button_payload.payload["task_id"])
+        is_first_time = self.is_first_answer(user_id)
+        message = self._translator.get_translation_instance(user_locale).with_text("you_are_answering_to").translate()\
+            + f"\n_{task.goal.name}_"
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_context(context)
-        response.with_message(TextualResponse(message))
+        response.with_message(TelegramTextualResponse(message))
+        if is_first_time:
+            response.with_message(TextualResponse(
+                self._translator.get_translation_instance(user_locale).with_text("question_0").translate()))
+        final_message = "Ok, " + self._translator.get_translation_instance(user_locale) \
+            .with_text("answer_question_button").translate().lower()
+        response.with_message(TextualResponse(final_message))
         return response
 
     def action_answer_question_2(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
@@ -768,7 +805,7 @@ class AskForHelpHandler(WenetEventHandler):
         user_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
         tasks = [t for t in service_api.get_all_tasks_of_application(self.app_id)
                  if t.requester_id != user_id and user_id not in set(
-                [transaction.actioneer_id for transaction in t.transactions])]
+                [transaction.actioneer_id for transaction in t.transactions if transaction.label == "answerTransaction"])]
         if not tasks:
             response.with_message(TextualResponse(
                 self._translator.get_translation_instance(user_locale).with_text("answers_no_tasks").translate()))

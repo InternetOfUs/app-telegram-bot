@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-02-04 10:13+0100\n"
+"PO-Revision-Date: 2021-02-09 11:11+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -22,7 +22,7 @@ msgid "info_text"
 msgstr ""
 "You can ask a question with the /question command. With /answer you can "
 "check open questions and answer them. Use /profile to check your personal "
-"profile."
+"profile. If you want to cancel your current operation, use /cancel"
 
 #: src/ask_for_help/handler.py:58
 msgid "start_text_1"
@@ -182,6 +182,9 @@ msgstr "I like this answer"
 
 msgid "not_implemented"
 msgstr "I’m sorry, this command is not implemented yet :grimacing:"
+
+msgid "you_are_answering_to"
+msgstr "You are answering to the following question:"
 
 #~ msgid "not_inclusive"
 #~ msgstr "Please use more "
