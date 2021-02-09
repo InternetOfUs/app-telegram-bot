@@ -1,5 +1,6 @@
 import abc
 import logging
+import os
 from typing import Optional, List
 from threading import Lock
 
@@ -119,7 +120,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
         self.task_type_id = task_type_id
         self.intent_manager = IntentManagerV3()
         self.messages_lock = Lock()
-        self.message_parser_for_logs = LogMessageHandler(self._bot_id, "Telegram")
+        self.message_parser_for_logs = LogMessageHandler(os.getenv("PROJECT_NAME", "wenet-ask-for-help-chatbot"), "Telegram")
         # redirecting the flow in the corresponding points
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_START, self.action_start).with_rule(intent=self.INTENT_START)
