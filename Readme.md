@@ -165,6 +165,7 @@ The _ask for help_ bot has the following optional environment variable:
 * `WENET_APP_ID`: WeNet App ID used by the bot
 * `WENET_HUB_URL`: url of the WeNet hub
 * `BOT_ID`: the bot ID associated with the EventHandler used by the bot itself.
+* `PROJECT_NAME` (optional): a string that will be used as name of the log file (with the format `<PROJECT_NAME>-messages.log`). The default value is `wenet-ask-for-help-chatbot`.
 
 ## Instances
 

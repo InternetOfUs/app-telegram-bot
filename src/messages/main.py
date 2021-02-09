@@ -8,7 +8,8 @@ from uhopper.utils.mqtt import MqttPublishHandler
 
 bot_id = os.getenv("BOT_ID")
 
-logging.config.dictConfig(get_logging_configuration(f"{bot_id}-messages"))
+project_name = os.getenv("PROJECT_NAME", "wenet-ask-for-help-chatbot")
+logging.config.dictConfig(get_logging_configuration(f"{project_name}-messages"))
 logger = logging.getLogger("uhopper.chatbot.wenet.messages")
 
 topic = os.getenv("MQTT_TOPIC")
