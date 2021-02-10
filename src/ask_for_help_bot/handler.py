@@ -146,9 +146,9 @@ class AskForHelpHandler(WenetEventHandler):
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_ANSWER, self.action_answer).with_rule(intent=self.INTENT_ANSWER)
         )
-        self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_PROFILE, self.action_profile).with_rule(intent=self.INTENT_PROFILE)
-        )
+        # self.intent_manager.with_fulfiller(
+        #     IntentFulfillerV3(self.INTENT_PROFILE, self.action_profile).with_rule(intent=self.INTENT_PROFILE)
+        # )
         # keep this as the last one!
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3("", self.handle_button_with_payload).with_rule(
