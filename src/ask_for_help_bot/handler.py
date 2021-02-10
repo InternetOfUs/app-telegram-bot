@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import random
 import uuid
 from datetime import datetime
@@ -169,7 +170,8 @@ class AskForHelpHandler(WenetEventHandler):
                 logger.info(f"Unable to retrieve user profile [{wenet_user_id}]")
                 return 'en'
             locale = user_object.locale if user_object.locale else 'en'
-            self.cache.cache({"locale": locale}, ttl=86400, key=self.CACHE_LOCALE.format(wenet_user_id))
+            self.cache.cache({"locale": locale}, ttl=int(os.getenv("LOCALE_TTL", 86400)),
+                             key=self.CACHE_LOCALE.format(wenet_user_id))
             return locale
         return cached_locale.get("locale", "en")
 
