@@ -2,6 +2,12 @@
 
 # Versions
 
+## 1.0.4
+- Several small fixes, such as typos, removal of the command `/profile` and `/report`
+- Added the possibility to use an environment variable to set the time to live of the cached locale of each user
+- Updated chatbot core to version `1.4.2`
+- Added the possibility to use an environment variable to set the name of the log file, as well as the `project` value used in the logging component
+
 ## 1.0.3
 - Updated the wenet common models to version `1.0.2`, that contain a major bug fix on OAuth token refresh
 
