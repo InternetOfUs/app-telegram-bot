@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import random
 import uuid
 from datetime import datetime
@@ -146,9 +147,9 @@ class AskForHelpHandler(WenetEventHandler):
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_ANSWER, self.action_answer).with_rule(intent=self.INTENT_ANSWER)
         )
-        self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_PROFILE, self.action_profile).with_rule(intent=self.INTENT_PROFILE)
-        )
+        # self.intent_manager.with_fulfiller(
+        #     IntentFulfillerV3(self.INTENT_PROFILE, self.action_profile).with_rule(intent=self.INTENT_PROFILE)
+        # )
         # keep this as the last one!
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3("", self.handle_button_with_payload).with_rule(
@@ -169,7 +170,8 @@ class AskForHelpHandler(WenetEventHandler):
                 logger.info(f"Unable to retrieve user profile [{wenet_user_id}]")
                 return 'en'
             locale = user_object.locale if user_object.locale else 'en'
-            self.cache.cache({"locale": locale}, ttl=86400, key=self.CACHE_LOCALE.format(wenet_user_id))
+            self.cache.cache({"locale": locale}, ttl=int(os.getenv("LOCALE_TTL", 86400)),
+                             key=self.CACHE_LOCALE.format(wenet_user_id))
             return locale
         return cached_locale.get("locale", "en")
 
@@ -254,14 +256,14 @@ class AskForHelpHandler(WenetEventHandler):
                 message_string = self._translator.get_translation_instance(user_object.locale)\
                     .with_text("answer_message_0")\
                     .with_substitution("question", message.question)\
-                    .with_substitution("user", questioning_user.name.first)\
+                    .with_substitution("user", questioning_user.name.first if questioning_user.name.first else "Anonymous")\
                     .translate()
                 # we create ids of all buttons, to know which buttons invalidate when one of them is clicked
                 button_ids = [str(uuid.uuid4()) for _ in range(4)]
                 button_data = {
                     "task_id": message.task_id,
                     "question": message.question,
-                    "username": questioning_user.name.first,
+                    "username": questioning_user.name.first if questioning_user.name.first else "Anonymous",
                     "related_buttons": button_ids,
                 }
                 response = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1, 1])
@@ -286,7 +288,7 @@ class AskForHelpHandler(WenetEventHandler):
                         .with_text("new_answer_message") \
                         .with_substitution("question", question_text) \
                         .with_substitution("answer", answer_text) \
-                        .with_substitution("username", answerer_user.name.first) \
+                        .with_substitution("username", answerer_user.name.first if answerer_user.name.first else "Anonymous") \
                         .translate()
                     answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1])
                     button_report_text = self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate()
@@ -819,7 +821,7 @@ class AskForHelpHandler(WenetEventHandler):
             for task in tasks:
                 questioning_user = service_api.get_user_profile(str(task.requester_id))
                 if questioning_user:
-                    tasks_texts.append(f"#{1 + len(proposed_tasks)}: *{task.goal.name}* - {questioning_user.name.first}")
+                    tasks_texts.append(f"#{1 + len(proposed_tasks)}: *{task.goal.name}* - {questioning_user.name.first if questioning_user.name.first else 'Anonymous'}")
                     proposed_tasks.append(task.task_id)
             context.with_static_state(self.CONTEXT_PROPOSED_TASKS, proposed_tasks)
             message_text = '\n'.join([text] + tasks_texts + [self._translator.get_translation_instance(user_locale).with_text("answers_tasks_choose").translate()])

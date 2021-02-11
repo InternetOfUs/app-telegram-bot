@@ -142,7 +142,8 @@ Both the chatbots use the following environment variables
 * `CLIENT_SECRET`: the secret key of the WeNet application
 * `WENET_AUTHENTICATION_MANAGEMENT_URL`: the URL that manages OAuth in WeNet
 * `REDIRECT_URL`: the redirection URL associated with the WeNet application
-* `PROJECT_NAME` (optional): a string that will be used as name of the log file (with the format `<PROJECT_NAME>.log`) and as `project` field in the Wenet logging messages. The default value is `wenet-ask-for-help-chatbot`.
+* `PROJECT_NAME` (optional): a string that will be used as name of the log file (with the format `<PROJECT_NAME>.log`) and as `project` field in the Wenet logging messages. The default value is `wenet-ask-for-help-chatbot`
+* `LOCALE_TTL` (optional): the time to live of the Redis key in which the user locale is saved, in seconds. By default, it is 86400 (24h).
 
 Optional variables (to setup Redis):
 - `REDIS_HOST` (default is `localhost`)
