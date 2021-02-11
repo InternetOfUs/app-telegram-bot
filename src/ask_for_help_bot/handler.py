@@ -568,9 +568,10 @@ class AskForHelpHandler(WenetEventHandler):
         if is_first_time:
             response.with_message(TextualResponse(
                 self._translator.get_translation_instance(user_locale).with_text("question_0").translate()))
-        final_message = "Ok, " + self._translator.get_translation_instance(user_locale) \
-            .with_text("answer_question_button").translate().lower()
-        response.with_message(TextualResponse(final_message))
+        else:
+            final_message = "Ok, " + self._translator.get_translation_instance(user_locale) \
+                .with_text("answer_question_button").translate().lower()
+            response.with_message(TextualResponse(final_message))
         return response
 
     def action_answer_question_2(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
