@@ -247,7 +247,8 @@ class AskForHelpHandler(WenetEventHandler):
             raise ValueError(error_message)
 
         user_account = user_accounts[0]
-        response = TelegramTextualResponse("*%s*\n_%s_" % (message.title, message.text))
+        title = "" if message.title == "" else f"*{message.title}*\n"
+        response = TelegramTextualResponse(f"{title}_{message.text}_")
         return NotificationEvent(user_account.social_details, [response], user_account.context)
 
     def handle_wenet_message(self, message: Message) -> NotificationEvent:
