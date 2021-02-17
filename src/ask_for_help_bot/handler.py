@@ -237,7 +237,18 @@ class AskForHelpHandler(WenetEventHandler):
         return response
 
     def handle_wenet_textual_message(self, message: TextualMessage) -> NotificationEvent:
-        pass
+        """
+        Handle all the incoming textual messages
+        """
+        user_accounts = self.get_user_accounts(message.receiver_id)
+        if len(user_accounts) != 1:
+            error_message = f"No context associated with Wenet user {message.receiver_id}"
+            logger.error(error_message)
+            raise ValueError(error_message)
+
+        user_account = user_accounts[0]
+        response = TelegramTextualResponse("*%s*\n_%s_" % (message.title, message.text))
+        return NotificationEvent(user_account.social_details, [response], user_account.context)
 
     def handle_wenet_message(self, message: Message) -> NotificationEvent:
         # new question to answer, or a new answer to a question
