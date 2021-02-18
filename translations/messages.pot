@@ -149,3 +149,9 @@ msgstr ""
 
 msgid "you_are_answering_to"
 msgstr ""
+
+msgid "picked_best_answer"
+msgstr ""
+
+msgid "message_from_wenet"
+msgstr ""
