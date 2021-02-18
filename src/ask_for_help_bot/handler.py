@@ -30,7 +30,7 @@ from wenet.common.interface.exceptions import TaskCreationError, RefreshTokenExp
     TaskNotFound
 from wenet.common.model.message.event import WeNetAuthenticationEvent
 from wenet.common.model.message.message import TextualMessage, Message, QuestionToAnswerMessage, \
-    AnsweredQuestionMessage, IncentiveMessage, IncentiveBadge
+    AnsweredQuestionMessage, IncentiveMessage, IncentiveBadge, AnsweredPickedMessage
 from wenet.common.model.task.task import Task, TaskGoal
 from wenet.common.model.task.transaction import TaskTransaction
 
@@ -335,6 +335,17 @@ class AskForHelpHandler(WenetEventHandler):
                 answer = TextualResponse(message.message)
                 image = UrlImageResponse(message.image_url)
                 return NotificationEvent(user_account.social_details, [answer, image], context)
+            elif isinstance(message, AnsweredPickedMessage):
+                try:
+                    question_task = service_api.get_task(message.task_id)
+                    message_string = self._translator.get_translation_instance(user_object.locale) \
+                        .with_text("picked_best_answer") \
+                        .with_substitution("question", question_task.goal.name) \
+                        .translate()
+                    return NotificationEvent(user_account.social_details, [TextualResponse(message_string)], context)
+                except TaskNotFound as e:
+                    logger.error(e.message)
+                    raise Exception(e.message)
             else:
                 logger.warning(f"Received unrecognized message of type {type(message)}: {message.to_repr()}")
                 raise Exception()

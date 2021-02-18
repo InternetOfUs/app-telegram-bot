@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-02-10 16:47+0100\n"
+"PO-Revision-Date: 2021-02-18 10:30+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -182,6 +182,11 @@ msgstr "Уучлаарай, энэ комманд одоогоор байхгү�
 
 msgid "you_are_answering_to"
 msgstr "Та дараах асуултанд хариулж байна:"
+
+msgid "picked_best_answer"
+msgstr ""
+"_ {question} _ гэсэн асуултанд таны хариултыг хамгийн сайн гэж сонгож "
+"байна! :muscle:"
 
 #~ msgid "not_inclusive"
 #~ msgstr "Please use more "

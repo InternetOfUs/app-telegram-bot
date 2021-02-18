@@ -149,3 +149,6 @@ msgstr ""
 
 msgid "you_are_answering_to"
 msgstr ""
+
+msgid "picked_best_answer"
+msgstr ""
