@@ -10,7 +10,7 @@ from chatbot_core.v3.model.messages import ResponseMessage, TextualResponse, Tel
     RapidAnswerResponse, TelegramRapidAnswerResponse, UrlImageResponse, TelegramCarouselResponse
 from wenet.common.model.logging_messages import messages
 from wenet.common.model.logging_messages.contents import TextualContent, AttachmentContent, CarouselContent, Card, \
-    LocationContent
+    LocationContent, ActionRequest
 from wenet.common.model.message.event import WeNetAuthenticationEvent
 from wenet.common.model.message.message import TextualMessage, Message
 
@@ -60,8 +60,7 @@ class LogMessageHandler:
         return messages.RequestMessage(str(uuid.uuid4()), self.channel, user_id, self.project, content)
 
     def handle_incoming_command(self, message: IncomingCommand, user_id: str) -> messages.RequestMessage:
-        content = TextualContent(message.text)
-        content.with_button(message.command, message.intent.value)
+        content = ActionRequest(message.command)
         return messages.RequestMessage(str(uuid.uuid4()), self.channel, user_id, self.project, content)
 
     def handle_incoming_text_message(self, message: IncomingTextMessage, user_id: str) -> messages.RequestMessage:
