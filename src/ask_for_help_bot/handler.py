@@ -76,12 +76,7 @@ class AskForHelpHandler(WenetEventHandler):
     STATE_QUESTION_1 = "question_1"
     STATE_QUESTION_2 = "question_2"
     STATE_QUESTION_3 = "question_3"
-    STATE_ANSWER_1 = "answer_1"
-    STATE_ANSWER_2 = "answer_2"
-    STATE_REPORT_1 = "report_1"
-    STATE_REPORT_2 = "report_2"
-    STATE_RECEIVED_ANSWER = "received_answer"
-    STATE_ANSWERING = "answering"
+    STATE_ANSWERING = "answer_2"
     # transaction labels
     LABEL_ANSWER_TRANSACTION = "answerTransaction"
     LABEL_NOT_ANSWER_TRANSACTION = "notAnswerTransaction"
@@ -141,7 +136,7 @@ class AskForHelpHandler(WenetEventHandler):
         )
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3("", self.action_answer_question_2).with_rule(
-                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWER_2)
+                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING)
             )
         )
         self.intent_manager.with_fulfiller(
@@ -198,14 +193,26 @@ class AskForHelpHandler(WenetEventHandler):
         response.with_message(TextualResponse(message))
         return response
 
-    def cancel_action(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+    def _clear_context(self, context: ConversationContext) -> ConversationContext:
         context_to_remove = [self.CONTEXT_CURRENT_STATE, self.CONTEXT_ASKED_QUESTION, self.CONTEXT_DESIRED_ANSWERER,
                              self.CONTEXT_QUESTION_TO_ANSWER, self.CONTEXT_MESSAGE_TO_REPORT,
                              self.CONTEXT_REPORTING_IS_QUESTION, self.CONTEXT_REPORTING_REASON,
                              self.CONTEXT_ORIGINAL_QUESTION_REPORTING]
-        context = incoming_event.context
         for context_key in context_to_remove:
             context.delete_static_state(context_key)
+        return context
+
+    def _is_doing_another_action(self, context: ConversationContext) -> bool:
+        """
+        Returns True if the user is in another action (e.g. inside the /question flow), False otherwise
+        """
+        statuses = [self.STATE_ANSWERING, self.STATE_QUESTION_1, self.STATE_QUESTION_2, self.STATE_QUESTION_3]
+        current_status = context.get_static_state(self.CONTEXT_CURRENT_STATE, "")
+        return current_status in statuses
+
+    def cancel_action(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+        context = incoming_event.context
+        self._clear_context(context)
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         message = self._translator.get_translation_instance(user_locale).with_text("cancel_text").translate()
         response = OutgoingEvent(social_details=incoming_event.social_details)
@@ -236,6 +243,16 @@ class AskForHelpHandler(WenetEventHandler):
         )
         return response
 
+    def _send_new_message_from_wenet_notification(self, user: UserConversationContext) -> None:
+        """
+        Clear the context and send a message to the user saying that a new message from wenet has come,
+        and that the previous operation is lost
+        """
+        context = self._clear_context(user.context)
+        locale = self._get_user_locale_from_wenet_id(context.get_static_state(self.CONTEXT_WENET_USER_ID), context)
+        text = self._translator.get_translation_instance(locale).with_text("message_from_wenet").translate()
+        self.send_notification(NotificationEvent(user.social_details, [TextualResponse(text)], context))
+
     def handle_wenet_textual_message(self, message: TextualMessage) -> NotificationEvent:
         """
         Handle all the incoming textual messages
@@ -247,6 +264,10 @@ class AskForHelpHandler(WenetEventHandler):
             raise ValueError(error_message)
 
         user_account = user_accounts[0]
+        # in case the user was doing something else, the previous operation is cancelled
+        if self._is_doing_another_action(user_account.context):
+            self._send_new_message_from_wenet_notification(user_account)
+
         title = "" if message.title == "" else f"*{message.title}*\n"
         response = TelegramTextualResponse(f"{title}_{message.text}_")
         return NotificationEvent(user_account.social_details, [response], user_account.context)
@@ -260,6 +281,10 @@ class AskForHelpHandler(WenetEventHandler):
 
         user_account = user_accounts[0]
         context = user_account.context
+        # in case the user was doing something else, the previous operation is cancelled
+        if self._is_doing_another_action(user_account.context):
+            self._send_new_message_from_wenet_notification(user_account)
+
         service_api = self._get_service_api_interface_connector_from_context(context)
         try:
             user_object = service_api.get_user_profile(str(message.receiver_id))
@@ -553,7 +578,7 @@ class AskForHelpHandler(WenetEventHandler):
         if user_id:
             is_first_answer = self.is_first_answer(user_id)
             show_conduct_message = is_first_answer or random.randint(1, 10) <= 2
-        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWER_2)
+        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING)
         context.with_static_state(self.CONTEXT_QUESTION_TO_ANSWER, button_payload.payload["task_id"])
         if show_conduct_message:
             message = self._translator.get_translation_instance(user_locale).with_text("question_0").translate()
@@ -577,7 +602,7 @@ class AskForHelpHandler(WenetEventHandler):
 
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         context = incoming_event.context
-        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWER_2)
+        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING)
         context.with_static_state(self.CONTEXT_QUESTION_TO_ANSWER, button_payload.payload["task_id"])
         context.delete_static_state(self.CONTEXT_PROPOSED_TASKS)
         user_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)

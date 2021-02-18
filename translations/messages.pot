@@ -152,3 +152,6 @@ msgstr ""
 
 msgid "picked_best_answer"
 msgstr ""
+
+msgid "message_from_wenet"
+msgstr ""
