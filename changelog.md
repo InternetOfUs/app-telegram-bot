@@ -2,6 +2,13 @@
 
 # Versions
 
+## 1.0.5
+
+* Removed redundant messages.
+* Added new logic allowing to clean context once new messages from WeNet are received.
+* Added support for "answer picked" notification message.
+* Added support for "textual message" notification message.
+
 ## 1.0.4
 - Several small fixes, such as typos, removal of the command `/profile` and `/report`
 - Added the possibility to use an environment variable to set the time to live of the cached locale of each user
