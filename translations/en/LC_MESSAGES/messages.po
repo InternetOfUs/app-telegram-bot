@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-02-18 11:10+0100\n"
+"PO-Revision-Date: 2021-03-11 16:56+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -20,20 +20,21 @@ msgstr ""
 #: src/ask_for_help/handler.py:32
 msgid "info_text"
 msgstr ""
-"You can ask a question with the /question command. With /answer you can "
-"check open questions and answer them. If you want to cancel your current "
-"operation, use /cancel"
+"You can ask a question with the /question command. With /answer you can list "
+"the currently open questions to answer. If you want to cancel your current "
+"operation, use /cancel . You can report a bug by sending an email to "
+"support@internetofus.eu !"
 
 #: src/ask_for_help/handler.py:58
 msgid "start_text_1"
 msgstr ""
-"Thanks for connecting! :wave: This is the *AskAAU* chatbot. My aim is to "
-"help students to help other students with questions and answers."
+"Thanks for connecting! :wave: This is the *Ask for Help* chatbot. I help "
+"students sharing their questions and get answers from their peers."
 
 #: src/ask_for_help/handler.py:59
 msgid "start_text_2"
 msgstr ""
-"I’m designed to connect people with diversity in mind - you know, opposites "
+"I’m designed to connect people with diversity in mind – you know, opposites "
 "attract each other, but sometimes it’s comfortable to have a similar person "
 "listening to you."
 
@@ -43,17 +44,19 @@ msgstr "Ask a question! :thinking_face:"
 
 #: src/ask_for_help/handler.py:46
 msgid "error_text"
-msgstr "I’m very sorry but I didn’t understand :pensive:"
+msgstr ""
+"I’m very sorry, but I didn’t understand :pensive: Write /info to learn how I "
+"can assist!"
 
 #: src/ask_for_help/handler.py:52
 msgid "cancel_text"
-msgstr "The current operation has been cancelled successfully"
+msgstr "No problem, the current operation has been cancelled successfully!"
 
 msgid "question_1"
-msgstr "What would you like to ask from the community members?"
+msgstr "What would you like to ask from the community members? :point_down:"
 
 msgid "question_2"
-msgstr "Tell me more about what kind of person should I ask?"
+msgstr "Help my :crystal_ball: algorithms, what type of people should I ask? "
 
 msgid "type_answer_1"
 msgstr "Different than me"
@@ -65,10 +68,12 @@ msgid "type_answer_3"
 msgstr "Anyone"
 
 msgid "question_is_not_text"
-msgstr "Please write your question"
+msgstr "Please write your question :point_down:"
 
 msgid "specify_answerer"
-msgstr "Can you specify why this kind of person?"
+msgstr ""
+":face_with_monocle: Please help my researcher :scientist: masters and tell "
+"why did you choose this kind of person?"
 
 msgid "question_4"
 msgstr ""
@@ -89,11 +94,11 @@ msgstr ""
 "conduct.\n"
 ":three: You have the opportunity to report abusive behavior.\n"
 "\n"
-"Ok? Let’s go!"
+"Ok? Let’s go! :point_down:"
 
 msgid "error_task_creation"
 msgstr ""
-"I’m very sorry but something went wrong :pensive: Please try again later"
+"I’m very sorry but something went wrong :pensive: Please try again later."
 
 msgid "answer_message_0"
 msgstr ""
@@ -104,7 +109,7 @@ msgstr ""
 "Can you answer it real quick?"
 
 msgid "answer_question_button"
-msgstr "Answer"
+msgstr ":raised_hand: Answer"
 
 msgid "answer_remind_later_button"
 msgstr ":clock2: Remind me later"
@@ -116,16 +121,16 @@ msgid "answer_report_button"
 msgstr "Report"
 
 msgid "answerer_is_not_text"
-msgstr "You answer must be a text and not an attachment"
+msgstr "You answer must be a text message, not an attachment, image or poll."
 
 msgid "answered_message"
 msgstr "Thanks! I will forward your answer to the person that asked it."
 
 msgid "not_answer_response"
-msgstr "Alright"
+msgstr "Alright!"
 
 msgid "answer_remind_later_message"
-msgstr "Ok, I will remind you later"
+msgstr "Ok, I will remind you later :zzz:"
 
 msgid "why_reporting_message"
 msgstr "Why are you reporting the message?"
@@ -154,30 +159,31 @@ msgstr ""
 "{answer} - {username}"
 
 msgid "more_answers_button"
-msgstr "Ask more people"
+msgstr ":game_die: Ask more people"
 
 msgid "ask_more_answers_text"
-msgstr "Ok, I will ask your question to more users"
+msgstr "Ok :ok_hand:, I will ask your question from more users!"
 
 msgid "answers_no_tasks"
-msgstr "There are no open questions at time moment, try again later"
+msgstr ""
+"There are no open questions at the moment :astonished:, try again later!"
 
 msgid "answers_tasks_intro"
-msgstr "Here are the questions available to answer:"
+msgstr "Here are the open questions available to answer:"
 
 msgid "answers_tasks_choose"
-msgstr "Choose a question to answer"
+msgstr "Choose a question to answer :point_down:"
 
 msgid "best_answer_final_message"
 msgstr ""
 "Glad I could help! If you need to ask another question, just use the /"
-"question command"
+"question command :wink:"
 
 msgid "expired_button_message"
-msgstr "I’m sorry, but you clicked on an expired button"
+msgstr "I’m sorry, that question is already resolved."
 
 msgid "best_answers_button"
-msgstr "I like this answer"
+msgstr ":white_check_mark: I accept this answer!"
 
 msgid "not_implemented"
 msgstr "I’m sorry, this command is not implemented yet :grimacing:"
@@ -191,7 +197,9 @@ msgstr ""
 "Way to go :muscle:"
 
 msgid "message_from_wenet"
-msgstr "There’s a new message from Wenet, your current operation is cancelled"
+msgstr ""
+"There’s a new notification from WeNet, I needed to cancel your current "
+"operation."
 
 #~ msgid "not_inclusive"
 #~ msgstr "Please use more "
