@@ -2,8 +2,10 @@
 
 # Versions
 
-## 1.0.5
+## 1.0.6
+- Updated text of english messages with the new translations provided by Peter
 
+## 1.0.5
 * Removed redundant messages.
 * Added new logic allowing to clean context once new messages from WeNet are received.
 * Added support for "answer picked" notification message.
