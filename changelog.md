@@ -2,6 +2,9 @@
 
 # Versions
 
+## 1.0.7
+- Fixed a bug in showing markdown characters into markdown messages
+
 ## 1.0.6
 - Updated text of english messages with the new translations provided by Peter
 
