@@ -377,3 +377,13 @@ class WenetEventHandler(EventHandler, abc.ABC):
         context.context.with_static_state(self.CONTEXT_WENET_USER_ID, wenet_user_id)
 
         self._interface_connector.update_user_context(context)
+
+    @staticmethod
+    def parse_text_with_markdown(text: str) -> str:
+        """
+        Given a string, replace any possible * with \u2022 (a dot), an underscore with a dash and a ` with '
+        """
+        text = text.replace("*", "\u2022")
+        text = text.replace("_", "-")
+        text = text.replace("`", "'")
+        return text
