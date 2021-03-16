@@ -2,6 +2,9 @@
 
 # Versions
 
+## 1.0.8
+- Updated spanish translations
+
 ## 1.0.7
 - Fixed a bug in showing markdown characters into markdown messages
 
