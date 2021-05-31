@@ -155,3 +155,6 @@ msgstr ""
 
 msgid "message_from_wenet"
 msgstr ""
+
+msgid "badges_promo"
+msgstr ""
