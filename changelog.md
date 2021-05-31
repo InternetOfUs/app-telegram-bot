@@ -2,6 +2,10 @@
 
 # Versions
 
+## 1.0.9
+- Added a new message promoting badges that appears after the login with Wenet
+- Updated some translations in spanish and danish
+
 ## 1.0.8
 - Updated spanish translations
 
