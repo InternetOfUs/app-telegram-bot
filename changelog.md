@@ -2,6 +2,9 @@
 
 # Versions
 
+## 1.0.10
+- Changed the `project` field in the messages logged into the Wenet platform. Now the `appId` is used, instead of the `PROJECT_NAME` environment variable
+
 ## 1.0.9
 - Added a new message promoting badges that appears after the login with Wenet
 - Updated some translations in spanish and danish
