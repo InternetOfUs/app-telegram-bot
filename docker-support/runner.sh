@@ -9,6 +9,7 @@ TEST=0
 DELETE_IF_FAILED=0
 SAVE_IMAGE_TO_TARGZ=0
 PUSH_IMAGE=0
+TEST_COVERAGE=0
 
 usage() {
   echo '''Usage: ...
@@ -21,6 +22,7 @@ usage() {
   -s  save image to tar.gz
   -p  push image to registry
   -i  pull image from registry
+  -c  test coverage
 
 Example:
 
@@ -28,7 +30,7 @@ Example:
   '''
 }
 
-args=`getopt btdsp $*`
+args=`getopt btdspc $*`
 # you should not use `getopt abo: "$@"` since that would parse
 # the arguments differently from what the set command below does.
 if [[ $? != 0 ]]
@@ -56,6 +58,9 @@ for i do
        shift;;
      -p)
        PUSH_IMAGE=1
+       shift;;
+     -c)
+       TEST_COVERAGE=1
        shift;;
   esac
 done
@@ -103,7 +108,20 @@ if [[ ${TEST} == 1 ]]; then
       fi
       exit 1
   fi
+fi
 
+# Test coverage step
+if [[ ${TEST_COVERAGE} == 1 ]]; then
+  echo "Running test coverage."
+  ${SCRIPT_DIR}/test_coverage.sh
+
+  if [[ $? != 0 ]]; then
+      echo "Error: Could not verify test coverage."
+      if [[ ${DELETE_IF_FAILED} == 1 ]]; then
+        docker rmi ${REGISTRY}/${IMAGE_NAME}  # TODO check if correct
+      fi
+      exit 1
+  fi
 fi
 
 if [[ ${PUSH_IMAGE} == 1 ]]; then
@@ -111,7 +129,7 @@ if [[ ${PUSH_IMAGE} == 1 ]]; then
   docker push ${REGISTRY}/${IMAGE_NAME}
 fi
 
-if [[ ${BUILD} == 0 ]] && [[ ${TEST} == 0 ]] && [[ ${PUSH_IMAGE} == 0 ]]; then
+if [[ ${BUILD} == 0 ]] && [[ ${TEST} == 0 ]] && [[ ${PUSH_IMAGE} == 0 ]] && [[ ${TEST_COVERAGE} == 0 ]]; then
   echo "Need to specify at least one parameter"
   usage
   exit 1

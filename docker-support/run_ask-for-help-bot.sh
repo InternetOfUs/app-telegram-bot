@@ -36,4 +36,4 @@ echo "Running ask-for-help-bot..."
 #
 
 
-python -m ask_for_help_bot.main
+exec python -m ask_for_help_bot.main

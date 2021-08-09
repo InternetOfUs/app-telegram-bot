@@ -68,16 +68,38 @@
           - ${CLIENT_SECRET}
           - ${WENET_AUTHENTICATION_MANAGEMENT_URL}
           - ${REDIRECT_URL}
-    ci_stages:
-      - build
-      - test
-      - push
-      - trigger
-      - notify
     ci_environments:
-      - production
-      - staging
-      - issue
+      production:
+        stages:
+          - name: build
+          - name: test
+          - name: push
+          - name: notify
+      staging:
+        stages:
+          - name: build
+            manual: true
+          - name: test
+          - name: push
+          - name: trigger
+            manual: true
+            git_ref: develop
+      issue:
+        stages:
+          - name: build
+            manual: true
+          - name: test
+          - name: push
+          - name: trigger
+            manual: true
+            git_ref: develop
+      mr:
+        stages:
+          - name: build
+            manual: true
+          - name: test
+
+
     project_python_submodules:
       - name: wenet-common-models
       - name: chatbot-core
