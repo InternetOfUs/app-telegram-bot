@@ -60,7 +60,19 @@ msgstr ""
 msgid "specify_answerer"
 msgstr ""
 
-msgid "question_4"
+msgid "specify_answerer_location"
+msgstr ""
+
+msgid "location_answer_1"
+msgstr ""
+
+msgid "location_answer_2"
+msgstr ""
+
+msgid "location_answer_3"
+msgstr ""
+
+msgid "question_5"
 msgstr ""
 
 msgid "answerer_details_are_not_text"

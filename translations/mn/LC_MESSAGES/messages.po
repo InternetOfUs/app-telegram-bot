@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-05-31 10:47+0200\n"
+"PO-Revision-Date: 2021-08-30 12:49+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -14,7 +14,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 2.4.2\n"
+"X-Generator: Poedit 3.0\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: src/ask_for_help/handler.py:32
@@ -70,7 +70,19 @@ msgstr "Асуултаа бичнэ үү"
 msgid "specify_answerer"
 msgstr "Яагаад тэр гэж? Дэлгэрэнгүй мэдээлэл өгөхгүй биз?"
 
-msgid "question_4"
+msgid "specify_answerer_location"
+msgstr "Эдгээр хүмүүс хаана байх ёстой вэ?"
+
+msgid "location_answer_1"
+msgstr "Алс хол"
+
+msgid "location_answer_2"
+msgstr "Ойролцоох"
+
+msgid "location_answer_3"
+msgstr "Хаана ч"
+
+msgid "question_5"
 msgstr ""
 "За, бусад хэрэглэгчдээс таны асуултыг асууя! Хариулт авбал танд мэдэгднэ ээ."
 
@@ -196,6 +208,11 @@ msgstr ""
 "Энэ ботыг ашигласнаар та супер дажгүй тэмдгүүдийг авах боломжтой болно "
 "гэдгийг та мэдэх үү? Та тэдгээрийг эндээс шалгаж болно :point_right: "
 "{base_url}/wenetapp/user-app-details?id={app_id}&back=profile"
+
+#~ msgid "question_4"
+#~ msgstr ""
+#~ "За, бусад хэрэглэгчдээс таны асуултыг асууя! Хариулт авбал танд мэдэгднэ "
+#~ "ээ."
 
 #~ msgid "not_inclusive"
 #~ msgstr "Please use more "
