@@ -61,7 +61,6 @@ class AskForHelpHandler(WenetEventHandler):
     INTENT_ASK_TO_DIFFERENT = "ask_to_different"
     INTENT_ASK_TO_SIMILAR = "ask_to_similar"
     INTENT_ASK_TO_ANYONE = "ask_to_anyone"
-    INTENT_ASK_TO_FAR_AWAY = "ask_to_far_away"
     INTENT_ASK_TO_NEARBY = "ask_to_nearby"
     INTENT_ASK_TO_ANYWHERE = "ask_to_anywhere"
     INTENT_ANSWER_QUESTION = "answer_question"
@@ -138,12 +137,6 @@ class AskForHelpHandler(WenetEventHandler):
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.STATE_QUESTION_3, self.action_question_4)
                 .with_rule(static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_3))
-        )
-        self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_ASK_TO_FAR_AWAY, self.action_question_5).with_rule(
-                intent=self.INTENT_ASK_TO_FAR_AWAY,
-                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_4)
-            )
         )
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_ASK_TO_NEARBY, self.action_question_5).with_rule(
@@ -229,7 +222,7 @@ class AskForHelpHandler(WenetEventHandler):
         """
         Returns True if the user is in another action (e.g. inside the /question flow), False otherwise
         """
-        statuses = [self.STATE_ANSWERING, self.STATE_QUESTION_1, self.STATE_QUESTION_2, self.STATE_QUESTION_3]
+        statuses = [self.STATE_ANSWERING, self.STATE_QUESTION_1, self.STATE_QUESTION_2, self.STATE_QUESTION_3, self.STATE_QUESTION_4]
         current_status = context.get_static_state(self.CONTEXT_CURRENT_STATE, "")
         return current_status in statuses
 
@@ -321,29 +314,53 @@ class AskForHelpHandler(WenetEventHandler):
             user_object = service_api.get_user_profile(str(message.receiver_id))
             if isinstance(message, QuestionToAnswerMessage):
                 questioning_user = service_api.get_user_profile(str(message.user_id))
-                message_string = self._translator.get_translation_instance(user_object.locale)\
-                    .with_text("answer_message_0")\
-                    .with_substitution("question", self.parse_text_with_markdown(message.question))\
-                    .with_substitution("user", questioning_user.name.first if questioning_user.name.first else "Anonymous")\
-                    .translate()
-                # we create ids of all buttons, to know which buttons invalidate when one of them is clicked
-                button_ids = [str(uuid.uuid4()) for _ in range(4)]
-                button_data = {
-                    "task_id": message.task_id,
-                    "question": message.question,
-                    "username": questioning_user.name.first if questioning_user.name.first else "Anonymous",
-                    "related_buttons": button_ids,
-                }
-                response = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1, 1])
+                task = service_api.get_task(message.task_id)
+                if task.attributes.get("positionOfAnswerer") == self.INTENT_ASK_TO_NEARBY:
+                    message_string = self._translator.get_translation_instance(user_object.locale) \
+                        .with_text("answer_message_nearby") \
+                        .with_substitution("question", self.parse_text_with_markdown(message.question)) \
+                        .with_substitution("user", questioning_user.name.first if questioning_user.name.first else "Anonymous") \
+                        .translate()
+                    # we create ids of all buttons, to know which buttons invalidate when one of them is clicked
+                    button_ids = [str(uuid.uuid4()) for _ in range(3)]
+                    button_data = {
+                        "task_id": message.task_id,
+                        "question": message.question,
+                        "username": questioning_user.name.first if questioning_user.name.first else "Anonymous",
+                        "related_buttons": button_ids,
+                    }
+                    response = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1])
 
-                self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_QUESTION).to_repr(), key=button_ids[0])
-                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_question_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
-                self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_REMIND_LATER).to_repr(), key=button_ids[1])
-                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_remind_later_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[1]))
-                self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_NOT).to_repr(), key=button_ids[2])
-                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_not_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
-                self.cache.cache(ButtonPayload(button_data, self.INTENT_QUESTION_REPORT).to_repr(), key=button_ids[3])
-                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[3]))
+                    self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_QUESTION).to_repr(), key=button_ids[0])
+                    response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_question_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
+                    self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_NOT).to_repr(), key=button_ids[1])
+                    response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_not_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[1]))
+                    self.cache.cache(ButtonPayload(button_data, self.INTENT_QUESTION_REPORT).to_repr(), key=button_ids[2])
+                    response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
+                else:
+                    message_string = self._translator.get_translation_instance(user_object.locale)\
+                        .with_text("answer_message_0")\
+                        .with_substitution("question", self.parse_text_with_markdown(message.question))\
+                        .with_substitution("user", questioning_user.name.first if questioning_user.name.first else "Anonymous")\
+                        .translate()
+                    # we create ids of all buttons, to know which buttons invalidate when one of them is clicked
+                    button_ids = [str(uuid.uuid4()) for _ in range(4)]
+                    button_data = {
+                        "task_id": message.task_id,
+                        "question": message.question,
+                        "username": questioning_user.name.first if questioning_user.name.first else "Anonymous",
+                        "related_buttons": button_ids,
+                    }
+                    response = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1, 1])
+
+                    self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_QUESTION).to_repr(), key=button_ids[0])
+                    response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_question_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
+                    self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_REMIND_LATER).to_repr(), key=button_ids[1])
+                    response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_remind_later_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[1]))
+                    self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_NOT).to_repr(), key=button_ids[2])
+                    response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_not_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
+                    self.cache.cache(ButtonPayload(button_data, self.INTENT_QUESTION_REPORT).to_repr(), key=button_ids[3])
+                    response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[3]))
                 return NotificationEvent(user_account.social_details, [response], context)
             elif isinstance(message, AnsweredQuestionMessage):
                 answerer_id = message.user_id
@@ -546,11 +563,9 @@ class AskForHelpHandler(WenetEventHandler):
             message = self._translator.get_translation_instance(user_locale).with_text("specify_answerer_location").translate()
             button_1_text = self._translator.get_translation_instance(user_locale).with_text("location_answer_1").translate()
             button_2_text = self._translator.get_translation_instance(user_locale).with_text("location_answer_2").translate()
-            button_3_text = self._translator.get_translation_instance(user_locale).with_text("location_answer_3").translate()
-            response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1, 1])
-            response_with_buttons.with_textual_option(button_1_text, self.INTENT_ASK_TO_FAR_AWAY)
-            response_with_buttons.with_textual_option(button_2_text, self.INTENT_ASK_TO_NEARBY)
-            response_with_buttons.with_textual_option(button_3_text, self.INTENT_ASK_TO_ANYWHERE)
+            response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1])
+            response_with_buttons.with_textual_option(button_1_text, self.INTENT_ASK_TO_NEARBY)
+            response_with_buttons.with_textual_option(button_2_text, self.INTENT_ASK_TO_ANYWHERE)
             response.with_message(response_with_buttons)
             response.with_context(context)
         else:
@@ -638,9 +653,7 @@ class AskForHelpHandler(WenetEventHandler):
         if show_conduct_message:
             message = self._translator.get_translation_instance(user_locale).with_text("question_0").translate()
         else:
-            # just show a simple "Ok, answer" translated in the various languages
-            message = "Ok, " + self._translator.get_translation_instance(user_locale)\
-                .with_text("answer_question_button").translate().lower()
+            message = self._translator.get_translation_instance(user_locale).with_text("answer_question").translate()
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_context(context)
         response.with_message(TextualResponse(message))

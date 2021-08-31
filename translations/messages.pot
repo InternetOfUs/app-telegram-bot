@@ -69,9 +69,6 @@ msgstr ""
 msgid "location_answer_2"
 msgstr ""
 
-msgid "location_answer_3"
-msgstr ""
-
 msgid "question_5"
 msgstr ""
 
@@ -85,6 +82,12 @@ msgid "error_task_creation"
 msgstr ""
 
 msgid "answer_message_0"
+msgstr ""
+
+msgid "answer_message_nearby"
+msgstr ""
+
+msgid "answer_question"
 msgstr ""
 
 msgid "answer_question_button"

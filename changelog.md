@@ -2,6 +2,9 @@
 
 # Versions
 
+## next
+ - Integrated position data in the question and answer flow
+
 ## 1.0.10
 - Changed the `project` field in the messages logged into the Wenet platform. Now the `appId` is used, instead of the `PROJECT_NAME` environment variable
 

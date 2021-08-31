@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-08-30 12:44+0200\n"
+"PO-Revision-Date: 2021-08-31 12:38+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -71,16 +71,13 @@ msgid "specify_answerer"
 msgstr "Can you specify why this kind of person?"
 
 msgid "specify_answerer_location"
-msgstr "Where should be these people?"
+msgstr "Should the people be in your proximity right now, or recently?"
 
 msgid "location_answer_1"
-msgstr "Far away"
+msgstr "In proximity"
 
 msgid "location_answer_2"
-msgstr "Nearby"
-
-msgid "location_answer_3"
-msgstr "Anywhere"
+msgstr "Doesn’t matter"
 
 msgid "question_5"
 msgstr ""
@@ -110,14 +107,21 @@ msgstr ""
 
 msgid "answer_message_0"
 msgstr ""
-"There is a question I think you can answer best!\n"
+"Someone in the community has a question which you could answer!\n"
 "\n"
-"*{question}* - {user}\n"
+"“{question}” - {user}"
+
+msgid "answer_message_nearby"
+msgstr ""
+"Someone *near you right now* has a question which you could answer!\n"
 "\n"
-"Can you answer it real quick?"
+"“{question}” - {user}"
+
+msgid "answer_question"
+msgstr "Go ahead with your answer :point_down: "
 
 msgid "answer_question_button"
-msgstr "Answer"
+msgstr "I will answer it now!"
 
 msgid "answer_remind_later_button"
 msgstr ":clock2: Remind me later"
@@ -126,7 +130,7 @@ msgid "answer_not_button"
 msgstr ":x: Can’t help"
 
 msgid "answer_report_button"
-msgstr "Report"
+msgstr ":exclamation: Report"
 
 msgid "answerer_is_not_text"
 msgstr "You answer must be a text and not an attachment"
@@ -213,6 +217,9 @@ msgstr ""
 "Did you know that by using this bot you will be able to win super cool "
 "badges? You can check them out here :point_right: {base_url}/wenetapp/user-"
 "app-details?id={app_id}&back=profile"
+
+#~ msgid "location_answer_3"
+#~ msgstr "Anywhere"
 
 #~ msgid "question_4"
 #~ msgstr ""
