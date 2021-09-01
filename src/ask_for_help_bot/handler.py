@@ -402,12 +402,7 @@ class AskForHelpHandler(WenetEventHandler):
             if isinstance(message, QuestionToAnswerMessage):
                 # handle a new question to answer checking if the question is for nearby people
                 questioning_user = service_api.get_user_profile(str(message.user_id))
-                try:
-                    question_task = service_api.get_task(message.task_id)
-                except TaskNotFound as e:
-                    logger.error(e.message)
-                    raise Exception(e.message)
-
+                question_task = service_api.get_task(message.task_id)
                 if question_task.attributes.get("positionOfAnswerer") == self.INTENT_ASK_TO_NEARBY:
                     response = self.handle_nearby_question(message, user_object, questioning_user)
                 else:
@@ -417,12 +412,7 @@ class AskForHelpHandler(WenetEventHandler):
                 # handle an answer to a question
                 answerer_id = message.user_id
                 answerer_user = service_api.get_user_profile(str(answerer_id))
-                try:
-                    question_task = service_api.get_task(message.task_id)
-                except TaskNotFound as e:
-                    logger.error(e.message)
-                    raise Exception(e.message)
-
+                question_task = service_api.get_task(message.task_id)
                 answer = self.handle_answered_question(message, user_object, answerer_user, question_task)
                 self._interface_connector.update_user_context(UserConversationContext(
                     social_details=user_account.social_details,
@@ -432,12 +422,7 @@ class AskForHelpHandler(WenetEventHandler):
                 return NotificationEvent(user_account.social_details, [answer], context)
             elif isinstance(message, AnsweredPickedMessage):
                 # handle an answer picked for a question
-                try:
-                    question_task = service_api.get_task(message.task_id)
-                except TaskNotFound as e:
-                    logger.error(e.message)
-                    raise Exception(e.message)
-
+                question_task = service_api.get_task(message.task_id)
                 response = self.handle_answered_picked(user_object, question_task)
                 return NotificationEvent(user_account.social_details, [response], context)
             elif isinstance(message, IncentiveMessage):
