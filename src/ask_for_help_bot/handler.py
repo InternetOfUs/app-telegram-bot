@@ -414,7 +414,7 @@ class AskForHelpHandler(WenetEventHandler):
                 answerer_user = service_api.get_user_profile(str(answerer_id))
                 question_task = service_api.get_task(message.task_id)
                 answer = self.handle_answered_question(message, user_object, answerer_user, question_task)
-                self._interface_connector.update_user_context(UserConversationContext(
+                self._interface_connector.update_user_context(UserConversationContext(  # TODO check if this update is useful or not
                     social_details=user_account.social_details,
                     context=context,
                     version=UserConversationContext.VERSION_V3
