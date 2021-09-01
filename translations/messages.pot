@@ -60,7 +60,16 @@ msgstr ""
 msgid "specify_answerer"
 msgstr ""
 
-msgid "question_4"
+msgid "specify_answerer_location"
+msgstr ""
+
+msgid "location_answer_1"
+msgstr ""
+
+msgid "location_answer_2"
+msgstr ""
+
+msgid "question_5"
 msgstr ""
 
 msgid "answerer_details_are_not_text"
@@ -73,6 +82,12 @@ msgid "error_task_creation"
 msgstr ""
 
 msgid "answer_message_0"
+msgstr ""
+
+msgid "answer_message_nearby"
+msgstr ""
+
+msgid "answer_question"
 msgstr ""
 
 msgid "answer_question_button"

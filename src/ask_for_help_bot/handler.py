@@ -33,6 +33,7 @@ from wenet.common.model.message.message import TextualMessage, Message, Question
     AnsweredQuestionMessage, IncentiveMessage, IncentiveBadge, AnsweredPickedMessage
 from wenet.common.model.task.task import Task, TaskGoal
 from wenet.common.model.task.transaction import TaskTransaction
+from wenet.common.model.user.user_profile import WeNetUserProfile
 
 logger = logging.getLogger("uhopper.chatbot.wenet.askforhelp.chatbot")
 
@@ -46,6 +47,7 @@ class AskForHelpHandler(WenetEventHandler):
     """
     # context keys
     CONTEXT_DESIRED_ANSWERER = "desired_answerer"
+    CONTEXT_DESIRED_ANSWERER_REASON = "desired_answerer_reason"
     CONTEXT_ASKED_QUESTION = "asked_question"
     CONTEXT_QUESTION_TO_ANSWER = "question_to_answer"
     CONTEXT_MESSAGE_TO_REPORT = "message_to_report"
@@ -60,6 +62,8 @@ class AskForHelpHandler(WenetEventHandler):
     INTENT_ASK_TO_DIFFERENT = "ask_to_different"
     INTENT_ASK_TO_SIMILAR = "ask_to_similar"
     INTENT_ASK_TO_ANYONE = "ask_to_anyone"
+    INTENT_ASK_TO_NEARBY = "ask_to_nearby"
+    INTENT_ASK_TO_ANYWHERE = "ask_to_anywhere"
     INTENT_ANSWER_QUESTION = "answer_question"
     INTENT_ANSWER_REMIND_LATER = "answer_remind_later"
     INTENT_ANSWER_NOT = "answer_not"
@@ -76,6 +80,7 @@ class AskForHelpHandler(WenetEventHandler):
     STATE_QUESTION_1 = "question_1"
     STATE_QUESTION_2 = "question_2"
     STATE_QUESTION_3 = "question_3"
+    STATE_QUESTION_4 = "question_4"
     STATE_ANSWERING = "answer_2"
     # transaction labels
     LABEL_ANSWER_TRANSACTION = "answerTransaction"
@@ -133,6 +138,18 @@ class AskForHelpHandler(WenetEventHandler):
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.STATE_QUESTION_3, self.action_question_4)
                 .with_rule(static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_3))
+        )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_ASK_TO_NEARBY, self.action_question_5).with_rule(
+                intent=self.INTENT_ASK_TO_NEARBY,
+                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_4)
+            )
+        )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_ASK_TO_ANYWHERE, self.action_question_5).with_rule(
+                intent=self.INTENT_ASK_TO_ANYWHERE,
+                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_4)
+            )
         )
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3("", self.action_answer_question_2).with_rule(
@@ -197,7 +214,7 @@ class AskForHelpHandler(WenetEventHandler):
         context_to_remove = [self.CONTEXT_CURRENT_STATE, self.CONTEXT_ASKED_QUESTION, self.CONTEXT_DESIRED_ANSWERER,
                              self.CONTEXT_QUESTION_TO_ANSWER, self.CONTEXT_MESSAGE_TO_REPORT,
                              self.CONTEXT_REPORTING_IS_QUESTION, self.CONTEXT_REPORTING_REASON,
-                             self.CONTEXT_ORIGINAL_QUESTION_REPORTING]
+                             self.CONTEXT_ORIGINAL_QUESTION_REPORTING, self.CONTEXT_DESIRED_ANSWERER_REASON]
         for context_key in context_to_remove:
             context.delete_static_state(context_key)
         return context
@@ -206,7 +223,7 @@ class AskForHelpHandler(WenetEventHandler):
         """
         Returns True if the user is in another action (e.g. inside the /question flow), False otherwise
         """
-        statuses = [self.STATE_ANSWERING, self.STATE_QUESTION_1, self.STATE_QUESTION_2, self.STATE_QUESTION_3]
+        statuses = [self.STATE_ANSWERING, self.STATE_QUESTION_1, self.STATE_QUESTION_2, self.STATE_QUESTION_3, self.STATE_QUESTION_4]
         current_status = context.get_static_state(self.CONTEXT_CURRENT_STATE, "")
         return current_status in statuses
 
@@ -280,6 +297,92 @@ class AskForHelpHandler(WenetEventHandler):
         response = TelegramTextualResponse(f"{title}_{self.parse_text_with_markdown(message.text)}_")
         return NotificationEvent(user_account.social_details, [response], user_account.context)
 
+    def handle_nearby_question(self, message: QuestionToAnswerMessage, user_object: WeNetUserProfile, questioning_user: WeNetUserProfile) -> TelegramRapidAnswerResponse:
+        # Translate the message that someone near has a question and insert the details of the question
+        message_string = self._translator.get_translation_instance(user_object.locale) \
+            .with_text("answer_message_nearby") \
+            .with_substitution("question", self.parse_text_with_markdown(message.question)) \
+            .with_substitution("user", questioning_user.name.first if questioning_user.name.first else "Anonymous") \
+            .translate()
+        # we create ids of all buttons, to know which buttons invalidate when one of them is clicked
+        button_ids = [str(uuid.uuid4()) for _ in range(3)]
+        button_data = {
+            "task_id": message.task_id,
+            "question": message.question,
+            "username": questioning_user.name.first if questioning_user.name.first else "Anonymous",
+            "related_buttons": button_ids,
+        }
+        response = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1])
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_QUESTION).to_repr(), key=button_ids[0])
+        response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_question_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_NOT).to_repr(), key=button_ids[1])
+        response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_not_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[1]))
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_QUESTION_REPORT).to_repr(), key=button_ids[2])
+        response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
+        return response
+
+    def handle_question(self, message: QuestionToAnswerMessage, user_object: WeNetUserProfile, questioning_user: WeNetUserProfile) -> TelegramRapidAnswerResponse:
+        # Translate the message that someone in the community has a question and insert the details of the question
+        message_string = self._translator.get_translation_instance(user_object.locale) \
+            .with_text("answer_message_0") \
+            .with_substitution("question", self.parse_text_with_markdown(message.question)) \
+            .with_substitution("user", questioning_user.name.first if questioning_user.name.first else "Anonymous") \
+            .translate()
+        # we create ids of all buttons, to know which buttons invalidate when one of them is clicked
+        button_ids = [str(uuid.uuid4()) for _ in range(4)]
+        button_data = {
+            "task_id": message.task_id,
+            "question": message.question,
+            "username": questioning_user.name.first if questioning_user.name.first else "Anonymous",
+            "related_buttons": button_ids,
+        }
+        response = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1, 1])
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_QUESTION).to_repr(), key=button_ids[0])
+        response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_question_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_REMIND_LATER).to_repr(), key=button_ids[1])
+        response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_remind_later_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[1]))
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_NOT).to_repr(), key=button_ids[2])
+        response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_not_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_QUESTION_REPORT).to_repr(), key=button_ids[3])
+        response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[3]))
+        return response
+
+    def handle_answered_question(self, message: AnsweredQuestionMessage, user_object: WeNetUserProfile, answerer_user: WeNetUserProfile, question_task: Task) -> TelegramRapidAnswerResponse:
+        answer_text = message.answer
+        question_text = self.parse_text_with_markdown(question_task.goal.name)
+        # Translate the message that there is a new answer and insert the details of the question and answer
+        message_string = self._translator.get_translation_instance(user_object.locale) \
+            .with_text("new_answer_message") \
+            .with_substitution("question", question_text) \
+            .with_substitution("answer", self.parse_text_with_markdown(answer_text)) \
+            .with_substitution("username", answerer_user.name.first if answerer_user.name.first else "Anonymous") \
+            .translate()
+        answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1])
+        button_report_text = self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate()
+        button_more_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("more_answers_button").translate()
+        button_best_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("best_answers_button").translate()
+        button_ids = [str(uuid.uuid4()) for _ in range(3)]
+        button_data = {
+            "transaction_id": message.transaction_id,
+            "task_id": question_task.task_id,
+            "related_buttons": button_ids,
+        }
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_BEST_ANSWER).to_repr(), key=button_ids[0])
+        answer.with_textual_option(button_best_answers_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_ASK_MORE_ANSWERS).to_repr(), key=button_ids[1])
+        answer.with_textual_option(button_more_answers_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[1]))
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_REPORT).to_repr(), key=button_ids[2])
+        answer.with_textual_option(button_report_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
+        return answer
+
+    def handle_answered_picked(self, user_object: WeNetUserProfile, question_task: Task) -> TextualResponse:
+        # Translate the message that the answer to a question was picked as the best and insert the details of the question
+        message_string = self._translator.get_translation_instance(user_object.locale) \
+            .with_text("picked_best_answer") \
+            .with_substitution("question", self.parse_text_with_markdown(question_task.goal.name)) \
+            .translate()
+        return TextualResponse(message_string)
+
     def handle_wenet_message(self, message: Message) -> NotificationEvent:
         # new question to answer, or a new answer to a question
         # incentive messages or badges
@@ -290,98 +393,50 @@ class AskForHelpHandler(WenetEventHandler):
         user_account = user_accounts[0]
         context = user_account.context
         # in case the user was doing something else, the previous operation is cancelled
-        if self._is_doing_another_action(user_account.context):
+        if self._is_doing_another_action(context):
             self._send_new_message_from_wenet_notification(user_account)
 
         service_api = self._get_service_api_interface_connector_from_context(context)
         try:
             user_object = service_api.get_user_profile(str(message.receiver_id))
             if isinstance(message, QuestionToAnswerMessage):
+                # handle a new question to answer checking if the question is for nearby people
                 questioning_user = service_api.get_user_profile(str(message.user_id))
-                message_string = self._translator.get_translation_instance(user_object.locale)\
-                    .with_text("answer_message_0")\
-                    .with_substitution("question", self.parse_text_with_markdown(message.question))\
-                    .with_substitution("user", questioning_user.name.first if questioning_user.name.first else "Anonymous")\
-                    .translate()
-                # we create ids of all buttons, to know which buttons invalidate when one of them is clicked
-                button_ids = [str(uuid.uuid4()) for _ in range(4)]
-                button_data = {
-                    "task_id": message.task_id,
-                    "question": message.question,
-                    "username": questioning_user.name.first if questioning_user.name.first else "Anonymous",
-                    "related_buttons": button_ids,
-                }
-                response = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1, 1])
-
-                self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_QUESTION).to_repr(), key=button_ids[0])
-                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_question_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
-                self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_REMIND_LATER).to_repr(), key=button_ids[1])
-                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_remind_later_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[1]))
-                self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_NOT).to_repr(), key=button_ids[2])
-                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_not_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
-                self.cache.cache(ButtonPayload(button_data, self.INTENT_QUESTION_REPORT).to_repr(), key=button_ids[3])
-                response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[3]))
+                question_task = service_api.get_task(message.task_id)
+                if question_task.attributes.get("positionOfAnswerer") == self.INTENT_ASK_TO_NEARBY:
+                    response = self.handle_nearby_question(message, user_object, questioning_user)
+                else:
+                    response = self.handle_question(message, user_object, questioning_user)
                 return NotificationEvent(user_account.social_details, [response], context)
             elif isinstance(message, AnsweredQuestionMessage):
+                # handle an answer to a question
                 answerer_id = message.user_id
-                answer_text = message.answer
                 answerer_user = service_api.get_user_profile(str(answerer_id))
-                try:
-                    question_task = service_api.get_task(message.task_id)
-                    question_text = self.parse_text_with_markdown(question_task.goal.name)
-                    message_string = self._translator.get_translation_instance(user_object.locale) \
-                        .with_text("new_answer_message") \
-                        .with_substitution("question", question_text) \
-                        .with_substitution("answer", self.parse_text_with_markdown(answer_text)) \
-                        .with_substitution("username", answerer_user.name.first if answerer_user.name.first else "Anonymous") \
-                        .translate()
-                    answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1])
-                    button_report_text = self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate()
-                    button_more_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("more_answers_button").translate()
-                    button_best_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("best_answers_button").translate()
-                    button_ids = [str(uuid.uuid4()) for _ in range(3)]
-                    button_data = {
-                        "transaction_id": message.transaction_id,
-                        "task_id": question_task.task_id,
-                        "related_buttons": button_ids,
-                    }
-                    self.cache.cache(ButtonPayload(button_data, self.INTENT_BEST_ANSWER).to_repr(), key=button_ids[0])
-                    answer.with_textual_option(button_best_answers_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
-                    self.cache.cache(ButtonPayload(button_data, self.INTENT_ASK_MORE_ANSWERS).to_repr(), key=button_ids[1])
-                    answer.with_textual_option(button_more_answers_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[1]))
-                    self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_REPORT).to_repr(), key=button_ids[2])
-                    answer.with_textual_option(button_report_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
-
-                    self._interface_connector.update_user_context(UserConversationContext(
-                        social_details=user_account.social_details,
-                        context=context,
-                        version=UserConversationContext.VERSION_V3
-                    ))
-                    return NotificationEvent(user_account.social_details, [answer], context)
-                except TaskNotFound as e:
-                    logger.error(e.message)
-                    raise Exception(e.message)
+                question_task = service_api.get_task(message.task_id)
+                answer = self.handle_answered_question(message, user_object, answerer_user, question_task)
+                self._interface_connector.update_user_context(UserConversationContext(  # TODO check if this update is useful or not
+                    social_details=user_account.social_details,
+                    context=context,
+                    version=UserConversationContext.VERSION_V3
+                ))
+                return NotificationEvent(user_account.social_details, [answer], context)
+            elif isinstance(message, AnsweredPickedMessage):
+                # handle an answer picked for a question
+                question_task = service_api.get_task(message.task_id)
+                response = self.handle_answered_picked(user_object, question_task)
+                return NotificationEvent(user_account.social_details, [response], context)
             elif isinstance(message, IncentiveMessage):
+                # handle an incentive message
                 answer = TextualResponse(message.content)
                 return NotificationEvent(user_account.social_details, [answer], context)
             elif isinstance(message, IncentiveBadge):
+                # handle an incentive badge
                 answer = TextualResponse(message.message)
                 image = UrlImageResponse(message.image_url)
                 return NotificationEvent(user_account.social_details, [answer, image], context)
-            elif isinstance(message, AnsweredPickedMessage):
-                try:
-                    question_task = service_api.get_task(message.task_id)
-                    message_string = self._translator.get_translation_instance(user_object.locale) \
-                        .with_text("picked_best_answer") \
-                        .with_substitution("question", self.parse_text_with_markdown(question_task.goal.name)) \
-                        .translate()
-                    return NotificationEvent(user_account.social_details, [TextualResponse(message_string)], context)
-                except TaskNotFound as e:
-                    logger.error(e.message)
-                    raise Exception(e.message)
             else:
                 logger.warning(f"Received unrecognized message of type {type(message)}: {message.to_repr()}")
-                raise Exception()
+                raise Exception(f"Received unrecognized message of type {type(message)}: {message.to_repr()}")
         except RefreshTokenExpiredError:
             logger.exception("Refresh token is not longer valid")
             notification_event = NotificationEvent(social_details=user_account.social_details)
@@ -394,7 +449,7 @@ class AskForHelpHandler(WenetEventHandler):
             )
             return notification_event
 
-    def handle_button_with_payload(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+    def handle_button_with_payload(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         """
         Handle a button with a payload saved into redis
         """
@@ -511,6 +566,30 @@ class AskForHelpHandler(WenetEventHandler):
 
     def action_question_4(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         """
+        Save the why this type of desired answerer, and ask where is the person that should answer the question
+        """
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        if isinstance(incoming_event.incoming_message, IncomingTextMessage):
+            desired_answerer_reason = incoming_event.incoming_message.text
+            context = incoming_event.context
+            context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_4)
+            context.with_static_state(self.CONTEXT_DESIRED_ANSWERER_REASON, desired_answerer_reason)
+            message = self._translator.get_translation_instance(user_locale).with_text("specify_answerer_location").translate()
+            button_1_text = self._translator.get_translation_instance(user_locale).with_text("location_answer_1").translate()
+            button_2_text = self._translator.get_translation_instance(user_locale).with_text("location_answer_2").translate()
+            response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1])
+            response_with_buttons.with_textual_option(button_1_text, self.INTENT_ASK_TO_NEARBY)
+            response_with_buttons.with_textual_option(button_2_text, self.INTENT_ASK_TO_ANYWHERE)
+            response.with_message(response_with_buttons)
+            response.with_context(context)
+        else:
+            error_message = self._translator.get_translation_instance(user_locale).with_text("answerer_details_are_not_text").translate()
+            response.with_message(TextualResponse(error_message))
+        return response
+
+    def action_question_5(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+        """
         Conclude the /question flow, with a final message
         """
         if incoming_event.context is not None:
@@ -519,49 +598,47 @@ class AskForHelpHandler(WenetEventHandler):
             raise Exception(f"Missing conversation context for event {incoming_event}")
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         response = OutgoingEvent(social_details=incoming_event.social_details)
-        if isinstance(incoming_event.incoming_message, IncomingTextMessage):
-            context = incoming_event.context
-            if not context.has_static_state(self.CONTEXT_ASKED_QUESTION) or not context.has_static_state(self.CONTEXT_DESIRED_ANSWERER):
-                raise Exception(f"Expected {self.CONTEXT_ASKED_QUESTION} and {self.CONTEXT_DESIRED_ANSWERER} in the context")
-            answerer_details = incoming_event.incoming_message.text
-            wenet_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
-            question = context.get_static_state(self.CONTEXT_ASKED_QUESTION)
-            desired_answerer = context.get_static_state(self.CONTEXT_DESIRED_ANSWERER)
-            attributes = {
-                "kindOfAnswerer": desired_answerer,
-                "answeredDetails": answerer_details,
-            }
-            question_task = Task(
-                None,
-                int(datetime.now().timestamp()),
-                int(datetime.now().timestamp()),
-                str(self.task_type_id),
-                str(wenet_id),
-                self.app_id,
-                None,
-                TaskGoal(question, ""),
-                [],
-                attributes,
-                None,
-                []
-            )
-            try:
-                service_api.create_task(question_task)
-                logger.debug(f"User [{wenet_id}] asked a question. Task created successfully")
-                message = self._translator.get_translation_instance(user_locale).with_text("question_4").translate()
-                response.with_message(TextualResponse(message))
-            except TaskCreationError as e:
-                logger.error(f"The service API responded with code {e.http_status} and message {json.dumps(e.json_response)}")
-                message = self._translator.get_translation_instance(user_locale).with_text("error_task_creation").translate()
-                response.with_message(TextualResponse(message))
-            finally:
-                context.delete_static_state(self.CONTEXT_ASKED_QUESTION)
-                context.delete_static_state(self.CONTEXT_DESIRED_ANSWERER)
-                context.delete_static_state(self.CONTEXT_CURRENT_STATE)
-                response.with_context(context)
-        else:
-            error_message = self._translator.get_translation_instance(user_locale).with_text("answerer_details_are_not_text").translate()
-            response.with_message(TextualResponse(error_message))
+        context = incoming_event.context
+        if not context.has_static_state(self.CONTEXT_ASKED_QUESTION) or not context.has_static_state(self.CONTEXT_DESIRED_ANSWERER) or not context.has_static_state(self.CONTEXT_DESIRED_ANSWERER_REASON):
+            raise Exception(f"Expected {self.CONTEXT_ASKED_QUESTION}, {self.CONTEXT_DESIRED_ANSWERER} and {self.CONTEXT_DESIRED_ANSWERER_REASON} in the context")
+        wenet_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
+        question = context.get_static_state(self.CONTEXT_ASKED_QUESTION)
+        desired_answerer = context.get_static_state(self.CONTEXT_DESIRED_ANSWERER)
+        answerer_details = context.get_static_state(self.CONTEXT_DESIRED_ANSWERER_REASON)
+        attributes = {
+            "kindOfAnswerer": desired_answerer,
+            "answeredDetails": answerer_details,
+            "positionOfAnswerer": intent,
+        }
+        question_task = Task(
+            None,
+            int(datetime.now().timestamp()),
+            int(datetime.now().timestamp()),
+            str(self.task_type_id),
+            str(wenet_id),
+            self.app_id,
+            None,
+            TaskGoal(question, ""),
+            [],
+            attributes,
+            None,
+            []
+        )
+        try:
+            service_api.create_task(question_task)
+            logger.debug(f"User [{wenet_id}] asked a question. Task created successfully")
+            message = self._translator.get_translation_instance(user_locale).with_text("question_5").translate()
+            response.with_message(TextualResponse(message))
+        except TaskCreationError as e:
+            logger.error(f"The service API responded with code {e.http_status} and message {json.dumps(e.json_response)}")
+            message = self._translator.get_translation_instance(user_locale).with_text("error_task_creation").translate()
+            response.with_message(TextualResponse(message))
+        finally:
+            context.delete_static_state(self.CONTEXT_ASKED_QUESTION)
+            context.delete_static_state(self.CONTEXT_DESIRED_ANSWERER)
+            context.delete_static_state(self.CONTEXT_DESIRED_ANSWERER_REASON)
+            context.delete_static_state(self.CONTEXT_CURRENT_STATE)
+            response.with_context(context)
         return response
 
     def is_first_answer(self, wenet_user_id: str) -> bool:
@@ -591,9 +668,7 @@ class AskForHelpHandler(WenetEventHandler):
         if show_conduct_message:
             message = self._translator.get_translation_instance(user_locale).with_text("question_0").translate()
         else:
-            # just show a simple "Ok, answer" translated in the various languages
-            message = "Ok, " + self._translator.get_translation_instance(user_locale)\
-                .with_text("answer_question_button").translate().lower()
+            message = self._translator.get_translation_instance(user_locale).with_text("answer_question").translate()
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_context(context)
         response.with_message(TextualResponse(message))
