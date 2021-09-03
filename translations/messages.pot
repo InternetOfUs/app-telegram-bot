@@ -60,6 +60,24 @@ msgstr ""
 msgid "specify_answerer"
 msgstr ""
 
+msgid "sensitive_question"
+msgstr ""
+
+msgid "not_sensitive"
+msgstr ""
+
+msgid "sensitive"
+msgstr ""
+
+msgid "anonymous_question"
+msgstr ""
+
+msgid "anonymous"
+msgstr ""
+
+msgid "not_anonymous"
+msgstr ""
+
 msgid "specify_answerer_location"
 msgstr ""
 
@@ -69,7 +87,7 @@ msgstr ""
 msgid "location_answer_2"
 msgstr ""
 
-msgid "question_5"
+msgid "question_final"
 msgstr ""
 
 msgid "answerer_details_are_not_text"
@@ -84,10 +102,19 @@ msgstr ""
 msgid "answer_message_0"
 msgstr ""
 
+msgid "answer_sensitive_message_0"
+msgstr ""
+
 msgid "answer_message_nearby"
 msgstr ""
 
+msgid "answer_sensitive_message_nearby"
+msgstr ""
+
 msgid "answer_question"
+msgstr ""
+
+msgid "answer_sensitive_question"
 msgstr ""
 
 msgid "answer_question_button"

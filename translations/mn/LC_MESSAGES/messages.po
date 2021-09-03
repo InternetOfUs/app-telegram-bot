@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-08-31 12:49+0200\n"
+"PO-Revision-Date: 2021-09-03 15:35+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -70,6 +70,26 @@ msgstr "Асуултаа бичнэ үү"
 msgid "specify_answerer"
 msgstr "Яагаад тэр гэж? Дэлгэрэнгүй мэдээлэл өгөхгүй биз?"
 
+msgid "sensitive_question"
+msgstr ""
+"Энэ нь байж болох эмзэг асуулт мөн үү? Хэрэв тийм бол би бусад хүмүүст "
+"хариулахдаа маш болгоомжтой байхыг мэдэгдэх болно."
+
+msgid "not_sensitive"
+msgstr "Мэдрэмтгий биш"
+
+msgid "sensitive"
+msgstr ":warning: Мэдрэмтгий"
+
+msgid "anonymous_question"
+msgstr "Та үүнийг нэрээ нууцлахыг хүсч байна уу?"
+
+msgid "anonymous"
+msgstr "Нэрээ нууцалж асуугаарай"
+
+msgid "not_anonymous"
+msgstr "Үүнийг ердийн байдлаар асуугаарай"
+
 msgid "specify_answerer_location"
 msgstr "Хүмүүс яг одоо эсвэл ойрхон байх ёстой юу?"
 
@@ -79,7 +99,7 @@ msgstr "Ойрхон"
 msgid "location_answer_2"
 msgstr "Энэ нь хамаагүй"
 
-msgid "question_5"
+msgid "question_final"
 msgstr ""
 "За, бусад хэрэглэгчдээс таны асуултыг асууя! Хариулт авбал танд мэдэгднэ ээ."
 
@@ -109,14 +129,38 @@ msgstr ""
 "\n"
 "“{question}” - {user}"
 
+msgid "answer_sensitive_message_0"
+msgstr ""
+"Нийгэмлэгийн хэн нэгэн танд хариулах эмзэг асуулт байна!\n"
+"\n"
+"“{question}” - {user}\n"
+"\n"
+":warning: Хэрэглэгч энэ асуултыг эмзэг гэж тэмдэглэсэн тул хариулахдаа маш "
+"болгоомжтой байгаарай :)"
+
 msgid "answer_message_nearby"
 msgstr ""
 "*Таны хажууд байгаа* хэн нэгэн танд хариулах боломжтой асуулт байна!\n"
 "\n"
 "“{question}” - {user}"
 
+msgid "answer_sensitive_message_nearby"
+msgstr ""
+"*Таны хажууд байгаа* хэн нэгэнд хариулах эмзэг асуулт байна!\n"
+"\n"
+"“{question}” - {user}\n"
+"\n"
+":warning: Хэрэглэгч энэ асуултыг эмзэг гэж тэмдэглэсэн тул хариулахдаа маш "
+"болгоомжтой байгаарай :)"
+
 msgid "answer_question"
 msgstr "Хариултаа үргэлжлүүлээрэй: point_down:"
+
+msgid "answer_sensitive_question"
+msgstr ""
+"Хариултаа үргэлжлүүлээрэй: point_down:\n"
+"Хариултаа болгоомжтой байгаарай, хэрэглэгч үүнийг эмзэг гэж тэмдэглэсэн "
+"байна."
 
 msgid "answer_question_button"
 msgstr "Би одоо хариулах болно!"
@@ -213,6 +257,11 @@ msgstr ""
 "гэдгийг та мэдэх үү? Та тэдгээрийг эндээс шалгаж болно :point_right: "
 "{base_url}/wenetapp/user-app-details?id={app_id}&back=profile"
 
+#~ msgid "question_5"
+#~ msgstr ""
+#~ "За, бусад хэрэглэгчдээс таны асуултыг асууя! Хариулт авбал танд мэдэгднэ "
+#~ "ээ."
+
 #~ msgid "location_answer_3"
 #~ msgstr "Хаана ч"
 
@@ -220,6 +269,3 @@ msgstr ""
 #~ msgstr ""
 #~ "За, бусад хэрэглэгчдээс таны асуултыг асууя! Хариулт авбал танд мэдэгднэ "
 #~ "ээ."
-
-#~ msgid "not_inclusive"
-#~ msgstr "Please use more "
