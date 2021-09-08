@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-09-03 15:28+0200\n"
+"PO-Revision-Date: 2021-09-08 13:50+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -180,7 +180,10 @@ msgid "answerer_is_not_text"
 msgstr "You answer must be a text and not an attachment"
 
 msgid "answered_message"
-msgstr "Thanks! I will forward your answer to the person that asked it."
+msgstr "Thanks! I will forward your answer to the person."
+
+msgid "answered_message_anonymously"
+msgstr "Thanks! I will forward your answer anonymously to the person."
 
 msgid "not_answer_response"
 msgstr "Allright"
@@ -244,7 +247,24 @@ msgid "not_implemented"
 msgstr "I’m sorry, this command is not implemented yet :grimacing:"
 
 msgid "you_are_answering_to"
-msgstr "You are answering to the following question:"
+msgstr ""
+"You are answering to the following question:\n"
+"_{question}_"
+
+msgid "you_are_answering_to_sensitive"
+msgstr ""
+"You are answering to the following question:\n"
+"_{question}_\n"
+"Please be mindful about your answer, the user marked it sensitive."
+
+msgid "answer_anonymously"
+msgstr "Would you prefer to send this answer anonymously?"
+
+msgid "anonymous_answer_1"
+msgstr "Send the answer anonymously"
+
+msgid "anonymous_answer_2"
+msgstr "Send the answer normally"
 
 msgid "picked_best_answer"
 msgstr ""

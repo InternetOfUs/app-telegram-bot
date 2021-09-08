@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-09-03 15:35+0200\n"
+"PO-Revision-Date: 2021-09-08 14:03+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -178,7 +178,10 @@ msgid "answerer_is_not_text"
 msgstr "Таны хариулт текст хэлбэртэй байх хэрэгтэй"
 
 msgid "answered_message"
-msgstr "Баярлалаа! Таны хариултыг асуулт асуусан хүнд нь уламжилъя"
+msgstr "Баярлалаа! Би таны хариуг тухайн хүнд дамжуулах болно"
+
+msgid "answered_message_anonymously"
+msgstr "Баярлалаа! Би таны хариултыг нэрээ нууцлан тухайн хүнд дамжуулах болно"
 
 msgid "not_answer_response"
 msgstr "За"
@@ -241,7 +244,25 @@ msgid "not_implemented"
 msgstr "Уучлаарай, энэ комманд одоогоор байхгүй байна :grimacing:"
 
 msgid "you_are_answering_to"
-msgstr "Та дараах асуултанд хариулж байна:"
+msgstr ""
+"Та дараах асуултанд хариулж байна:\n"
+"_{question}_"
+
+msgid "you_are_answering_to_sensitive"
+msgstr ""
+"Та дараах асуултанд хариулж байна:\n"
+"_{question}_\n"
+"Хариултаа болгоомжтой байгаарай, хэрэглэгч үүнийг эмзэг гэж тэмдэглэсэн "
+"байна."
+
+msgid "answer_anonymously"
+msgstr "Та энэ хариултыг нэрээ нууцлан илгээхийг хүсч байна уу?"
+
+msgid "anonymous_answer_1"
+msgstr "Хариултаа нэрээ нууцлан илгээнэ үү"
+
+msgid "anonymous_answer_2"
+msgstr "Хариултыг ердийн байдлаар илгээнэ үү"
 
 msgid "picked_best_answer"
 msgstr ""

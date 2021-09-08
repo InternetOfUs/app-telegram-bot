@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-09-03 15:31+0200\n"
+"PO-Revision-Date: 2021-09-08 13:56+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: es\n"
@@ -185,7 +185,10 @@ msgid "answerer_is_not_text"
 msgstr "Tu respuesta debe ser un texto y no un adjunto"
 
 msgid "answered_message"
-msgstr "¡Gracias! Enviaré su respuesta a la persona que lo preguntó."
+msgstr "¡Gracias! Enviaré tu respuesta a la persona."
+
+msgid "answered_message_anonymously"
+msgstr "¡Gracias! Enviaré su respuesta de forma anónima a la persona."
 
 msgid "not_answer_response"
 msgstr "Todo correcto"
@@ -250,7 +253,24 @@ msgid "not_implemented"
 msgstr "Lo siento, este comando aún no está implementado :grimacing:"
 
 msgid "you_are_answering_to"
-msgstr "Estás respondiendo a la siguiente pregunta:"
+msgstr ""
+"Estás respondiendo a la siguiente pregunta:\n"
+"_{question}_"
+
+msgid "you_are_answering_to_sensitive"
+msgstr ""
+"Estás respondiendo a la siguiente pregunta:\n"
+"_{question}_\n"
+"Tenga en cuenta su respuesta, el usuario la marcó sensible."
+
+msgid "answer_anonymously"
+msgstr "¿Prefieres enviar esta respuesta de forma anónima?"
+
+msgid "anonymous_answer_1"
+msgstr "Envía la respuesta de forma anónima"
+
+msgid "anonymous_answer_2"
+msgstr "Envía la respuesta normalmente"
 
 msgid "picked_best_answer"
 msgstr ""

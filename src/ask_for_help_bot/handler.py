@@ -50,8 +50,8 @@ class AskForHelpHandler(WenetEventHandler):
     CONTEXT_SENSITIVE_QUESTION = "sensitive_question"
     CONTEXT_ANONYMOUS_QUESTION = "anonymous_question"
     CONTEXT_ASKED_QUESTION = "asked_question"
+    CONTEXT_ANSWER_TO_QUESTION = "answer_to_question"
     CONTEXT_QUESTION_TO_ANSWER = "question_to_answer"
-    CONTEXT_SENSITIVE_QUESTION_TO_ANSWER = "sensitive_question_to_answer"
     CONTEXT_MESSAGE_TO_REPORT = "message_to_report"
     CONTEXT_REPORTING_IS_QUESTION = "reporting_is_question"
     CONTEXT_REPORTING_REASON = "reporting_reason"
@@ -64,8 +64,10 @@ class AskForHelpHandler(WenetEventHandler):
     INTENT_ASK_TO_DIFFERENT = "ask_to_different"
     INTENT_ASK_TO_SIMILAR = "ask_to_similar"
     INTENT_ASK_TO_ANYONE = "ask_to_anyone"
-    INTENT_ASK_TO_NEARBY = "ask_to_nearby"
-    INTENT_ASK_TO_ANYWHERE = "ask_to_anywhere"
+    INTENT_ASK_TO_NEARBY = "nearby"
+    INTENT_ASK_TO_ANYWHERE = "anywhere"
+    INTENT_ANSWER_ANONYMOUSLY = "answer_anonymously"
+    INTENT_ANSWER_NOT_ANONYMOUSLY = "answer_not_anonymously"
     INTENT_SENSITIVE_QUESTION = "sensitive"
     INTENT_NOT_SENSITIVE_QUESTION = "not_sensitive"
     INTENT_ANONYMOUS_QUESTION = "anonymous"
@@ -90,6 +92,8 @@ class AskForHelpHandler(WenetEventHandler):
     STATE_QUESTION_4_1 = "question_4_1"
     STATE_QUESTION_5 = "question_5"
     STATE_ANSWERING = "answer_2"
+    STATE_ANSWERING_SENSITIVE = "answer_sensitive"
+    STATE_ANSWERING_ANONYMOUSLY = "answer_anonymously"
     # transaction labels
     LABEL_ANSWER_TRANSACTION = "answerTransaction"
     LABEL_NOT_ANSWER_TRANSACTION = "notAnswerTransaction"
@@ -184,8 +188,25 @@ class AskForHelpHandler(WenetEventHandler):
             )
         )
         self.intent_manager.with_fulfiller(
+            IntentFulfillerV3("", self.action_answer_sensitive_question).with_rule(
+                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING_SENSITIVE)
+            )
+        )
+        self.intent_manager.with_fulfiller(
             IntentFulfillerV3("", self.action_answer_question_2).with_rule(
                 static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING)
+            )
+        )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_ANSWER_ANONYMOUSLY, self.action_answer_question_anonymously).with_rule(
+                intent=self.INTENT_ANSWER_ANONYMOUSLY,
+                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING_ANONYMOUSLY)
+            )
+        )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_ANSWER_NOT_ANONYMOUSLY, self.action_answer_question_anonymously).with_rule(
+                intent=self.INTENT_ANSWER_NOT_ANONYMOUSLY,
+                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING_ANONYMOUSLY)
             )
         )
         self.intent_manager.with_fulfiller(
@@ -245,7 +266,7 @@ class AskForHelpHandler(WenetEventHandler):
     def _clear_context(self, context: ConversationContext) -> ConversationContext:
         context_to_remove = [
             self.CONTEXT_CURRENT_STATE, self.CONTEXT_ASKED_QUESTION, self.CONTEXT_DESIRED_ANSWERER,
-            self.CONTEXT_QUESTION_TO_ANSWER, self.CONTEXT_SENSITIVE_QUESTION_TO_ANSWER, self.CONTEXT_MESSAGE_TO_REPORT,
+            self.CONTEXT_QUESTION_TO_ANSWER, self.CONTEXT_MESSAGE_TO_REPORT,
             self.CONTEXT_REPORTING_IS_QUESTION, self.CONTEXT_REPORTING_REASON, self.CONTEXT_ORIGINAL_QUESTION_REPORTING,
             self.CONTEXT_DESIRED_ANSWERER_REASON, self.CONTEXT_SENSITIVE_QUESTION, self.CONTEXT_ANONYMOUS_QUESTION]
         for context_key in context_to_remove:
@@ -256,8 +277,9 @@ class AskForHelpHandler(WenetEventHandler):
         """
         Returns True if the user is in another action (e.g. inside the /question flow), False otherwise
         """
-        statuses = [self.STATE_ANSWERING, self.STATE_QUESTION_1, self.STATE_QUESTION_2, self.STATE_QUESTION_3,
-                    self.STATE_QUESTION_4, self.STATE_QUESTION_4_1, self.STATE_QUESTION_5]
+        statuses = [self.STATE_ANSWERING, self.STATE_ANSWERING_SENSITIVE, self.STATE_ANSWERING_ANONYMOUSLY,
+                    self.STATE_QUESTION_1, self.STATE_QUESTION_2, self.STATE_QUESTION_3, self.STATE_QUESTION_4,
+                    self.STATE_QUESTION_4_1, self.STATE_QUESTION_5]
         current_status = context.get_static_state(self.CONTEXT_CURRENT_STATE, "")
         return current_status in statuses
 
@@ -398,15 +420,17 @@ class AskForHelpHandler(WenetEventHandler):
     def handle_answered_question(self, message: AnsweredQuestionMessage, user_object: WeNetUserProfile, answerer_user: WeNetUserProfile, question_task: Task) -> TelegramRapidAnswerResponse:
         answer_text = message.answer
         question_text = self.parse_text_with_markdown(question_task.goal.name)
+        answer_transaction = None
+        for transaction in question_task.transactions:
+            if transaction.id == message.transaction_id:
+                answer_transaction = transaction
         # Translate the message that there is a new answer and insert the details of the question and answer
         message_string = self._translator.get_translation_instance(user_object.locale) \
             .with_text("new_answer_message") \
             .with_substitution("question", question_text) \
             .with_substitution("answer", self.parse_text_with_markdown(answer_text)) \
-            .with_substitution("username", answerer_user.name.first if answerer_user.name.first else "Anonymous") \
+            .with_substitution("username", answerer_user.name.first if answerer_user.name.first and not answer_transaction.attributes.get("anonymous") else "Anonymous") \
             .translate()
-
-        # TODO handle anonymous answerer
 
         answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1])
         button_report_text = self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate()
@@ -765,16 +789,16 @@ class AskForHelpHandler(WenetEventHandler):
         """
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         context = incoming_event.context
-        # user_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
-        # show_conduct_message = True
-        # if user_id:
-        #     is_first_answer = self.is_first_answer(user_id)
-        #     show_conduct_message = is_first_answer or random.randint(1, 10) <= 2
-        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING)
+        user_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
+        show_conduct_message = True
+        if user_id:
+            is_first_answer = self.is_first_answer(user_id)
+            show_conduct_message = is_first_answer or random.randint(1, 10) <= 2
         context.with_static_state(self.CONTEXT_QUESTION_TO_ANSWER, button_payload.payload["task_id"])
-        context.with_static_state(self.CONTEXT_SENSITIVE_QUESTION_TO_ANSWER, button_payload.payload.get("sensitive"))
-        # if show_conduct_message:
-        #     message = self._translator.get_translation_instance(user_locale).with_text("question_0").translate()
+        if button_payload.payload.get("sensitive"):
+            context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING_SENSITIVE)
+        else:
+            context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING)
         if button_payload.payload.get("sensitive"):
             message = self._translator.get_translation_instance(user_locale).with_text("answer_sensitive_question").translate()
         else:
@@ -782,6 +806,8 @@ class AskForHelpHandler(WenetEventHandler):
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_context(context)
         response.with_message(TextualResponse(message))
+        if show_conduct_message:
+            response.with_message(TextualResponse(self._translator.get_translation_instance(user_locale).with_text("question_0").translate()))
         return response
 
     def action_answer_picked_question(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
@@ -795,25 +821,60 @@ class AskForHelpHandler(WenetEventHandler):
 
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         context = incoming_event.context
-        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING)
         context.with_static_state(self.CONTEXT_QUESTION_TO_ANSWER, button_payload.payload["task_id"])
         context.delete_static_state(self.CONTEXT_PROPOSED_TASKS)
         user_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
         task = service_api.get_task(button_payload.payload["task_id"])
-        is_first_time = self.is_first_answer(user_id)
-        message = self._translator.get_translation_instance(user_locale).with_text("you_are_answering_to").translate()\
-            + f"\n_{self.parse_text_with_markdown(task.goal.name)}_"
+        if button_payload.payload.get("sensitive"):
+            context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING_SENSITIVE)
+            message = self._translator.get_translation_instance(user_locale).with_text("you_are_answering_to_sensitive")\
+                .with_substitution("question", self.parse_text_with_markdown(task.goal.name))\
+                .translate()
+        else:
+            context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING)
+            message = self._translator.get_translation_instance(user_locale).with_text("you_are_answering_to")\
+                .with_substitution("question", self.parse_text_with_markdown(task.goal.name))\
+                .translate()
+
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_context(context)
         response.with_message(TelegramTextualResponse(message))
+        is_first_time = self.is_first_answer(user_id)
         if is_first_time:
-            response.with_message(TextualResponse(
-                self._translator.get_translation_instance(user_locale).with_text("question_0").translate()))
+            response.with_message(TextualResponse(self._translator.get_translation_instance(user_locale).with_text("question_0").translate()))
         return response
 
-    def action_answer_question_2(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+    def action_answer_sensitive_question(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         """
-        QuestionToAnswerMessage flow, collect the user's answer and thank her. If it is sensitive ask if ahould be anonymous the answer
+        QuestionToAnswerMessage flow, collect the user's answer and since it is a sensitive question ask if should be anonymous the answer
+        """
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+        context = incoming_event.context
+        if not context.has_static_state(self.CONTEXT_QUESTION_TO_ANSWER):
+            error_message = "Illegal state, expected the question ID in the context, but it does not exist"
+            logger.error(error_message)
+            raise ValueError(error_message)
+
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        if isinstance(incoming_event.incoming_message, IncomingTextMessage):
+            context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING_ANONYMOUSLY)
+            context.with_static_state(self.CONTEXT_ANSWER_TO_QUESTION, incoming_event.incoming_message.text)
+            message = self._translator.get_translation_instance(user_locale).with_text("answer_anonymously").translate()
+            button_1_text = self._translator.get_translation_instance(user_locale).with_text("anonymous_answer_1").translate()
+            button_2_text = self._translator.get_translation_instance(user_locale).with_text("anonymous_answer_2").translate()
+            response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1])
+            response_with_buttons.with_textual_option(button_1_text, self.INTENT_ANSWER_ANONYMOUSLY)
+            response_with_buttons.with_textual_option(button_2_text, self.INTENT_ANSWER_NOT_ANONYMOUSLY)
+            response.with_message(response_with_buttons)
+            response.with_context(context)
+        else:
+            error_message = self._translator.get_translation_instance(user_locale).with_text("answerer_is_not_text").translate()
+            response.with_message(TextualResponse(error_message))
+        return response
+
+    def action_answer_question_anonymously(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+        """
+        QuestionToAnswerMessage flow, collect if the user's answer should be anonymous and thank her
         """
         if incoming_event.context is not None:
             service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
@@ -823,7 +884,45 @@ class AskForHelpHandler(WenetEventHandler):
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         context = incoming_event.context
 
-        # TODO handle anonymous answerer flow
+        if not context.has_static_state(self.CONTEXT_QUESTION_TO_ANSWER):
+            error_message = "Illegal state, expected the question ID in the context, but it does not exist"
+            logger.error(error_message)
+            raise ValueError(error_message)
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        question_id = context.get_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
+        answer = context.get_static_state(self.CONTEXT_ANSWER_TO_QUESTION)
+        actioneer_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
+        try:
+            transaction = TaskTransaction(None, question_id, self.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), actioneer_id, {"answer": answer, "anonymous": True if intent == self.INTENT_ANSWER_ANONYMOUSLY else False}, [])
+            service_api.create_task_transaction(transaction)
+            logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
+            if intent == self.INTENT_ANSWER_ANONYMOUSLY:
+                message = self._translator.get_translation_instance(user_locale).with_text("answered_message_anonymously").translate()
+            else:
+                message = self._translator.get_translation_instance(user_locale).with_text("answered_message").translate()
+            response.with_message(TextualResponse(message))
+        except TaskTransactionCreationError as e:
+            response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
+            logger.error(
+                "Error in the creation of the transaction for answering the task [%s]. The service API responded with code %d and message %s"
+                % (question_id, e.http_status, json.dumps(e.json_response)))
+        finally:
+            context.delete_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
+            context.delete_static_state(self.CONTEXT_CURRENT_STATE)
+            response.with_context(context)
+        return response
+
+    def action_answer_question_2(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+        """
+        QuestionToAnswerMessage flow, collect the user's answer and thank her
+        """
+        if incoming_event.context is not None:
+            service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
+        else:
+            raise Exception(f"Missing conversation context for event {incoming_event}")
+
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+        context = incoming_event.context
 
         if not context.has_static_state(self.CONTEXT_QUESTION_TO_ANSWER):
             error_message = "Illegal state, expected the question ID in the context, but it does not exist"
@@ -835,7 +934,7 @@ class AskForHelpHandler(WenetEventHandler):
             answer = incoming_event.incoming_message.text
             actioneer_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
             try:
-                transaction = TaskTransaction(None, question_id, self.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), actioneer_id, {"answer": answer}, [])
+                transaction = TaskTransaction(None, question_id, self.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), actioneer_id, {"answer": answer, "anonymous": False}, [])
                 service_api.create_task_transaction(transaction)
                 logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
                 message = self._translator.get_translation_instance(user_locale).with_text("answered_message").translate()
@@ -843,7 +942,7 @@ class AskForHelpHandler(WenetEventHandler):
             except TaskTransactionCreationError as e:
                 response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
                 logger.error(
-                    "Error in the creation of the transaction for answering the task [%s]. The service API resonded with code %d and message %s"
+                    "Error in the creation of the transaction for answering the task [%s]. The service API responded with code %d and message %s"
                     % (question_id, e.http_status, json.dumps(e.json_response)))
             finally:
                 context.delete_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
@@ -872,7 +971,7 @@ class AskForHelpHandler(WenetEventHandler):
         except TaskTransactionCreationError as e:
             response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
             logger.error(
-                "Error in the creation of the transaction for not answering the task [%s]. The service API resonded with code %d and message %s"
+                "Error in the creation of the transaction for not answering the task [%s]. The service API responded with code %d and message %s"
                 % (question_id, e.http_status, json.dumps(e.json_response)))
         response.with_context(context)
         return response
@@ -972,7 +1071,7 @@ class AskForHelpHandler(WenetEventHandler):
         except TaskTransactionCreationError as e:
             response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
             logger.error(
-                "Error in the creation of the transaction for reporting the task [%s]. The service API resonded with code %d and message %s"
+                "Error in the creation of the transaction for reporting the task [%s]. The service API responded with code %d and message %s"
                 % (task_id, e.http_status, json.dumps(e.json_response)))
         return response
 
@@ -995,7 +1094,7 @@ class AskForHelpHandler(WenetEventHandler):
         except TaskTransactionCreationError as e:
             response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
             logger.error(
-                "Error in the creation of the transaction to ask more responses for the task [%s]. The service API resonded with code %d and message %s"
+                "Error in the creation of the transaction to ask more responses for the task [%s]. The service API responded with code %d and message %s"
                 % (task_id, e.http_status, json.dumps(e.json_response)))
         finally:
             context.delete_static_state(self.CONTEXT_CURRENT_STATE)
@@ -1022,7 +1121,7 @@ class AskForHelpHandler(WenetEventHandler):
         except TaskTransactionCreationError as e:
             response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
             logger.error(
-                "Error in the creation of the transaction for reporting the task [%s]. The service API resonded with code %d and message %s"
+                "Error in the creation of the transaction for reporting the task [%s]. The service API responded with code %d and message %s"
                 % (task_id, e.http_status, json.dumps(e.json_response)))
         return response
 
@@ -1039,8 +1138,6 @@ class AskForHelpHandler(WenetEventHandler):
                  if t.requester_id != user_id and user_id not in set(
                 [transaction.actioneer_id for transaction in t.transactions if transaction.label == "answerTransaction"])]
 
-        # TODO handle sensitive and anonymous questions
-
         if not tasks:
             response.with_message(TextualResponse(
                 self._translator.get_translation_instance(user_locale).with_text("answers_no_tasks").translate()))
@@ -1054,13 +1151,16 @@ class AskForHelpHandler(WenetEventHandler):
             for task in tasks:
                 questioning_user = service_api.get_user_profile(str(task.requester_id))
                 if questioning_user:
-                    tasks_texts.append(f"#{1 + len(proposed_tasks)}: *{self.parse_text_with_markdown(task.goal.name)}* - {questioning_user.name.first if questioning_user.name.first else 'Anonymous'}")
-                    proposed_tasks.append(task.task_id)
-            context.with_static_state(self.CONTEXT_PROPOSED_TASKS, proposed_tasks)
+                    task_text = f"#{1 + len(proposed_tasks)}: *{self.parse_text_with_markdown(task.goal.name)}* - {questioning_user.name.first if questioning_user.name.first and not task.attributes.get('anonymous') else 'Anonymous'}"
+                    if task.attributes.get('sensitive'):
+                        task_text = task_text + f" - {self._translator.get_translation_instance(user_locale).with_text('sensitive').translate()}"
+                    tasks_texts.append(task_text)
+                    proposed_tasks.append(task)
+            context.with_static_state(self.CONTEXT_PROPOSED_TASKS, [task.task_id for task in proposed_tasks])
             message_text = '\n'.join([text] + tasks_texts + [self._translator.get_translation_instance(user_locale).with_text("answers_tasks_choose").translate()])
             rapid_answer = RapidAnswerResponse(TextualResponse(message_text))
             for i in range(len(proposed_tasks)):
-                button_id = self.cache.cache(ButtonPayload({"task_id": proposed_tasks[i]}, self.INTENT_ANSWER_PICKED_QUESTION).to_repr())
+                button_id = self.cache.cache(ButtonPayload({"task_id": proposed_tasks[i].task_id, "sensitive": proposed_tasks[i].attributes.get('sensitive')}, self.INTENT_ANSWER_PICKED_QUESTION).to_repr())
                 rapid_answer.with_textual_option(f"#{1 + i}", self.INTENT_BUTTON_WITH_PAYLOAD.format(button_id))
             response.with_message(rapid_answer)
         response.with_context(context)

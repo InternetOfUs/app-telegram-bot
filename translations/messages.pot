@@ -135,6 +135,9 @@ msgstr ""
 msgid "answered_message"
 msgstr ""
 
+msgid "answered_message_anonymously"
+msgstr ""
+
 msgid "not_answer_response"
 msgstr ""
 
@@ -190,6 +193,18 @@ msgid "not_implemented"
 msgstr ""
 
 msgid "you_are_answering_to"
+msgstr ""
+
+msgid "you_are_answering_to_sensitive"
+msgstr ""
+
+msgid "answer_anonymously"
+msgstr ""
+
+msgid "anonymous_answer_1"
+msgstr ""
+
+msgid "anonymous_answer_2"
 msgstr ""
 
 msgid "picked_best_answer"

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-09-03 15:34+0200\n"
+"PO-Revision-Date: 2021-09-08 13:59+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -186,7 +186,11 @@ msgid "answerer_is_not_text"
 msgstr "La tua risposta deve essere un testo, e non un allegato"
 
 msgid "answered_message"
-msgstr "Grazie! Ora invio la tua risposta alla persona interessata"
+msgstr "Grazie! Ora invio la tua risposta alla persona interessata."
+
+msgid "answered_message_anonymously"
+msgstr ""
+"Grazie! Inoltrerò la tua risposta in modo anonimo alla persona interessata."
 
 msgid "not_answer_response"
 msgstr "Ok"
@@ -250,7 +254,25 @@ msgid "not_implemented"
 msgstr "Mi dispiace, ma questo comando non è ancora disponibile :grimacing:"
 
 msgid "you_are_answering_to"
-msgstr "Stai rispondendo alla seguente domanda:"
+msgstr ""
+"Stai rispondendo alla seguente domanda:\n"
+"_{question}_"
+
+msgid "you_are_answering_to_sensitive"
+msgstr ""
+"Stai rispondendo alla seguente domanda:\n"
+"_{question}_\n"
+"Per favore sii attento nella tua risposta, l’utente l’ha contrassegnata come "
+"dal contenuto sensibile."
+
+msgid "answer_anonymously"
+msgstr "Preferisci inviare questa risposta in forma anonima?"
+
+msgid "anonymous_answer_1"
+msgstr "Invia la risposta in forma anonima"
+
+msgid "anonymous_answer_2"
+msgstr "Invia la risposta normalmente"
 
 msgid "picked_best_answer"
 msgstr ""
