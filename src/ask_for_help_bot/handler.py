@@ -908,6 +908,7 @@ class AskForHelpHandler(WenetEventHandler):
                 % (question_id, e.http_status, json.dumps(e.json_response)))
         finally:
             context.delete_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
+            context.delete_static_state(self.CONTEXT_ANSWER_TO_QUESTION)
             context.delete_static_state(self.CONTEXT_CURRENT_STATE)
             response.with_context(context)
         return response
