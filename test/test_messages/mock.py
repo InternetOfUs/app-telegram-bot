@@ -1,4 +1,4 @@
-from uhopper.utils.mqtt import MqttPublishHandler
+from uhopper.utils.mqtt.handler import MqttPublishHandler
 
 
 class MockMqttPublishHandler(MqttPublishHandler):
