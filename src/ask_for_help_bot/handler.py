@@ -25,14 +25,14 @@ from chatbot_core.v3.model.messages import TextualResponse, RapidAnswerResponse,
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEvent
 from common.button_payload import ButtonPayload
 from common.wenet_event_handler import WenetEventHandler
-from uhopper.utils.alert import AlertModule
-from wenet.common.interface.exceptions import TaskCreationError, RefreshTokenExpiredError, TaskTransactionCreationError
-from wenet.common.model.message.event import WeNetAuthenticationEvent
-from wenet.common.model.message.message import TextualMessage, Message, QuestionToAnswerMessage, \
+from uhopper.utils.alert.module import AlertModule
+from wenet.interface.exceptions import CreationError, RefreshTokenExpiredError
+from wenet.model.callback_message.event import WeNetAuthenticationEvent
+from wenet.model.callback_message.message import TextualMessage, Message, QuestionToAnswerMessage, \
     AnsweredQuestionMessage, IncentiveMessage, IncentiveBadge, AnsweredPickedMessage
-from wenet.common.model.task.task import Task, TaskGoal
-from wenet.common.model.task.transaction import TaskTransaction
-from wenet.common.model.user.user_profile import WeNetUserProfile
+from wenet.model.task.task import Task, TaskGoal
+from wenet.model.task.transaction import TaskTransaction
+from wenet.model.user.profile import WeNetUserProfile
 
 logger = logging.getLogger("uhopper.chatbot.wenet.askforhelp.chatbot")
 
@@ -105,13 +105,13 @@ class AskForHelpHandler(WenetEventHandler):
     CACHE_LOCALE = "locale-{}"
     FIRST_ANSWER = "first-answer-{}"
 
-    def __init__(self, instance_namespace: str, bot_id: str, handler_id: str, telegram_id: str, wenet_backend_url: str,
+    def __init__(self, instance_namespace: str, bot_id: str, handler_id: str, telegram_id: str, wenet_instance_url: str,
                  wenet_hub_url: str, app_id: str, client_secret: str, redirect_url: str, wenet_authentication_url: str,
                  wenet_authentication_management_url: str, task_type_id: str, alert_module: AlertModule,
                  connector: SocialConnector, nlp_handler: Optional[NLPHandler], translator: Optional[Translator],
                  delay_between_messages_sec: Optional[int] = None, delay_between_text_sec: Optional[float] = None,
                  logger_connectors: Optional[List[LoggerConnector]] = None):
-        super().__init__(instance_namespace, bot_id, handler_id, telegram_id, wenet_backend_url, wenet_hub_url, app_id,
+        super().__init__(instance_namespace, bot_id, handler_id, telegram_id, wenet_instance_url, wenet_hub_url, app_id,
                          client_secret, redirect_url, wenet_authentication_url, wenet_authentication_management_url,
                          task_type_id, alert_module, connector, nlp_handler, translator, delay_between_messages_sec,
                          delay_between_text_sec, logger_connectors)
@@ -122,12 +122,12 @@ class AskForHelpHandler(WenetEventHandler):
             IntentFulfillerV3(self.INTENT_QUESTION, self.action_question).with_rule(intent=self.INTENT_QUESTION)
         )
         self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_QUESTION_FIRST, self.action_question)
-                .with_rule(intent=self.INTENT_QUESTION_FIRST)
+            IntentFulfillerV3(self.INTENT_QUESTION_FIRST, self.action_question).with_rule(intent=self.INTENT_QUESTION_FIRST)
         )
         self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.STATE_QUESTION_1, self.action_question_2)
-                .with_rule(static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_1))
+            IntentFulfillerV3(self.STATE_QUESTION_1, self.action_question_2).with_rule(
+                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_1)
+            )
         )
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_ASK_TO_DIFFERENT, self.action_question_3).with_rule(
@@ -148,8 +148,9 @@ class AskForHelpHandler(WenetEventHandler):
             )
         )
         self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.STATE_QUESTION_3, self.action_question_4)
-                .with_rule(static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_3))
+            IntentFulfillerV3(self.STATE_QUESTION_3, self.action_question_4).with_rule(
+                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_3)
+            )
         )
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_SENSITIVE_QUESTION, self.action_question_4_1).with_rule(
@@ -758,8 +759,8 @@ class AskForHelpHandler(WenetEventHandler):
             logger.debug(f"User [{wenet_id}] asked a question. Task created successfully")
             message = self._translator.get_translation_instance(user_locale).with_text("question_final").translate()
             response.with_message(TextualResponse(message))
-        except TaskCreationError as e:
-            logger.error(f"The service API responded with code {e.http_status} and message {json.dumps(e.json_response)}")
+        except CreationError as e:
+            logger.error(f"The service API responded with code {e.http_status_code} and message {json.dumps(e.server_response)}")
             message = self._translator.get_translation_instance(user_locale).with_text("error_task_creation").translate()
             response.with_message(TextualResponse(message))
         finally:
@@ -901,11 +902,11 @@ class AskForHelpHandler(WenetEventHandler):
             else:
                 message = self._translator.get_translation_instance(user_locale).with_text("answered_message").translate()
             response.with_message(TextualResponse(message))
-        except TaskTransactionCreationError as e:
+        except CreationError as e:
             response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
             logger.error(
                 "Error in the creation of the transaction for answering the task [%s]. The service API responded with code %d and message %s"
-                % (question_id, e.http_status, json.dumps(e.json_response)))
+                % (question_id, e.http_status_code, json.dumps(e.server_response)))
         finally:
             context.delete_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
             context.delete_static_state(self.CONTEXT_ANSWER_TO_QUESTION)
@@ -940,11 +941,11 @@ class AskForHelpHandler(WenetEventHandler):
                 logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
                 message = self._translator.get_translation_instance(user_locale).with_text("answered_message").translate()
                 response.with_message(TextualResponse(message))
-            except TaskTransactionCreationError as e:
+            except CreationError as e:
                 response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
                 logger.error(
                     "Error in the creation of the transaction for answering the task [%s]. The service API responded with code %d and message %s"
-                    % (question_id, e.http_status, json.dumps(e.json_response)))
+                    % (question_id, e.http_status_code, json.dumps(e.server_response)))
             finally:
                 context.delete_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
                 context.delete_static_state(self.CONTEXT_CURRENT_STATE)
@@ -969,11 +970,11 @@ class AskForHelpHandler(WenetEventHandler):
             service_api.create_task_transaction(transaction)
             message = self._translator.get_translation_instance(user_locale).with_text("not_answer_response").translate()
             response.with_message(TextualResponse(message))
-        except TaskTransactionCreationError as e:
+        except CreationError as e:
             response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
             logger.error(
                 "Error in the creation of the transaction for not answering the task [%s]. The service API responded with code %d and message %s"
-                % (question_id, e.http_status, json.dumps(e.json_response)))
+                % (question_id, e.http_status_code, json.dumps(e.server_response)))
         response.with_context(context)
         return response
 
@@ -1000,9 +1001,10 @@ class AskForHelpHandler(WenetEventHandler):
         button_ids = [str(uuid.uuid4()) for _ in range(4)]
         button_data = {
             "task_id": question_id,
-            "related_buttons": button_ids,
             "question": button_payload.payload["question"],
+            "sensitive": button_payload.payload.get("sensitive", False),
             "username": button_payload.payload["username"],
+            "related_buttons": button_ids,
         }
         response_to_store = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1, 1])
 
@@ -1069,11 +1071,11 @@ class AskForHelpHandler(WenetEventHandler):
             message = self._translator.get_translation_instance(user_locale).with_text(
                 "report_final_message").translate()
             response.with_message(TextualResponse(message))
-        except TaskTransactionCreationError as e:
+        except CreationError as e:
             response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
             logger.error(
                 "Error in the creation of the transaction for reporting the task [%s]. The service API responded with code %d and message %s"
-                % (task_id, e.http_status, json.dumps(e.json_response)))
+                % (task_id, e.http_status_code, json.dumps(e.server_response)))
         return response
 
     def action_more_answers(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
@@ -1092,11 +1094,11 @@ class AskForHelpHandler(WenetEventHandler):
             logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
             message = self._translator.get_translation_instance(user_locale).with_text("ask_more_answers_text").translate()
             response.with_message(TextualResponse(message))
-        except TaskTransactionCreationError as e:
+        except CreationError as e:
             response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
             logger.error(
                 "Error in the creation of the transaction to ask more responses for the task [%s]. The service API responded with code %d and message %s"
-                % (task_id, e.http_status, json.dumps(e.json_response)))
+                % (task_id, e.http_status_code, json.dumps(e.server_response)))
         finally:
             context.delete_static_state(self.CONTEXT_CURRENT_STATE)
             response.with_context(context)
@@ -1119,11 +1121,11 @@ class AskForHelpHandler(WenetEventHandler):
             message = self._translator.get_translation_instance(user_locale).with_text(
                 "best_answer_final_message").translate()
             response.with_message(TextualResponse(message))
-        except TaskTransactionCreationError as e:
+        except CreationError as e:
             response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
             logger.error(
                 "Error in the creation of the transaction for reporting the task [%s]. The service API responded with code %d and message %s"
-                % (task_id, e.http_status, json.dumps(e.json_response)))
+                % (task_id, e.http_status_code, json.dumps(e.server_response)))
         return response
 
     def action_answer(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:

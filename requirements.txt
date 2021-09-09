@@ -2,3 +2,9 @@ redis
 flask
 Flask-RESTful
 gunicorn
+requests
+emoji
+uhopper-chatbot==1.5.2
+wenet-common==2.0.1a1
+uhopper-alert==2.0.0
+uhopper-mqtt==1.1.0

@@ -4,7 +4,7 @@ import uuid
 
 from common.logging_config import get_logging_configuration
 from messages.ws import MessageInterface
-from uhopper.utils.mqtt import MqttPublishHandler
+from uhopper.utils.mqtt.handler import MqttPublishHandler
 
 bot_id = os.getenv("BOT_ID")
 
