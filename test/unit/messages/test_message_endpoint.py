@@ -1,10 +1,11 @@
 import json
 from unittest.mock import Mock
 
-from test.test_messages.common import CommonTestCase
+from test.unit.messages.common import CommonTestCase
 
 
 class TestEndpoint(CommonTestCase):
+
     def test_parsing_volunteer_notification(self):
         self.setUp()
         mock_publish = Mock()
