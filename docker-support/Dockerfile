@@ -9,18 +9,12 @@ ENV PIP_CONFIG_FILE /root/.config/pip/pip.conf
 
 
 
-
-
 RUN pip install --upgrade pip
 COPY requirements.txt .
 RUN pip install --user --no-cache-dir -r requirements.txt
 
-COPY wenet-common-models-requirements.txt .
-RUN pip install --user --no-cache-dir -r wenet-common-models-requirements.txt
-COPY chatbot-core-requirements.txt .
-RUN pip install --user --no-cache-dir -r chatbot-core-requirements.txt
-COPY utils-requirements.txt .
-RUN pip install --user --no-cache-dir -r utils-requirements.txt
+COPY utils-py-requirements.txt .
+RUN pip install --user --no-cache-dir -r utils-py-requirements.txt
 
 FROM public.registry.u-hopper.com/python:3.8
 

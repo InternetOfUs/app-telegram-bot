@@ -344,9 +344,7 @@ badges:default:
     paths:
       - template.svg
       - deploy.svg
-      - wenet-common-models.svg
-      - chatbot-core.svg
-      - utils.svg
+      - utils-py.svg
     expire_in: 1 day
   only:
     - master

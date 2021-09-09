@@ -43,7 +43,7 @@
           - ${MQTT_TOPIC}
           - ${INTERFACE_APIKEY}
           - ${INSTANCE_NAMESPACE}
-          - ${WENET_BACKEND_URL}
+          - ${WENET_INSTANCE_URL}
           - ${WENET_APP_ID}
           - ${WENET_HUB_URL}
           - ${TASK_TYPE_ID}
@@ -61,7 +61,7 @@
           - ${MQTT_TOPIC}
           - ${INTERFACE_APIKEY}
           - ${INSTANCE_NAMESPACE}
-          - ${WENET_BACKEND_URL}
+          - ${WENET_INSTANCE_URL}
           - ${WENET_APP_ID}
           - ${WENET_HUB_URL}
           - ${TASK_TYPE_ID}
@@ -98,11 +98,5 @@
           - name: build
             type: badge
 
-
-    project_python_submodules:
-      - name: wenet-common-models
-      - name: chatbot-core
-      - name: utils
-        path: chatbot-core/utils-py
   roles:
     - uh.project-template
