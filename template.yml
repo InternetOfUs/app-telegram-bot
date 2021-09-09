@@ -73,31 +73,30 @@
         stages:
           - name: build
           - name: test
+            in_docker: false
           - name: push
-          - name: notify
       staging:
         stages:
           - name: build
             manual: true
           - name: test
-          - name: push
-          - name: trigger
-            manual: true
-            git_ref: develop
-      issue:
-        stages:
-          - name: build
-            manual: true
-          - name: test
+            in_docker: false
           - name: push
           - name: trigger
             manual: true
             git_ref: develop
       mr:
         stages:
-          - name: build
-            manual: true
           - name: test
+            in_docker: false
+          - name: test
+            type: coverage
+      default:
+        stages:
+          - name: test
+            type: coverage
+          - name: build
+            type: badge
 
 
     project_python_submodules:
