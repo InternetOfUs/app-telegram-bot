@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-09-08 13:56+0200\n"
+"PO-Revision-Date: 2021-09-10 12:48+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: es\n"
@@ -54,9 +54,6 @@ msgstr "La operación actual se ha cancelado correctamente"
 msgid "question_1"
 msgstr "¿Qué le gustaría preguntar a los miembros de la comunidad?"
 
-msgid "question_2"
-msgstr "Cuéntame más, ¿sobre qué tipo de persona debo preguntar?"
-
 msgid "type_answer_1"
 msgstr "Diferente a mí"
 
@@ -68,9 +65,6 @@ msgstr "Cualquiera"
 
 msgid "question_is_not_text"
 msgstr "Por favor escriba su pregunta"
-
-msgid "specify_answerer"
-msgstr "¿Puede especificar por qué este tipo de persona?"
 
 msgid "sensitive_question"
 msgstr ""
@@ -92,6 +86,21 @@ msgstr "Pregúntalo de forma anónima"
 msgid "not_anonymous"
 msgstr "Pregúntalo normalmente"
 
+msgid "social_closeness_question"
+msgstr ""
+"¿Debería la gente estar más cerca o más lejos *socialmente* de ti? Más cerca "
+"están las personas que quizás conozca o con las que haya interactuado "
+"anteriormente a través del chatbot."
+
+msgid "answer_socially_close"
+msgstr "Más cerca de mí"
+
+msgid "answer_socially_indifferent"
+msgstr "Indiferente, no lo tomes en cuenta"
+
+msgid "answer_socially_distant"
+msgstr "Distante de mi"
+
 msgid "specify_answerer_location"
 msgstr "¿Debería la gente estar cerca de ti ahora mismo o recientemente?"
 
@@ -105,10 +114,6 @@ msgid "question_final"
 msgstr ""
 "Muy bien, pediré a otros usuarios que respondan tu pregunta. Cuando reciba "
 "una respuesta, te lo notificaré."
-
-msgid "answerer_details_are_not_text"
-msgstr ""
-"Por favor, especifique qué tipo de persona le gustaría que le respondiera."
 
 msgid "question_0"
 msgstr ""
@@ -286,6 +291,16 @@ msgstr ""
 "¿Sabías que al usar este bot podrás ganar insignias geniales? Puedes verlos "
 "aquí :point_right: {base_url}/wenetapp/user-app-details?id={app_id}"
 "&back=profile"
+
+#~ msgid "question_2"
+#~ msgstr "Cuéntame más, ¿sobre qué tipo de persona debo preguntar?"
+
+#~ msgid "specify_answerer"
+#~ msgstr "¿Puede especificar por qué este tipo de persona?"
+
+#~ msgid "answerer_details_are_not_text"
+#~ msgstr ""
+#~ "Por favor, especifique qué tipo de persona le gustaría que le respondiera."
 
 #~ msgid "question_5"
 #~ msgstr ""

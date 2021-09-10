@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-09-08 13:50+0200\n"
+"PO-Revision-Date: 2021-09-10 12:44+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -52,9 +52,6 @@ msgstr "The current operation has been cancelled successfully"
 msgid "question_1"
 msgstr "What would you like to ask from the community members?"
 
-msgid "question_2"
-msgstr "Tell me more about what kind of person should I ask?"
-
 msgid "type_answer_1"
 msgstr "Different than me"
 
@@ -66,9 +63,6 @@ msgstr "Anyone"
 
 msgid "question_is_not_text"
 msgstr "Please write your question"
-
-msgid "specify_answerer"
-msgstr "Can you specify why this kind of person?"
 
 msgid "sensitive_question"
 msgstr ""
@@ -90,6 +84,20 @@ msgstr "Ask it anonymously"
 msgid "not_anonymous"
 msgstr "Ask it normally"
 
+msgid "social_closeness_question"
+msgstr ""
+"Should the people be closer or further from you *socially*? Closer are "
+"people you might know or have interacted with earlier through the chatbot."
+
+msgid "answer_socially_close"
+msgstr "Closer to me"
+
+msgid "answer_socially_indifferent"
+msgstr "Indifferent, don’t take into account"
+
+msgid "answer_socially_distant"
+msgstr "Distant to me"
+
 msgid "specify_answerer_location"
 msgstr "Should the people be in your proximity right now, or recently?"
 
@@ -103,9 +111,6 @@ msgid "question_final"
 msgstr ""
 "Alright, I will ask other users to answer your question! When I receive an "
 "answer, I will notify you."
-
-msgid "answerer_details_are_not_text"
-msgstr "Please specify what kind of person you would like to be answered by."
 
 msgid "question_0"
 msgstr ""
@@ -281,6 +286,16 @@ msgstr ""
 "Did you know that by using this bot you will be able to win super cool "
 "badges? You can check them out here :point_right: {base_url}/wenetapp/user-"
 "app-details?id={app_id}&back=profile"
+
+#~ msgid "question_2"
+#~ msgstr "Tell me more about what kind of person should I ask?"
+
+#~ msgid "specify_answerer"
+#~ msgstr "Can you specify why this kind of person?"
+
+#~ msgid "answerer_details_are_not_text"
+#~ msgstr ""
+#~ "Please specify what kind of person you would like to be answered by."
 
 #~ msgid "question_5"
 #~ msgstr ""
