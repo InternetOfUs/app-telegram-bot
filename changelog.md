@@ -3,7 +3,10 @@
 # Versions
 
 ## next
- - Integrated position data in the question and answer flow
+- Integrated position data in the question and answer flow
+- Integrated sensitive and anonymous information data in the question and answer flow
+- Update to project template 4.3.3
+- Removed submodules and added the libraries as packages
 
 ## 1.0.10
 - Changed the `project` field in the messages logged into the Wenet platform. Now the `appId` is used, instead of the `PROJECT_NAME` environment variable

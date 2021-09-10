@@ -80,19 +80,10 @@ where `response_list` is a list of `ResponseMessage` objects.
 ### Installation
 The chatbot required Python version 3.7 or higher.
 
-The project requires some submodules that can be configured by running the command
-
-```bash
-git submodule update --init --recursive
-```
-
-All required Python packages can be installed using the command
+All required Python packages can be installed using the command:
 
 ```bash
 pip install -r requirements.txt
-pip install -r wenet-common-models/requirements.txt
-pip install -r chatbot-core/requirements.txt
-pip install -r chatbot-core/utils-py/requirements.txt
 ```
 
 ### Docker support
@@ -135,7 +126,7 @@ Both the chatbots use the following environment variables
 * `MQTT_TOPIC`: MQTT topic to listen on
 * `INTERFACE_APIKEY`: bot interface api key
 * `INSTANCE_NAMESPACE`: bot instance namespace
-* `WENET_BACKEND_URL`: the url to the WeNet Service APIs
+* `WENET_INSTANCE_URL`: the url to the WeNet instance
 * `WENET_APP_ID`: WeNet App ID used by the bot
 * `WENET_HUB_URL`: url of the WeNet hub
 * `TASK_TYPE_ID`: the type ID of the tasks Eat Together

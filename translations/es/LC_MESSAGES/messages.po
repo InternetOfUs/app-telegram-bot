@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-08-31 12:39+0200\n"
+"PO-Revision-Date: 2021-09-08 13:56+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: es\n"
@@ -72,6 +72,26 @@ msgstr "Por favor escriba su pregunta"
 msgid "specify_answerer"
 msgstr "¿Puede especificar por qué este tipo de persona?"
 
+msgid "sensitive_question"
+msgstr ""
+"¿Es esta una pregunta potencialmente sensible? Si es así, se lo haré saber a "
+"otras personas para que tengan mucho cuidado al responder."
+
+msgid "not_sensitive"
+msgstr "No sensible"
+
+msgid "sensitive"
+msgstr ":warning: Sensible"
+
+msgid "anonymous_question"
+msgstr "¿Prefieres preguntarlo de forma anónima?"
+
+msgid "anonymous"
+msgstr "Pregúntalo de forma anónima"
+
+msgid "not_anonymous"
+msgstr "Pregúntalo normalmente"
+
 msgid "specify_answerer_location"
 msgstr "¿Debería la gente estar cerca de ti ahora mismo o recientemente?"
 
@@ -81,7 +101,7 @@ msgstr "En la proximidad"
 msgid "location_answer_2"
 msgstr "No importa"
 
-msgid "question_5"
+msgid "question_final"
 msgstr ""
 "Muy bien, pediré a otros usuarios que respondan tu pregunta. Cuando reciba "
 "una respuesta, te lo notificaré."
@@ -115,6 +135,15 @@ msgstr ""
 "\n"
 "“{question}” - {user}"
 
+msgid "answer_sensitive_message_0"
+msgstr ""
+"¡Alguien en la comunidad tiene una pregunta delicada que podrías responder!\n"
+"\n"
+"“{question}” - {user}\n"
+"\n"
+":warning: El usuario marcó esta pregunta como sensible, así que tenga mucho "
+"cuidado al responder :)"
+
 msgid "answer_message_nearby"
 msgstr ""
 "¡Alguien *cerca de ti ahora mismo* tiene una pregunta que podrías "
@@ -122,8 +151,23 @@ msgstr ""
 "\n"
 "“{question}” - {user}"
 
+msgid "answer_sensitive_message_nearby"
+msgstr ""
+"¡Alguien *cerca de ti ahora mismo* tiene una pregunta delicada que podrías "
+"responder!\n"
+"\n"
+"“{question}” - {user}\n"
+"\n"
+":warning: El usuario marcó esta pregunta como sensible, así que tenga mucho "
+"cuidado al responder :)"
+
 msgid "answer_question"
 msgstr "Continúe con su respuesta: point_down:"
+
+msgid "answer_sensitive_question"
+msgstr ""
+"Continúe con su respuesta: point_down:\n"
+"Tenga en cuenta su respuesta, el usuario la marcó sensible."
 
 msgid "answer_question_button"
 msgstr "¡La responderé ahora!"
@@ -141,7 +185,10 @@ msgid "answerer_is_not_text"
 msgstr "Tu respuesta debe ser un texto y no un adjunto"
 
 msgid "answered_message"
-msgstr "¡Gracias! Enviaré su respuesta a la persona que lo preguntó."
+msgstr "¡Gracias! Enviaré tu respuesta a la persona."
+
+msgid "answered_message_anonymously"
+msgstr "¡Gracias! Enviaré su respuesta de forma anónima a la persona."
 
 msgid "not_answer_response"
 msgstr "Todo correcto"
@@ -206,7 +253,24 @@ msgid "not_implemented"
 msgstr "Lo siento, este comando aún no está implementado :grimacing:"
 
 msgid "you_are_answering_to"
-msgstr "Estás respondiendo a la siguiente pregunta:"
+msgstr ""
+"Estás respondiendo a la siguiente pregunta:\n"
+"_{question}_"
+
+msgid "you_are_answering_to_sensitive"
+msgstr ""
+"Estás respondiendo a la siguiente pregunta:\n"
+"_{question}_\n"
+"Tenga en cuenta su respuesta, el usuario la marcó sensible."
+
+msgid "answer_anonymously"
+msgstr "¿Prefieres enviar esta respuesta de forma anónima?"
+
+msgid "anonymous_answer_1"
+msgstr "Envía la respuesta de forma anónima"
+
+msgid "anonymous_answer_2"
+msgstr "Envía la respuesta normalmente"
 
 msgid "picked_best_answer"
 msgstr ""
@@ -223,6 +287,11 @@ msgstr ""
 "aquí :point_right: {base_url}/wenetapp/user-app-details?id={app_id}"
 "&back=profile"
 
+#~ msgid "question_5"
+#~ msgstr ""
+#~ "Muy bien, pediré a otros usuarios que respondan tu pregunta. Cuando "
+#~ "reciba una respuesta, te lo notificaré."
+
 #~ msgid "location_answer_3"
 #~ msgstr "En cualquier sitio"
 
@@ -230,6 +299,3 @@ msgstr ""
 #~ msgstr ""
 #~ "Muy bien, pediré a otros usuarios que respondan tu pregunta. Cuando "
 #~ "reciba una respuesta, te lo notificaré."
-
-#~ msgid "not_inclusive"
-#~ msgstr "Please use more "

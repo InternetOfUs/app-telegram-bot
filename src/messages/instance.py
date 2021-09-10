@@ -5,9 +5,9 @@ from flask import request, redirect
 from flask_restful import Resource, abort
 
 from chatbot_core.model.event import IncomingCustomEvent
-from uhopper.utils.mqtt import MqttPublishHandler
-from wenet.common.model.message.builder import MessageBuilder
-from wenet.common.model.message.event import WeNetAuthenticationEvent
+from uhopper.utils.mqtt.handler import MqttPublishHandler
+from wenet.model.callback_message.builder import MessageBuilder
+from wenet.model.callback_message.event import WeNetAuthenticationEvent
 
 logger = logging.getLogger("uhopper.chatbot.wenet.messages")
 

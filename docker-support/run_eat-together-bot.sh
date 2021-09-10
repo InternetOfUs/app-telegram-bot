@@ -10,7 +10,7 @@ declare -a REQUIRED_ENV_VARS=(
                                 "${MQTT_TOPIC}"
                                 "${INTERFACE_APIKEY}"
                                 "${INSTANCE_NAMESPACE}"
-                                "${WENET_BACKEND_URL}"
+                                "${WENET_INSTANCE_URL}"
                                 "${WENET_APP_ID}"
                                 "${WENET_HUB_URL}"
                                 "${TASK_TYPE_ID}"

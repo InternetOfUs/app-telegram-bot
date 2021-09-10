@@ -1,6 +1,5 @@
 import abc
 import logging
-import os
 from typing import Optional, List
 from threading import Lock
 
@@ -22,14 +21,14 @@ from chatbot_core.v3.model.messages import RapidAnswerResponse, TextualResponse,
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEvent
 from common.cache import BotCache
 from common.messages_to_log import LogMessageHandler
-from uhopper.utils.alert import AlertModule
-from wenet.common.interface.client import Oauth2Client
-from wenet.common.interface.exceptions import TaskNotFound, RefreshTokenExpiredError
-from wenet.common.interface.service_api import ServiceApiInterface
-from wenet.common.model.message.builder import MessageBuilder
-from wenet.common.model.message.event import WeNetAuthenticationEvent
-from wenet.common.model.message.message import TextualMessage, Message
-from wenet.common.storage.cache import RedisCache
+from uhopper.utils.alert.module import AlertModule
+from wenet.interface.client import Oauth2Client
+from wenet.interface.exceptions import NotFound, RefreshTokenExpiredError
+from wenet.interface.service_api import ServiceApiInterface
+from wenet.model.callback_message.builder import MessageBuilder
+from wenet.model.callback_message.event import WeNetAuthenticationEvent
+from wenet.model.callback_message.message import TextualMessage, Message
+from wenet.storage.cache import RedisCache
 
 logger = logging.getLogger("uhopper.chatbot.wenet")
 
@@ -51,7 +50,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
         - instance_namespace, bot_id, handler_id, alert_module, connector, nlp_handler, translator,
         delay_between_messages_sec, delay_between_text_sec, logger_connectors as the normal EventHandler
         - telegram_id: telegram secret code to communicate with Telegram APIs
-        - wenet_backend_url: the url of the Wenet API
+        - wenet_instance_url: the url of the Wenet instance
         - wenet_hub_url: the url of the Wenet hub frontend, where users are redirected for authentication
         - app_id: the Wenet app Id with which the bot works
         - client_secret: the secret key to use Wenet API
@@ -80,7 +79,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
                  bot_id: str,
                  handler_id: str,
                  telegram_id: str,
-                 wenet_backend_url: str,
+                 wenet_instance_url: str,
                  wenet_hub_url: str,
                  app_id: str,
                  client_secret: str,
@@ -110,7 +109,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
         self.bot_username = info["result"]["username"]
         self.bot_name = info["result"]["first_name"]
 
-        self.wenet_backend_url = wenet_backend_url
+        self.wenet_instance_url = wenet_instance_url
         self.wenet_hub_url = wenet_hub_url
         self.app_id = app_id
         self.client_secret = client_secret
@@ -200,9 +199,8 @@ class WenetEventHandler(EventHandler, abc.ABC):
         return response
 
     def _get_service_connector_from_social_details(self, social_details: TelegramDetails) -> ServiceApiInterface:
-        oauth_client = Oauth2Client(self.wenet_authentication_management_url, self.oauth_cache,
-                                    social_details.unique_id(), self.app_id, self.client_secret)
-        return ServiceApiInterface(self.wenet_backend_url, oauth_client)
+        oauth_client = Oauth2Client(self.app_id, self.client_secret, social_details.unique_id(), self.oauth_cache, token_endpoint_url=self.wenet_authentication_management_url)
+        return ServiceApiInterface(oauth_client, self.wenet_instance_url)
 
     def _get_service_api_interface_connector_from_context(self, context: ConversationContext) -> ServiceApiInterface:
         if not context.has_static_state(self.CONTEXT_TELEGRAM_USER_ID):
@@ -288,7 +286,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
             logger.error(
                 "Malformed message from WeNet, the parser raised the following exception: %s \n event: [%s]" % (
                  e, custom_event.to_repr()))
-        except TaskNotFound as e:
+        except NotFound as e:
             logger.error(e.message)
         except Exception as e:
             logger.exception("Unable to handle to command", exc_info=e)
@@ -361,18 +359,18 @@ class WenetEventHandler(EventHandler, abc.ABC):
         """
         Get from Wenet the user ID and saves it into the context
         """
-        client = Oauth2Client.initialize_with_code(self.wenet_authentication_management_url,
-                                                   self.oauth_cache, social_details.unique_id(), self.app_id,
-                                                   self.client_secret, message.code, self.redirect_url)
+        client = Oauth2Client.initialize_with_code(
+            self.app_id, self.client_secret, message.code, self.redirect_url, social_details.unique_id(),
+            self.oauth_cache, token_endpoint_url=self.wenet_authentication_management_url
+        )
 
+        service_api = ServiceApiInterface(client, self.wenet_instance_url)
         context = self._interface_connector.get_user_context(social_details)
         context.context.with_static_state(self.CONTEXT_TELEGRAM_USER_ID, social_details.user_id)
 
         # get wenet user ID
-        wenet_user_id_request = client.get(self.wenet_backend_url + '/token')
-        if wenet_user_id_request.status_code != 200:
-            raise Exception(wenet_user_id_request.json()['error_description'])
-        wenet_user_id = wenet_user_id_request.json()['profileId']
+        wenet_user_id_request = service_api.get_token_details()
+        wenet_user_id = wenet_user_id_request.profile_id
         logger.debug(f"Wenet user ID is {wenet_user_id}")
         context.context.with_static_state(self.CONTEXT_WENET_USER_ID, wenet_user_id)
 
