@@ -49,7 +49,6 @@ class TestAskForHelpHandler(TestCase):
             self.assertEqual("task_id", cached_item["payload"]["task_id"])
             self.assertEqual("question", cached_item["payload"]["question"])
             self.assertEqual(True, cached_item["payload"]["sensitive"])
-            self.assertEqual("Anonymous", cached_item["payload"]["username"])
 
     def test_handle_nearby_question_sensitive(self):
         handler = MockAskForHelpHandler()
@@ -137,7 +136,6 @@ class TestAskForHelpHandler(TestCase):
             self.assertEqual("task_id", cached_item["payload"]["task_id"])
             self.assertEqual("question", cached_item["payload"]["question"])
             self.assertEqual(True, cached_item["payload"]["sensitive"])
-            self.assertEqual("Anonymous", cached_item["payload"]["username"])
 
     def test_handle_question_sensitive(self):
         handler = MockAskForHelpHandler()
