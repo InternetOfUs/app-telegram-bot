@@ -399,7 +399,7 @@ class AskForHelpHandler(WenetEventHandler):
             "username": questioning_user.name.first if questioning_user.name.first and not anonymous else self._translator.get_translation_instance(user_object.locale).with_text("anonymous_user").translate(),
             "related_buttons": button_ids,
         }
-        response = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1])
+        response = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 2])
         self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_QUESTION).to_repr(), key=button_ids[0])
         response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_question_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
         self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_NOT).to_repr(), key=button_ids[1])
@@ -430,7 +430,7 @@ class AskForHelpHandler(WenetEventHandler):
             "username": questioning_user.name.first if questioning_user.name.first and not anonymous else self._translator.get_translation_instance(user_object.locale).with_text("anonymous_user").translate(),
             "related_buttons": button_ids,
         }
-        response = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1, 1])
+        response = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[2, 2])
         self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_QUESTION).to_repr(), key=button_ids[0])
         response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_question_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
         self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_REMIND_LATER).to_repr(), key=button_ids[1])
@@ -456,7 +456,7 @@ class AskForHelpHandler(WenetEventHandler):
             .with_substitution("username", answerer_user.name.first if answerer_user.name.first and not answer_transaction.attributes.get("anonymous") else self._translator.get_translation_instance(user_object.locale).with_text("anonymous_user").translate()) \
             .translate()
 
-        answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1])
+        answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 2])
         button_report_text = self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate()
         button_more_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("more_answers_button").translate()
         button_best_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("best_answers_button").translate()
@@ -675,7 +675,7 @@ class AskForHelpHandler(WenetEventHandler):
         message = self._translator.get_translation_instance(user_locale).with_text("sensitive_question").translate()
         button_1_text = self._translator.get_translation_instance(user_locale).with_text("not_sensitive").translate()
         button_2_text = self._translator.get_translation_instance(user_locale).with_text("sensitive").translate()
-        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1])
+        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2])
         response_with_buttons.with_textual_option(button_1_text, self.INTENT_NOT_SENSITIVE_QUESTION)
         response_with_buttons.with_textual_option(button_2_text, self.INTENT_SENSITIVE_QUESTION)
         response.with_message(response_with_buttons)
@@ -694,7 +694,7 @@ class AskForHelpHandler(WenetEventHandler):
         message = self._translator.get_translation_instance(user_locale).with_text("anonymous_question").translate()
         button_1_text = self._translator.get_translation_instance(user_locale).with_text("anonymous").translate()
         button_2_text = self._translator.get_translation_instance(user_locale).with_text("not_anonymous").translate()
-        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1])
+        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2])
         response_with_buttons.with_textual_option(button_1_text, self.INTENT_ANONYMOUS_QUESTION)
         response_with_buttons.with_textual_option(button_2_text, self.INTENT_NOT_ANONYMOUS_QUESTION)
         response.with_message(response_with_buttons)
@@ -717,7 +717,7 @@ class AskForHelpHandler(WenetEventHandler):
         button_1_text = self._translator.get_translation_instance(user_locale).with_text("answer_socially_close").translate()
         button_2_text = self._translator.get_translation_instance(user_locale).with_text("answer_socially_indifferent").translate()
         button_3_text = self._translator.get_translation_instance(user_locale).with_text("answer_socially_distant").translate()
-        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1, 1])
+        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[3])
         response_with_buttons.with_textual_option(button_1_text, self.INTENT_SIMILAR)
         response_with_buttons.with_textual_option(button_2_text, self.INTENT_INDIFFERENT)
         response_with_buttons.with_textual_option(button_3_text, self.INTENT_DIFFERENT)
@@ -737,7 +737,7 @@ class AskForHelpHandler(WenetEventHandler):
         message = self._translator.get_translation_instance(user_locale).with_text("specify_answerer_location").translate()
         button_1_text = self._translator.get_translation_instance(user_locale).with_text("location_answer_1").translate()
         button_2_text = self._translator.get_translation_instance(user_locale).with_text("location_answer_2").translate()
-        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1])
+        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2])
         response_with_buttons.with_textual_option(button_1_text, self.INTENT_ASK_TO_NEARBY)
         response_with_buttons.with_textual_option(button_2_text, self.INTENT_ASK_TO_ANYWHERE)
         response.with_message(response_with_buttons)
@@ -899,7 +899,7 @@ class AskForHelpHandler(WenetEventHandler):
             message = self._translator.get_translation_instance(user_locale).with_text("answer_anonymously").translate()
             button_1_text = self._translator.get_translation_instance(user_locale).with_text("anonymous_answer_1").translate()
             button_2_text = self._translator.get_translation_instance(user_locale).with_text("anonymous_answer_2").translate()
-            response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1])
+            response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2])
             response_with_buttons.with_textual_option(button_1_text, self.INTENT_ANSWER_ANONYMOUSLY)
             response_with_buttons.with_textual_option(button_2_text, self.INTENT_ANSWER_NOT_ANONYMOUSLY)
             response.with_message(response_with_buttons)
@@ -1042,7 +1042,7 @@ class AskForHelpHandler(WenetEventHandler):
             "username": button_payload.payload["username"],
             "related_buttons": button_ids,
         }
-        response_to_store = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1, 1])
+        response_to_store = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[2, 2])
 
         self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_QUESTION).to_repr(), key=button_ids[0])
         response_to_store.with_textual_option(self._translator.get_translation_instance(user_locale).with_text("answer_question_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
@@ -1069,7 +1069,7 @@ class AskForHelpHandler(WenetEventHandler):
         button_why_reporting_1_text = self._translator.get_translation_instance(user_locale).with_text("button_why_reporting_1_text").translate()
         button_why_reporting_2_text = self._translator.get_translation_instance(user_locale).with_text("button_why_reporting_2_text").translate()
         button_why_reporting_3_text = self._translator.get_translation_instance(user_locale).with_text("button_why_reporting_3_text").translate()
-        message = TelegramRapidAnswerResponse(TextualResponse(message_text), row_displacement=[1, 1, 1])
+        message = TelegramRapidAnswerResponse(TextualResponse(message_text), row_displacement=[2, 1])
         button_ids = [str(uuid.uuid4()) for _ in range(2)]
         payload = button_payload.payload
         payload.update({"related_buttons": button_ids})
