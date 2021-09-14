@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-09-10 12:48+0200\n"
+"PO-Revision-Date: 2021-09-14 18:30+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: es\n"
@@ -54,22 +54,54 @@ msgstr "La operación actual se ha cancelado correctamente"
 msgid "question_1"
 msgstr "¿Qué le gustaría preguntar a los miembros de la comunidad?"
 
-msgid "type_answer_1"
-msgstr "Diferente a mí"
-
-msgid "type_answer_2"
-msgstr "Similar a mí"
-
-msgid "type_answer_3"
-msgstr "Cualquiera"
-
 msgid "question_is_not_text"
 msgstr "Por favor escriba su pregunta"
 
+msgid "domain_question"
+msgstr ""
+"De acuerdo, pediré a otros que respondan a tu pregunta. Ahora le haré "
+"algunas preguntas para especificar a quién preguntar con mayor precisión :"
+"dart:.\n"
+"\n"
+"1/6: ¿Cuál es el dominio de su pregunta?"
+
+msgid "studying_career"
+msgstr ":book: Estudiar / Carrera"
+
+msgid "local_university"
+msgstr ":mortar_board: Universidad local"
+
+msgid "local_things"
+msgstr ":world_map: Cosas locales"
+
+msgid "physical_activity"
+msgstr ":runner: Actividad física"
+
+msgid "cultural_interests"
+msgstr ":classical_building: Intereses culturales"
+
+msgid "food_and_cooking"
+msgstr ":fried_egg: Comida y cocina"
+
+msgid "cinema_theatre"
+msgstr ":popcorn: Cine, teatro"
+
+msgid "music"
+msgstr ":notes: Música"
+
+msgid "arts_and_crafts"
+msgstr ":art: Arte y artesanía"
+
+msgid "life_ponders"
+msgstr ":thinking_face: Reflexiones sobre la vida"
+
+msgid "varia_misc"
+msgstr ":space_invader: Varia / Misc"
+
 msgid "sensitive_question"
 msgstr ""
-"¿Es esta una pregunta potencialmente sensible? Si es así, se lo haré saber a "
-"otras personas para que tengan mucho cuidado al responder."
+"4/6: ¿Es esta una pregunta potencialmente sensible? Si es así, se lo haré "
+"saber a otras personas para que tengan mucho cuidado al responder."
 
 msgid "not_sensitive"
 msgstr "No sensible"
@@ -80,6 +112,9 @@ msgstr ":warning: Sensible"
 msgid "anonymous_question"
 msgstr "¿Prefieres preguntarlo de forma anónima?"
 
+msgid "anonymous_user"
+msgstr "Anónimo"
+
 msgid "anonymous"
 msgstr "Pregúntalo de forma anónima"
 
@@ -88,8 +123,8 @@ msgstr "Pregúntalo normalmente"
 
 msgid "social_closeness_question"
 msgstr ""
-"¿Debería la gente estar más cerca o más lejos *socialmente* de ti? Más cerca "
-"están las personas que quizás conozca o con las que haya interactuado "
+"5/6: ¿Debería la gente estar más cerca o más lejos *socialmente* de ti? Más "
+"cerca están las personas que quizás conozca o con las que haya interactuado "
 "anteriormente a través del chatbot."
 
 msgid "answer_socially_close"
@@ -102,7 +137,7 @@ msgid "answer_socially_distant"
 msgstr "Distante de mi"
 
 msgid "specify_answerer_location"
-msgstr "¿Debería la gente estar cerca de ti ahora mismo o recientemente?"
+msgstr "6/6: ¿Debería la gente estar cerca de ti ahora mismo o recientemente?"
 
 msgid "location_answer_1"
 msgstr "En la proximidad"
@@ -291,6 +326,15 @@ msgstr ""
 "¿Sabías que al usar este bot podrás ganar insignias geniales? Puedes verlos "
 "aquí :point_right: {base_url}/wenetapp/user-app-details?id={app_id}"
 "&back=profile"
+
+#~ msgid "type_answer_1"
+#~ msgstr "Diferente a mí"
+
+#~ msgid "type_answer_2"
+#~ msgstr "Similar a mí"
+
+#~ msgid "type_answer_3"
+#~ msgstr "Cualquiera"
 
 #~ msgid "question_2"
 #~ msgstr "Cuéntame más, ¿sobre qué tipo de persona debo preguntar?"
