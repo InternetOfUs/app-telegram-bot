@@ -73,6 +73,9 @@
         stages:
           - name: build
           - name: test
+            in_docker: true #TODO disable when the submodules are removed
+#          - name: test
+#            type: coverage
           - name: push
           - name: notify
       staging:
@@ -80,15 +83,7 @@
           - name: build
             manual: true
           - name: test
-          - name: push
-          - name: trigger
-            manual: true
-            git_ref: develop
-      issue:
-        stages:
-          - name: build
-            manual: true
-          - name: test
+            in_docker: true #TODO disable when the submodules are removed
           - name: push
           - name: trigger
             manual: true
@@ -96,8 +91,17 @@
       mr:
         stages:
           - name: build
-            manual: true
           - name: test
+            in_docker: true #TODO disable when the submodules are removed
+#          - name: test
+#            type: coverage
+      default:
+        stages:
+          - name: build
+          - name: build
+            type: badge
+#          - name: test
+#            type: coverage
 
 
     project_python_submodules:
