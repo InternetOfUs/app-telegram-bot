@@ -49,7 +49,7 @@ class PendingMessagesJob(SocialJob):
             try:
                 pending_answer = PendingQuestionToAnswer.from_repr(pending_answers[question_id])
             except Exception as e:
-                logger.exception(f"An exception [{type(e)}] occurs handling in parsing the pending answer [{context}]", exc_info=e)
+                logger.exception(f"An exception [{type(e)}] occurs handling in parsing the pending answer [{pending_answers[question_id]}]", exc_info=e)
                 continue
 
             if pending_answer.sent is not None and pending_answer.sent + datetime.timedelta(minutes=self.REMINDER_MINUTES) <= datetime.datetime.now():
