@@ -27,36 +27,19 @@ variables:
 #
 workflow:
   rules:
-    - if: $CI_COMMIT_MESSAGE =~ /-wip$/
+    - if: $CI_COMMIT_MESSAGE =~ /-wip/
       when: never
-    - if: $CI_COMMIT_MESSAGE =~ /Merge tag$/
+    - if: $CI_COMMIT_MESSAGE =~ /Merge tag/
       when: never
     - when: always
-
-before_script:
-  # Install required apk packages.
-  - apk add --update bash wget ca-certificates openssl git tar openssh-client curl python3
-
-#
-# Extendable stages.
-#
-.common-production:
-  only:
-    - tags
-
-.common-staging:
-  only:
-    - develop
-
-.common-issue:
-  only:
-    - /^feature.*$/i
-    - /^hotfix.*$/i
-    - /^milestone.*$/i
 
 #
 # Static script to be reused by the enabled stages.
 #
+
+.apk-before-script: &apk-before-script
+  # Install required apk packages.
+  - apk add --update bash wget ca-certificates openssl git tar openssh-client curl python3 py3-pip
 
 # Script for docker based stages.
 .docker-script: &docker-script
@@ -100,46 +83,96 @@ before_script:
   - chmod 400  ~/.ssh/id_rsa
   - export ANSIBLE_HOST_KEY_CHECKING=False
 
+
 #
 # Stages to run.
 #
+
 stages:
   - build
   - test
   - push
-  - trigger
   - notify
+  - deploy
+
 
 #
-# Build stages.
+# Stages for production.
 #
 
-build_production:
+
+build:production:
   stage: build
   script:
+    - *apk-before-script
     - *docker-script
+
     - ./docker-support/runner.sh -bs $CI_COMMIT_TAG
   artifacts:
     paths:
       - docker_image.tar.gz
     expire_in: 1 day
-  extends: .common-production
+  only:
+    - tags
 
-build_staging:
+
+test:production:
+  stage: test
+  script:
+    - *apk-before-script
+    - docker load -i docker_image.tar.gz
+    - ./docker-support/runner.sh -t $CI_COMMIT_TAG
+  dependencies:
+    - build:production
+  only:
+    - tags
+
+
+push:production:
+  stage: push
+  script:
+    - *apk-before-script
+    - *docker-script
+    - docker load -i docker_image.tar.gz
+    - ./docker-support/runner.sh -p $CI_COMMIT_TAG
+  dependencies:
+    - build:production
+    - test:production
+  only:
+    - tags
+
+
+notify:production:
+  stage: notify
+  image: public.registry.u-hopper.com/alpine:3.13
+  script:
+    - *apk-before-script
+    - *ansible-script
+    - export RELEASE_TAG="$CI_COMMIT_TAG"
+    - export BUILD_ENVIRONMENT="production"
+    - export WITH_DEPLOY="no"
+    - export DEPLOY_TRIGGERED="no"
+    - ansible-playbook ansible/notify.yml
+  dependencies:
+    - build:production
+    - test:production
+    - push:production
+  allow_failure: true
+  only:
+    - tags
+
+
+#
+# Stages for staging.
+#
+
+
+build:staging:
   stage: build
   script:
+    - *apk-before-script
     - *docker-script
-    - ./docker-support/runner.sh -bs latest
-  artifacts:
-    paths:
-      - docker_image.tar.gz
-    expire_in: 1 day
-  extends: .common-staging
 
-build_issue:
-  stage: build
-  script:
-    - *docker-script
     - ./docker-support/runner.sh -bs latest
   artifacts:
     paths:
@@ -147,169 +180,128 @@ build_issue:
     expire_in: 1 day
   when: manual
   allow_failure: false
-  extends: .common-issue
+  only:
+    - develop
 
 
-#
-# Test stages
-# Only configured for python projects. Currently there is not test support
-# for php/yii2 projects.
-#
-
-test_production:
+test:staging:
   stage: test
   script:
-    - docker load -i docker_image.tar.gz
-    - ./docker-support/runner.sh -t $CI_COMMIT_TAG
-  dependencies:
-    - build_production
-  extends: .common-production
-
-test_staging:
-  stage: test
-  script:
+    - *apk-before-script
     - docker load -i docker_image.tar.gz
     - ./docker-support/runner.sh -t latest
   dependencies:
-    - build_staging
-  extends: .common-staging
-
-test_issue:
-  stage: test
-  script:
-    - docker load -i docker_image.tar.gz
-    - ./docker-support/runner.sh -t latest
-  dependencies:
-    - build_issue
-  allow_failure: false
-  extends: .common-issue
+    - build:staging
+  only:
+    - develop
 
 
-#
-# Push stages.
-#
-
-push_production:
+push:staging:
   stage: push
   script:
-    - *docker-script
-    - docker load -i docker_image.tar.gz
-    - ./docker-support/runner.sh -p $CI_COMMIT_TAG
-  dependencies:
-    - build_production
-    - test_production
-  extends: .common-production
-push_staging:
-  stage: push
-  script:
+    - *apk-before-script
     - *docker-script
     - docker load -i docker_image.tar.gz
     - ./docker-support/runner.sh -p latest
   dependencies:
-    - build_staging
-    - test_staging
-  extends: .common-staging
-push_issue:
-  stage: push
+    - build:staging
+    - test:staging
+  only:
+    - develop
+
+
+trigger:staging:
+  stage: deploy
+  image: public.registry.u-hopper.com/alpine:3.13
   script:
+    - *apk-before-script
+    - *ansible-script
+    - export GIT_REF="develop"
+    - ansible-playbook ansible/trigger.yml
+  dependencies:
+    - build:staging
+    - test:staging
+    - push:staging
+  allow_failure: false
+  when: manual
+  only:
+    - develop
+
+
+#
+# Stages for mr.
+#
+
+
+build:mr:
+  stage: build
+  script:
+    - *apk-before-script
     - *docker-script
+
+    - ./docker-support/runner.sh -bs latest
+  artifacts:
+    paths:
+      - docker_image.tar.gz
+    expire_in: 1 day
+  only:
+    - merge_requests
+
+
+test:mr:
+  stage: test
+  script:
+    - *apk-before-script
     - docker load -i docker_image.tar.gz
-    - ./docker-support/runner.sh -p latest
+    - ./docker-support/runner.sh -t latest
   dependencies:
-    - build_issue
-    - test_issue
-  allow_failure: false
-  extends: .common-issue
+    - build:mr
+  only:
+    - merge_requests
 
 
-#
-# Trigger stages.
-# Allowing to trigger the deployment in another repository.
-#
+# 
+# Stages for master.
+# Allows to build badges and run the test coverage.
+# 
 
-
-trigger_staging:
-  stage: trigger
+build:badges:
+  stage: build
+  image: public.registry.u-hopper.com/python:3.8
   script:
-    - *ansible-script
-    - export GIT_REF="develop"
-    - ansible-playbook ansible/trigger.yml
-  dependencies:
-    - build_staging
-    - test_staging
-    - push_staging
-  allow_failure: false
-  extends: .common-staging
+    - pip install PyYAML anybadge
+    - python docker-support/badges.py
+  artifacts:
+    paths:
+      - template.svg
+      - deploy.svg
+      - wenet-common-models.svg
+      - chatbot-core.svg
+      - utils.svg
+    expire_in: 1 day
+  only:
+    - master
 
-trigger_issue:
-  stage: trigger
+build:master:
+  stage: build
   script:
-    - *ansible-script
-    - export GIT_REF="develop"
-    - ansible-playbook ansible/trigger.yml
-  dependencies:
-    - build_issue
-    - test_issue
-    - push_issue
-  allow_failure: false
-  extends: .common-issue
+    - *apk-before-script
+    - *docker-script
+    - ./docker-support/runner.sh -bs latest
+  artifacts:
+    paths:
+      - docker_image.tar.gz
+    expire_in: 1 day
+  only:
+    - master
 
-
-
-
-
-#
-# Notification stages.
-#
-notify_production:
-  stage: notify
+test:coverage:
+  stage: test
   script:
-    - *ansible-script
-    - export RELEASE_TAG="$CI_COMMIT_TAG"
-    - export BUILD_ENVIRONMENT="production"
-    - export WITH_DEPLOY="yes"
-    - export DEPLOY_TRIGGERED="no"
-    - ansible-playbook ansible/notify.yml
+    - *apk-before-script
+    - docker load -i docker_image.tar.gz
+    - ./docker-support/runner.sh -c latest
   dependencies:
-    - build_production
-    - test_production
-    - push_production
-  allow_failure: true
-  extends: .common-production
-
-notify_staging:
-  stage: notify
-  script:
-    - *ansible-script
-    - export RELEASE_TAG="latest"
-    - export BUILD_ENVIRONMENT="staging"
-    - export WITH_DEPLOY="yes"
-    - export DEPLOY_TRIGGERED="yes"
-    - ansible-playbook ansible/notify.yml
-  dependencies:
-    - build_staging
-    - test_staging
-    - push_staging
-    - trigger_staging
-  allow_failure: true
-  extends: .common-staging
-
-notify_issue:
-  stage: notify
-  script:
-    - *ansible-script
-    - export RELEASE_TAG="latest"
-    - export BUILD_ENVIRONMENT="issue"
-    - export WITH_DEPLOY="yes"
-    - export DEPLOY_TRIGGERED="yes"
-    - ansible-playbook ansible/notify.yml
-  dependencies:
-    - build_issue
-    - test_issue
-    - push_issue
-    - trigger_issue
-  allow_failure: true
-  extends: .common-issue
-
-
-
+    - build:master
+  only:
+    - master
