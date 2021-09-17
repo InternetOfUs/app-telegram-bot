@@ -44,7 +44,7 @@ class PendingMessagesJob(SocialJob):
         notifications = []
         pending_answers = context.context.get_static_state(self.CONTEXT_PENDING_ANSWERS, dict())
         questions_to_remove = set()
-        modified = False
+        is_context_modified = False
         for question_id in pending_answers:
             try:
                 pending_answer = PendingQuestionToAnswer.from_repr(pending_answers[question_id])
@@ -53,11 +53,9 @@ class PendingMessagesJob(SocialJob):
                 continue
 
             if pending_answer.sent is not None and pending_answer.sent + datetime.timedelta(minutes=self.REMINDER_MINUTES) <= datetime.datetime.now():
-                pending_answer.sent = None
-                pending_answers[question_id] = pending_answer.to_repr()
                 notifications.append(NotificationEvent(pending_answer.social_details, [pending_answer.response]))
                 questions_to_remove.add(pending_answer.question_id)
-                modified = True
+                is_context_modified = True
 
         for notification in notifications:
             notification.with_context(context.context)
@@ -66,6 +64,6 @@ class PendingMessagesJob(SocialJob):
         for question_id in questions_to_remove:
             pending_answers.pop(question_id)
 
-        if modified:
+        if is_context_modified:
             context.context.with_static_state(self.CONTEXT_PENDING_ANSWERS, pending_answers)
             self._interface_connector.update_user_context(context)
