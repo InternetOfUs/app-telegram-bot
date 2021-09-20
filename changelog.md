@@ -7,6 +7,7 @@
 - Integrated sensitive and anonymous information data in the question and answer flow
 - Update to project template 4.3.3
 - Removed submodules and added the libraries as packages
+- Updated question flow adding social closeness input in the question creation flow instead of similarity and reason
 - Refactored PendingMessagesJob
 
 ## 1.0.10

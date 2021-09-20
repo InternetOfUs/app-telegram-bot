@@ -42,9 +42,6 @@ msgstr ""
 msgid "question_1"
 msgstr ""
 
-msgid "question_2"
-msgstr ""
-
 msgid "type_answer_1"
 msgstr ""
 
@@ -55,9 +52,6 @@ msgid "type_answer_3"
 msgstr ""
 
 msgid "question_is_not_text"
-msgstr ""
-
-msgid "specify_answerer"
 msgstr ""
 
 msgid "sensitive_question"
@@ -78,6 +72,18 @@ msgstr ""
 msgid "not_anonymous"
 msgstr ""
 
+msgid "social_closeness_question"
+msgstr ""
+
+msgid "answer_socially_close"
+msgstr ""
+
+msgid "answer_socially_indifferent"
+msgstr ""
+
+msgid "answer_socially_distant"
+msgstr ""
+
 msgid "specify_answerer_location"
 msgstr ""
 
@@ -88,9 +94,6 @@ msgid "location_answer_2"
 msgstr ""
 
 msgid "question_final"
-msgstr ""
-
-msgid "answerer_details_are_not_text"
 msgstr ""
 
 msgid "question_0"

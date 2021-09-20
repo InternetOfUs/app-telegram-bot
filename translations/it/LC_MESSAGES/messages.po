@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-09-08 13:59+0200\n"
+"PO-Revision-Date: 2021-09-10 12:50+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -52,9 +52,6 @@ msgstr "L’operazione corrente è stata cancellata"
 msgid "question_1"
 msgstr "Cosa vorresti chiedere ai componenti della community?"
 
-msgid "question_2"
-msgstr "A quale tipo di persona dovrei chiedere?"
-
 msgid "type_answer_1"
 msgstr "Diversa da me"
 
@@ -66,9 +63,6 @@ msgstr "A chiunque"
 
 msgid "question_is_not_text"
 msgstr "Per piacere scrivi la tua domanda"
-
-msgid "specify_answerer"
-msgstr "Puoi dirmi perchè hai scelto questo tipo di persona?"
 
 msgid "sensitive_question"
 msgstr ""
@@ -90,6 +84,21 @@ msgstr "Chiedilo in modo anonimo"
 msgid "not_anonymous"
 msgstr "Chiedilo normalmente"
 
+msgid "social_closeness_question"
+msgstr ""
+"Le persone dovrebbero essere più vicine o più lontane da te *socialmente*? "
+"Più vicine sono le persone che potresti conoscere o con cui hai interagito "
+"in precedenza tramite il chatbot."
+
+msgid "answer_socially_close"
+msgstr "Vicine a me"
+
+msgid "answer_socially_indifferent"
+msgstr "Indifferente, non tenerne conto"
+
+msgid "answer_socially_distant"
+msgstr "Distanti da me"
+
 msgid "specify_answerer_location"
 msgstr ""
 "Le persone dovrebbero essere nelle tue vicinanze in questo momento o di "
@@ -105,11 +114,6 @@ msgid "question_final"
 msgstr ""
 "Bene, inoltrerò la tua domanda ad altri utenti. Appena avrò risposta ti faro "
 "sapere"
-
-msgid "answerer_details_are_not_text"
-msgstr ""
-"Per piacere specifica a parole a che tipo di persona dovrei proporre la tua "
-"domanda"
 
 msgid "question_0"
 msgstr ""
@@ -288,6 +292,17 @@ msgstr ""
 "Lo sapevi che usando questo bot puoi vincere dei badge incredibili? Puoi "
 "guardarli qui :point_right: {base_url}/wenetapp/user-app-details?id={app_id}"
 "&back=profile"
+
+#~ msgid "question_2"
+#~ msgstr "A quale tipo di persona dovrei chiedere?"
+
+#~ msgid "specify_answerer"
+#~ msgstr "Puoi dirmi perchè hai scelto questo tipo di persona?"
+
+#~ msgid "answerer_details_are_not_text"
+#~ msgstr ""
+#~ "Per piacere specifica a parole a che tipo di persona dovrei proporre la "
+#~ "tua domanda"
 
 #~ msgid "question_5"
 #~ msgstr ""
