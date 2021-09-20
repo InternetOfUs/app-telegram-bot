@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-09-08 14:03+0200\n"
+"PO-Revision-Date: 2021-09-10 12:52+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -52,9 +52,6 @@ msgstr "Үйл ажиллагаа амжилттай цуцлагдлаа"
 msgid "question_1"
 msgstr "Хамт олноос юу асуумаар байна?"
 
-msgid "question_2"
-msgstr "Хэнээс асуух вэ? Дэлгэрэнгүй мэдээлэл өгнө үү?"
-
 msgid "type_answer_1"
 msgstr "Надаас өөр"
 
@@ -66,9 +63,6 @@ msgstr "Хэн ч байж болно"
 
 msgid "question_is_not_text"
 msgstr "Асуултаа бичнэ үү"
-
-msgid "specify_answerer"
-msgstr "Яагаад тэр гэж? Дэлгэрэнгүй мэдээлэл өгөхгүй биз?"
 
 msgid "sensitive_question"
 msgstr ""
@@ -90,6 +84,20 @@ msgstr "Нэрээ нууцалж асуугаарай"
 msgid "not_anonymous"
 msgstr "Үүнийг ердийн байдлаар асуугаарай"
 
+msgid "social_closeness_question"
+msgstr ""
+"Хүмүүс тантай *нийгмийн хувьд* илүү ойр эсвэл хол байх ёстой юу? Таны мэддэг "
+"эсвэл чатботоор дамжуулан өмнө нь харилцаж байсан хүмүүс илүү ойр байдаг."
+
+msgid "answer_socially_close"
+msgstr "Надад илүү ойр"
+
+msgid "answer_socially_indifferent"
+msgstr "Хайхрамжгүй хандаж, анхааралдаа авах хэрэггүй"
+
+msgid "answer_socially_distant"
+msgstr "Distant to me"
+
 msgid "specify_answerer_location"
 msgstr "Хүмүүс яг одоо эсвэл ойрхон байх ёстой юу?"
 
@@ -102,9 +110,6 @@ msgstr "Энэ нь хамаагүй"
 msgid "question_final"
 msgstr ""
 "За, бусад хэрэглэгчдээс таны асуултыг асууя! Хариулт авбал танд мэдэгднэ ээ."
-
-msgid "answerer_details_are_not_text"
-msgstr "Ямар төрлийн хүнээс хариулт авмаар байна?"
 
 msgid "question_0"
 msgstr ""
@@ -277,6 +282,15 @@ msgstr ""
 "Энэ ботыг ашигласнаар та супер дажгүй тэмдгүүдийг авах боломжтой болно "
 "гэдгийг та мэдэх үү? Та тэдгээрийг эндээс шалгаж болно :point_right: "
 "{base_url}/wenetapp/user-app-details?id={app_id}&back=profile"
+
+#~ msgid "question_2"
+#~ msgstr "Хэнээс асуух вэ? Дэлгэрэнгүй мэдээлэл өгнө үү?"
+
+#~ msgid "specify_answerer"
+#~ msgstr "Яагаад тэр гэж? Дэлгэрэнгүй мэдээлэл өгөхгүй биз?"
+
+#~ msgid "answerer_details_are_not_text"
+#~ msgstr "Ямар төрлийн хүнээс хариулт авмаар байна?"
 
 #~ msgid "question_5"
 #~ msgstr ""
