@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-09-20 17:55+0200\n"
+"PO-Revision-Date: 2021-09-21 15:04+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: es\n"
@@ -146,6 +146,20 @@ msgid "answer_different_domain"
 msgstr "Diferente"
 
 msgid "answer_indifferent_domain"
+msgstr "Indiferente, no lo tomes en cuenta"
+
+msgid "belief_values_question"
+msgstr ""
+"3/6: ¿Deberían estas personas tener *creencias y valores* similares o "
+"diferentes a los tuyos?"
+
+msgid "answer_similar_belief_values"
+msgstr "Similares"
+
+msgid "answer_different_belief_values"
+msgstr "Diferentes"
+
+msgid "answer_indifferent_belief_values"
 msgstr "Indiferente, no lo tomes en cuenta"
 
 msgid "sensitive_question"
