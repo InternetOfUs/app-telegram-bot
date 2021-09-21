@@ -49,7 +49,6 @@ class TestAskForHelpHandler(TestCase):
             self.assertEqual("task_id", cached_item["payload"]["task_id"])
             self.assertEqual("question", cached_item["payload"]["question"])
             self.assertEqual(True, cached_item["payload"]["sensitive"])
-            self.assertEqual("Anonymous", cached_item["payload"]["username"])
 
     def test_handle_nearby_question_sensitive(self):
         handler = MockAskForHelpHandler()
@@ -137,7 +136,6 @@ class TestAskForHelpHandler(TestCase):
             self.assertEqual("task_id", cached_item["payload"]["task_id"])
             self.assertEqual("question", cached_item["payload"]["question"])
             self.assertEqual(True, cached_item["payload"]["sensitive"])
-            self.assertEqual("Anonymous", cached_item["payload"]["username"])
 
     def test_handle_question_sensitive(self):
         handler = MockAskForHelpHandler()
@@ -303,6 +301,61 @@ class TestAskForHelpHandler(TestCase):
             self.assertEqual("transaction_id", cached_item["payload"]["transaction_id"])
             self.assertEqual("task_id", cached_item["payload"]["task_id"])
 
+    def test_action_question(self):
+        handler = MockAskForHelpHandler()
+        translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
+        translator_instance.translate = Mock(return_value="")
+        handler._translator.get_translation_instance = Mock(return_value=translator_instance)
+        handler._get_user_locale_from_incoming_event = Mock(return_value="en")
+
+        response = handler.action_question_0(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", "/ask", ""), ConversationContext()), handler.INTENT_ASK)
+        self.assertIsInstance(response, OutgoingEvent)
+        self.assertEqual(1, len(response.messages))
+        self.assertIsInstance(response.messages[0], TextualResponse)
+        self.assertTrue(handler.CONTEXT_CURRENT_STATE in response.context._static_context and response.context._static_context[handler.CONTEXT_CURRENT_STATE] == handler.STATE_QUESTION_0)
+
+    def test_action_question_1(self):
+        handler = MockAskForHelpHandler()
+        translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
+        translator_instance.translate = Mock(return_value="")
+        handler._translator.get_translation_instance = Mock(return_value=translator_instance)
+        handler._get_user_locale_from_incoming_event = Mock(return_value="en")
+
+        response = handler.action_question_1(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingTextMessage("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", "text"), ConversationContext()), "")
+        self.assertIsInstance(response, OutgoingEvent)
+        self.assertEqual(1, len(response.messages))
+        self.assertIsInstance(response.messages[0], TelegramRapidAnswerResponse)
+        self.assertEqual(11, len(response.messages[0].options))
+        self.assertTrue(handler.CONTEXT_CURRENT_STATE in response.context._static_context and response.context._static_context[handler.CONTEXT_CURRENT_STATE] == handler.STATE_QUESTION_1)
+
+    def test_action_question_2(self):
+        handler = MockAskForHelpHandler()
+        translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
+        translator_instance.translate = Mock(return_value="")
+        handler._translator.get_translation_instance = Mock(return_value=translator_instance)
+        handler._get_user_locale_from_incoming_event = Mock(return_value="en")
+
+        response = handler.action_question_2(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", "command", ""), ConversationContext()), handler.INTENT_STUDYING_CAREER)
+        self.assertIsInstance(response, OutgoingEvent)
+        self.assertEqual(1, len(response.messages))
+        self.assertIsInstance(response.messages[0], TelegramRapidAnswerResponse)
+        self.assertEqual(3, len(response.messages[0].options))
+        self.assertTrue(handler.CONTEXT_CURRENT_STATE in response.context._static_context and response.context._static_context[handler.CONTEXT_CURRENT_STATE] == handler.STATE_QUESTION_2)
+
+    def test_action_question_3(self):
+        handler = MockAskForHelpHandler()
+        translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
+        translator_instance.translate = Mock(return_value="")
+        handler._translator.get_translation_instance = Mock(return_value=translator_instance)
+        handler._get_user_locale_from_incoming_event = Mock(return_value="en")
+
+        response = handler.action_question_3(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", "command", ""), ConversationContext()), handler.INTENT_DIFFERENT_DOMAIN)
+        self.assertIsInstance(response, OutgoingEvent)
+        self.assertEqual(1, len(response.messages))
+        self.assertIsInstance(response.messages[0], TelegramRapidAnswerResponse)
+        self.assertEqual(3, len(response.messages[0].options))
+        self.assertTrue(handler.CONTEXT_CURRENT_STATE in response.context._static_context and response.context._static_context[handler.CONTEXT_CURRENT_STATE] == handler.STATE_QUESTION_3)
+
     def test_action_question_4(self):
         handler = MockAskForHelpHandler()
         translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
@@ -310,7 +363,7 @@ class TestAskForHelpHandler(TestCase):
         handler._translator.get_translation_instance = Mock(return_value=translator_instance)
         handler._get_user_locale_from_incoming_event = Mock(return_value="en")
 
-        response = handler.action_question_4(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingTextMessage("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", "text"), ConversationContext()), "")
+        response = handler.action_question_4(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", "command", ""), ConversationContext()), handler.INTENT_DIFFERENT_BELIEF_VALUES)
         self.assertIsInstance(response, OutgoingEvent)
         self.assertEqual(1, len(response.messages))
         self.assertIsInstance(response.messages[0], TelegramRapidAnswerResponse)
@@ -352,7 +405,7 @@ class TestAskForHelpHandler(TestCase):
         handler._translator.get_translation_instance = Mock(return_value=translator_instance)
         handler._get_user_locale_from_incoming_event = Mock(return_value="en")
 
-        response = handler.action_question_6(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", "command", ""), ConversationContext()), handler.INTENT_SIMILAR)
+        response = handler.action_question_6(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", "command", ""), ConversationContext()), handler.INTENT_SIMILAR_SOCIALLY)
         self.assertIsInstance(response, OutgoingEvent)
         self.assertEqual(1, len(response.messages))
         self.assertIsInstance(response.messages[0], TelegramRapidAnswerResponse)
@@ -372,7 +425,10 @@ class TestAskForHelpHandler(TestCase):
         response = handler.action_question_final(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", "command", ""), ConversationContext(static_context={
             handler.CONTEXT_WENET_USER_ID: "",
             handler.CONTEXT_ASKED_QUESTION: "question",
-            handler.CONTEXT_SOCIAL_CLOSENESS: "similar",
+            handler.CONTEXT_QUESTION_DOMAIN: handler.INTENT_STUDYING_CAREER,
+            handler.CONTEXT_DOMAIN_INTEREST: handler.INTENT_DIFFERENT_DOMAIN,
+            handler.CONTEXT_BELIEF_VALUES_SIMILARITY: handler.INTENT_DIFFERENT_BELIEF_VALUES,
+            handler.CONTEXT_SOCIAL_CLOSENESS: handler.INTENT_SIMILAR_SOCIALLY,
             handler.CONTEXT_SENSITIVE_QUESTION: False
         })), handler.INTENT_ASK_TO_NEARBY)
         self.assertIsInstance(response, OutgoingEvent)

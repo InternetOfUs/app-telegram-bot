@@ -8,6 +8,10 @@
 - Update to project template 4.3.3
 - Removed submodules and added the libraries as packages
 - Updated question flow adding social closeness input in the question creation flow instead of similarity and reason
+- Integrated domain data in the question flow
+- Integrated domain similarity data in the question flow
+- Added environment variables for communityId and maxUsers fields
+- Integrated belief and values similarity data in the question flow
 - Updated app commands: renamed `/question` into `/ask` and `/answer` into `/questions`.
 
 ## 1.0.10

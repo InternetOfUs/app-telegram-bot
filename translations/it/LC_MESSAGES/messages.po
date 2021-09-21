@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-09-21 16:25+0200\n"
+"PO-Revision-Date: 2021-09-21 16:39+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -20,10 +20,9 @@ msgstr ""
 #: src/ask_for_help/handler.py:32
 msgid "info_text"
 msgstr ""
-"Puoi fare una domanda con il comando /ask. Usando /questions puoi vedere le "
-"domande aperte e rispondere. Se vuoi interrompere un’azione che stai "
-"facendo, usa il comando /cancel . Puoi segnalare un bug inviando una mail a "
-"support@internetofus.eu !"
+"Puoi fare una domanda con il comando /question. Usando /answer puoi vedere "
+"le risposte aperte e rispondere. Se vuoi interrompere un’azione che stai "
+"facendo, usa il comando /cancel"
 
 #: src/ask_for_help/handler.py:58
 msgid "start_text_1"
@@ -53,21 +52,116 @@ msgstr "L’operazione corrente è stata cancellata"
 msgid "question_1"
 msgstr "Cosa vorresti chiedere ai componenti della community?"
 
-msgid "type_answer_1"
-msgstr "Diversa da me"
-
-msgid "type_answer_2"
-msgstr "Simile a me"
-
-msgid "type_answer_3"
-msgstr "A chiunque"
-
 msgid "question_is_not_text"
 msgstr "Per piacere scrivi la tua domanda"
 
+msgid "domain_question"
+msgstr ""
+"Ok, chiederò ad altri di rispondere alla tua domanda. Adesso ti farò alcune "
+"domande per specificare a chi chiedere più precisamente :dart:.\n"
+"\n"
+"1/6: Qual è il dominio della tua domanda?"
+
+msgid "studying_career_button"
+msgstr ":book: Studiare / Carriera"
+
+msgid "local_university_button"
+msgstr ":mortar_board: Università locale"
+
+msgid "local_things_button"
+msgstr ":world_map: Cose locali"
+
+msgid "physical_activity_button"
+msgstr ":runner: Attività fisica"
+
+msgid "cultural_interests_button"
+msgstr ":classical_building: Interessi culturali"
+
+msgid "food_and_cooking_button"
+msgstr ":cooking: Cibo e cucina"
+
+msgid "cinema_theatre_button"
+msgstr ":popcorn: Cinema, teatro"
+
+msgid "music_button"
+msgstr ":notes: Musica"
+
+msgid "arts_and_crafts_button"
+msgstr ":art: Arti e mestieri"
+
+msgid "life_ponders_button"
+msgstr ":thinking_face: Riflessioni sulla vita"
+
+msgid "varia_misc_button"
+msgstr ":space_invader: Varia / Misc"
+
+msgid "studying_career"
+msgstr "Studiare / Carriera"
+
+msgid "local_university"
+msgstr "Università locale"
+
+msgid "local_things"
+msgstr "Cose locali"
+
+msgid "physical_activity"
+msgstr "Attività fisica"
+
+msgid "cultural_interests"
+msgstr "Interessi culturali"
+
+msgid "food_and_cooking"
+msgstr "Cibo e cucina"
+
+msgid "cinema_theatre"
+msgstr "Cinema, teatro"
+
+msgid "music"
+msgstr "Musica"
+
+msgid "arts_and_crafts"
+msgstr "Arti e mestieri"
+
+msgid "life_ponders"
+msgstr "Riflessioni sulla vita"
+
+msgid "varia_misc"
+msgstr "Varia / Misc"
+
+msgid "domain_similarity_question"
+msgstr ""
+"Ok, ora possiamo specificare il tipo di persone che inviterò per la tua "
+"domanda.\n"
+"\n"
+"2/6: Queste persone dovrebbero avere un *interesse per ({domain})* simile o "
+"diverso dal tuo?"
+
+msgid "answer_similar_domain"
+msgstr "Simile"
+
+msgid "answer_different_domain"
+msgstr "Diverso"
+
+msgid "answer_indifferent_domain"
+msgstr "Indifferente, non tenerne conto"
+
+msgid "belief_values_question"
+msgstr ""
+"3/6: Queste persone dovrebbero avere *credenze e valori* simili o diversi "
+"dai tuoi?"
+
+msgid "answer_similar_belief_values"
+msgstr "Simili"
+
+msgid "answer_different_belief_values"
+msgstr "Diversi"
+
+msgid "answer_indifferent_belief_values"
+msgstr "Indifferente, non tenerne conto"
+
 msgid "sensitive_question"
 msgstr ""
-"È una domanda dal contenuto sensible? Se lo è, farò sapere alle altre "
+"4/6: È una domanda dal contenuto sensible? Se lo è, farò sapere alle altre "
 "persone di prestare particolare attenzione nel rispondere."
 
 msgid "not_sensitive"
@@ -79,6 +173,9 @@ msgstr ":warning: Sensibile"
 msgid "anonymous_question"
 msgstr "Preferisci chiederlo in forma anonima?"
 
+msgid "anonymous_user"
+msgstr "Anonimo"
+
 msgid "anonymous"
 msgstr "Chiedilo in modo anonimo"
 
@@ -87,9 +184,9 @@ msgstr "Chiedilo normalmente"
 
 msgid "social_closeness_question"
 msgstr ""
-"Le persone dovrebbero essere più vicine o più lontane da te *socialmente*? "
-"Più vicine sono le persone che potresti conoscere o con cui hai interagito "
-"in precedenza tramite il chatbot."
+"5/6: Le persone dovrebbero essere più vicine o più lontane da te "
+"*socialmente*? Più vicine sono le persone che potresti conoscere o con cui "
+"hai interagito in precedenza tramite il chatbot."
 
 msgid "answer_socially_close"
 msgstr "Vicine a me"
@@ -102,7 +199,7 @@ msgstr "Distanti da me"
 
 msgid "specify_answerer_location"
 msgstr ""
-"Le persone dovrebbero essere nelle tue vicinanze in questo momento o di "
+"6/6: Le persone dovrebbero essere nelle tue vicinanze in questo momento o di "
 "recente?"
 
 msgid "location_answer_1"
@@ -293,6 +390,15 @@ msgstr ""
 "Lo sapevi che usando questo bot puoi vincere dei badge incredibili? Puoi "
 "guardarli qui :point_right: {base_url}/wenetapp/user-app-details?id={app_id}"
 "&back=profile"
+
+#~ msgid "type_answer_1"
+#~ msgstr "Diversa da me"
+
+#~ msgid "type_answer_2"
+#~ msgstr "Simile a me"
+
+#~ msgid "type_answer_3"
+#~ msgstr "A chiunque"
 
 #~ msgid "question_2"
 #~ msgstr "A quale tipo di persona dovrei chiedere?"

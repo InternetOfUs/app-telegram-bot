@@ -46,6 +46,9 @@ class AskForHelpHandler(WenetEventHandler):
     """
     # context keys
     CONTEXT_ASKED_QUESTION = "asked_question"
+    CONTEXT_QUESTION_DOMAIN = "question_domain"
+    CONTEXT_DOMAIN_INTEREST = "domain_interest"
+    CONTEXT_BELIEF_VALUES_SIMILARITY = "belief_values_similarity"
     CONTEXT_SENSITIVE_QUESTION = "sensitive_question"
     CONTEXT_ANONYMOUS_QUESTION = "anonymous_question"
     CONTEXT_SOCIAL_CLOSENESS = "social_closeness"
@@ -60,13 +63,30 @@ class AskForHelpHandler(WenetEventHandler):
     # all the recognize intents
     INTENT_ASK = "/ask"
     INTENT_FIRST_QUESTION = "first_question"
+    INTENT_STUDYING_CAREER = "studying_career"
+    INTENT_LOCAL_UNIVERSITY = "local_university"
+    INTENT_LOCAL_THINGS = "local_things"
+    INTENT_PHYSICAL_ACTIVITY = "physical_activity"
+    INTENT_CULTURAL_INTERESTS = "cultural_interests"
+    INTENT_FOOD_AND_COOKING = "food_and_cooking"
+    INTENT_CINEMA_THEATRE = "cinema_theatre"
+    INTENT_MUSIC = "music"
+    INTENT_ARTS_AND_CRAFTS = "arts_and_crafts"
+    INTENT_LIFE_PONDERS = "life_ponders"
+    INTENT_VARIA_MISC = "varia_misc"
+    INTENT_SIMILAR_DOMAIN = "similar"
+    INTENT_INDIFFERENT_DOMAIN = "indifferent"
+    INTENT_DIFFERENT_DOMAIN = "different"
+    INTENT_SIMILAR_BELIEF_VALUES = "similar"
+    INTENT_INDIFFERENT_BELIEF_VALUES = "indifferent"
+    INTENT_DIFFERENT_BELIEF_VALUES = "different"
     INTENT_SENSITIVE_QUESTION = "sensitive"
     INTENT_NOT_SENSITIVE_QUESTION = "not_sensitive"
     INTENT_ANONYMOUS_QUESTION = "anonymous"
     INTENT_NOT_ANONYMOUS_QUESTION = "not_anonymous"
-    INTENT_SIMILAR = "similar"
-    INTENT_INDIFFERENT = "indifferent"
-    INTENT_DIFFERENT = "different"
+    INTENT_SIMILAR_SOCIALLY = "similar"
+    INTENT_INDIFFERENT_SOCIALLY = "indifferent"
+    INTENT_DIFFERENT_SOCIALLY = "different"
     INTENT_ASK_TO_NEARBY = "nearby"
     INTENT_ASK_TO_ANYWHERE = "anywhere"
     INTENT_ANSWER_ANONYMOUSLY = "answer_anonymously"
@@ -108,32 +128,63 @@ class AskForHelpHandler(WenetEventHandler):
 
     def __init__(self, instance_namespace: str, bot_id: str, handler_id: str, telegram_id: str, wenet_instance_url: str,
                  wenet_hub_url: str, app_id: str, client_secret: str, redirect_url: str, wenet_authentication_url: str,
-                 wenet_authentication_management_url: str, task_type_id: str, alert_module: AlertModule,
-                 connector: SocialConnector, nlp_handler: Optional[NLPHandler], translator: Optional[Translator],
-                 delay_between_messages_sec: Optional[int] = None, delay_between_text_sec: Optional[float] = None,
-                 logger_connectors: Optional[List[LoggerConnector]] = None):
+                 wenet_authentication_management_url: str, task_type_id: str, community_id: str, max_users: int,
+                 alert_module: AlertModule, connector: SocialConnector, nlp_handler: Optional[NLPHandler],
+                 translator: Optional[Translator], delay_between_messages_sec: Optional[int] = None,
+                 delay_between_text_sec: Optional[float] = None, logger_connectors: Optional[List[LoggerConnector]] = None):
         super().__init__(instance_namespace, bot_id, handler_id, telegram_id, wenet_instance_url, wenet_hub_url, app_id,
                          client_secret, redirect_url, wenet_authentication_url, wenet_authentication_management_url,
-                         task_type_id, alert_module, connector, nlp_handler, translator, delay_between_messages_sec,
-                         delay_between_text_sec, logger_connectors)
+                         task_type_id, community_id, alert_module, connector, nlp_handler, translator,
+                         delay_between_messages_sec, delay_between_text_sec, logger_connectors)
+
+        self.max_users = max_users
 
         JobManager.instance().add_job(PendingMessagesJob("wenet_ask_for_help_pending_messages_job",
                                                          self._instance_namespace, self._connector, None))
         self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_ASK, self.action_question).with_rule(
+            IntentFulfillerV3(self.INTENT_ASK, self.action_question_0).with_rule(
                 intent=self.INTENT_ASK
             )
         )
         self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_FIRST_QUESTION, self.action_question).with_rule(
+            IntentFulfillerV3(self.INTENT_FIRST_QUESTION, self.action_question_0).with_rule(
                 intent=self.INTENT_FIRST_QUESTION
             )
         )
         self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.STATE_QUESTION_0, self.action_question_4).with_rule(
+            IntentFulfillerV3("", self.action_question_1).with_rule(
                 static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_0)
             )
         )
+        domain_intents = [self.INTENT_STUDYING_CAREER, self.INTENT_LOCAL_UNIVERSITY, self.INTENT_LOCAL_THINGS,
+                          self.INTENT_PHYSICAL_ACTIVITY, self.INTENT_CULTURAL_INTERESTS, self.INTENT_FOOD_AND_COOKING,
+                          self.INTENT_CINEMA_THEATRE, self.INTENT_MUSIC, self.INTENT_ARTS_AND_CRAFTS,
+                          self.INTENT_LIFE_PONDERS, self.INTENT_VARIA_MISC]
+        for domain_intent in domain_intents:
+            self.intent_manager.with_fulfiller(
+                IntentFulfillerV3(domain_intent, self.action_question_2).with_rule(
+                    intent=domain_intent,
+                    static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_1)
+                )
+            )
+        domain_similarity_intents = [self.INTENT_SIMILAR_DOMAIN, self.INTENT_DIFFERENT_DOMAIN,
+                                     self.INTENT_INDIFFERENT_DOMAIN]
+        for domain_similarity_intent in domain_similarity_intents:
+            self.intent_manager.with_fulfiller(
+                IntentFulfillerV3(domain_similarity_intent, self.action_question_3).with_rule(
+                    intent=domain_similarity_intent,
+                    static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_2)
+                )
+            )
+        belief_values_similarity_intents = [self.INTENT_SIMILAR_BELIEF_VALUES, self.INTENT_DIFFERENT_BELIEF_VALUES,
+                                            self.INTENT_INDIFFERENT_BELIEF_VALUES]
+        for belief_values_similarity_intent in belief_values_similarity_intents:
+            self.intent_manager.with_fulfiller(
+                IntentFulfillerV3(belief_values_similarity_intent, self.action_question_4).with_rule(
+                    intent=belief_values_similarity_intent,
+                    static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_3)
+                )
+            )
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_SENSITIVE_QUESTION, self.action_question_4_1).with_rule(
                 intent=self.INTENT_SENSITIVE_QUESTION,
@@ -158,24 +209,15 @@ class AskForHelpHandler(WenetEventHandler):
                 static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_4_1)
             )
         )
-        self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_SIMILAR, self.action_question_6).with_rule(
-                intent=self.INTENT_SIMILAR,
-                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_5)
+        social_similarity_intents = [self.INTENT_SIMILAR_SOCIALLY, self.INTENT_DIFFERENT_SOCIALLY,
+                                     self.INTENT_INDIFFERENT_SOCIALLY]
+        for social_similarity_intent in social_similarity_intents:
+            self.intent_manager.with_fulfiller(
+                IntentFulfillerV3(social_similarity_intent, self.action_question_6).with_rule(
+                    intent=social_similarity_intent,
+                    static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_5)
+                )
             )
-        )
-        self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_INDIFFERENT, self.action_question_6).with_rule(
-                intent=self.INTENT_INDIFFERENT,
-                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_5)
-            )
-        )
-        self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_DIFFERENT, self.action_question_6).with_rule(
-                intent=self.INTENT_DIFFERENT,
-                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_5)
-            )
-        )
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_ASK_TO_NEARBY, self.action_question_final).with_rule(
                 intent=self.INTENT_ASK_TO_NEARBY,
@@ -236,8 +278,8 @@ class AskForHelpHandler(WenetEventHandler):
             user_object = service_api.get_user_profile(wenet_user_id)
             if not user_object:
                 logger.info(f"Unable to retrieve user profile [{wenet_user_id}]")
-                return 'en'
-            locale = user_object.locale if user_object.locale else 'en'
+                return "en"
+            locale = user_object.locale if user_object.locale else "en"
             self.cache.cache({"locale": locale}, ttl=int(os.getenv("LOCALE_TTL", 86400)),
                              key=self.CACHE_LOCALE.format(wenet_user_id))
             return locale
@@ -247,7 +289,7 @@ class AskForHelpHandler(WenetEventHandler):
         wenet_user_id = incoming_event.context.get_static_state(self.CONTEXT_WENET_USER_ID, None)
         if not wenet_user_id:
             logger.info(f"Impossible to get user locale from incoming event. The Wenet user ID is not in the context")
-            return 'en'
+            return "en"
         return self._get_user_locale_from_wenet_id(wenet_user_id, incoming_event.context)
 
     def _get_help_and_info_message(self, locale: str) -> str:
@@ -278,7 +320,7 @@ class AskForHelpHandler(WenetEventHandler):
 
     def _is_doing_another_action(self, context: ConversationContext) -> bool:
         """
-        Returns True if the user is in another action (e.g. inside the /question flow), False otherwise
+        Returns True if the user is in another action (e.g. inside the /ask flow), False otherwise
         """
         statuses = [self.STATE_ANSWERING, self.STATE_ANSWERING_SENSITIVE, self.STATE_ANSWERING_ANONYMOUSLY,
                     self.STATE_QUESTION_0, self.STATE_QUESTION_1, self.STATE_QUESTION_2, self.STATE_QUESTION_3,
@@ -366,7 +408,7 @@ class AskForHelpHandler(WenetEventHandler):
             message_string = message_string.with_text("answer_message_nearby")
 
         message_string = message_string.with_substitution("question", self.parse_text_with_markdown(message.question)) \
-            .with_substitution("user", questioning_user.name.first if questioning_user.name.first and not anonymous else "Anonymous") \
+            .with_substitution("user", questioning_user.name.first if questioning_user.name.first and not anonymous else self._translator.get_translation_instance(user_object.locale).with_text("anonymous_user").translate()) \
             .translate()
 
         # we create ids of all buttons, to know which buttons invalidate when one of them is clicked
@@ -375,10 +417,10 @@ class AskForHelpHandler(WenetEventHandler):
             "task_id": message.task_id,
             "question": message.question,
             "sensitive": sensitive,
-            "username": questioning_user.name.first if questioning_user.name.first and not anonymous else "Anonymous",
+            "username": questioning_user.name.first if questioning_user.name.first and not anonymous else self._translator.get_translation_instance(user_object.locale).with_text("anonymous_user").translate(),
             "related_buttons": button_ids,
         }
-        response = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1])
+        response = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 2])
         self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_QUESTION).to_repr(), key=button_ids[0])
         response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_question_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
         self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_NOT).to_repr(), key=button_ids[1])
@@ -397,7 +439,7 @@ class AskForHelpHandler(WenetEventHandler):
             message_string = message_string.with_text("answer_message_0")
 
         message_string = message_string.with_substitution("question", self.parse_text_with_markdown(message.question)) \
-            .with_substitution("user", questioning_user.name.first if questioning_user.name.first and not anonymous else "Anonymous") \
+            .with_substitution("user", questioning_user.name.first if questioning_user.name.first and not anonymous else self._translator.get_translation_instance(user_object.locale).with_text("anonymous_user").translate()) \
             .translate()
 
         # we create ids of all buttons, to know which buttons invalidate when one of them is clicked
@@ -406,10 +448,10 @@ class AskForHelpHandler(WenetEventHandler):
             "task_id": message.task_id,
             "question": message.question,
             "sensitive": sensitive,
-            "username": questioning_user.name.first if questioning_user.name.first and not anonymous else "Anonymous",
+            "username": questioning_user.name.first if questioning_user.name.first and not anonymous else self._translator.get_translation_instance(user_object.locale).with_text("anonymous_user").translate(),
             "related_buttons": button_ids,
         }
-        response = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1, 1])
+        response = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[2, 2])
         self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_QUESTION).to_repr(), key=button_ids[0])
         response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_question_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
         self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_REMIND_LATER).to_repr(), key=button_ids[1])
@@ -432,10 +474,10 @@ class AskForHelpHandler(WenetEventHandler):
             .with_text("new_answer_message") \
             .with_substitution("question", question_text) \
             .with_substitution("answer", self.parse_text_with_markdown(answer_text)) \
-            .with_substitution("username", answerer_user.name.first if answerer_user.name.first and not answer_transaction.attributes.get("anonymous") else "Anonymous") \
+            .with_substitution("username", answerer_user.name.first if answerer_user.name.first and not answer_transaction.attributes.get("anonymous") else self._translator.get_translation_instance(user_object.locale).with_text("anonymous_user").translate()) \
             .translate()
 
-        answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1])
+        answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 2])
         button_report_text = self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate()
         button_more_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("more_answers_button").translate()
         button_best_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("best_answers_button").translate()
@@ -497,11 +539,6 @@ class AskForHelpHandler(WenetEventHandler):
                 answerer_user = service_api.get_user_profile(str(answerer_id))
                 question_task = service_api.get_task(message.task_id)
                 answer = self.handle_answered_question(message, user_object, answerer_user, question_task)
-                self._interface_connector.update_user_context(UserConversationContext(  # TODO check if this update is useful or not
-                    social_details=user_account.social_details,
-                    context=context,
-                    version=UserConversationContext.VERSION_V3
-                ))
                 return NotificationEvent(user_account.social_details, [answer], context)
             elif isinstance(message, AnsweredPickedMessage):
                 # handle an answer picked for a question
@@ -589,46 +626,125 @@ class AskForHelpHandler(WenetEventHandler):
                 TextualResponse("Unable to complete the WeNetAuthentication")
             )
 
-    def action_question(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+    def action_question_0(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
         """
-        Beginning of the /question command
+        Beginning of the /ask command
         """
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+        response = OutgoingEvent(social_details=incoming_event.social_details)
         context = incoming_event.context
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_0)
-        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
-        preamble_message = None
         if intent == self.INTENT_FIRST_QUESTION:
             preamble_message = self._translator.get_translation_instance(user_locale).with_text("question_0").translate()
-        message = self._translator.get_translation_instance(user_locale).with_text("question_1").translate()
-        response = OutgoingEvent(social_details=incoming_event.social_details)
-        if preamble_message:
             response.with_message(TextualResponse(preamble_message))
+        message = self._translator.get_translation_instance(user_locale).with_text("question_1").translate()
         response.with_message(TextualResponse(message))
         response.with_context(context)
         return response
 
-    def action_question_4(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+    def action_question_1(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         """
-        Save the why this type of desired answerer, and ask whether the question is sensitive or not
+        Save the why this type of desired answerer, and ask the domain of the question
         """
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         response = OutgoingEvent(social_details=incoming_event.social_details)
         if isinstance(incoming_event.incoming_message, IncomingTextMessage):
             question = incoming_event.incoming_message.text
             context = incoming_event.context
+            context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_1)
             context.with_static_state(self.CONTEXT_ASKED_QUESTION, question)
-            context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_4)
-            message = self._translator.get_translation_instance(user_locale).with_text("sensitive_question").translate()
-            button_1_text = self._translator.get_translation_instance(user_locale).with_text("not_sensitive").translate()
-            button_2_text = self._translator.get_translation_instance(user_locale).with_text("sensitive").translate()
-            response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1])
-            response_with_buttons.with_textual_option(button_1_text, self.INTENT_NOT_SENSITIVE_QUESTION)
-            response_with_buttons.with_textual_option(button_2_text, self.INTENT_SENSITIVE_QUESTION)
+            message = self._translator.get_translation_instance(user_locale).with_text("domain_question").translate()
+            button_1_text = self._translator.get_translation_instance(user_locale).with_text("studying_career_button").translate()
+            button_2_text = self._translator.get_translation_instance(user_locale).with_text("local_university_button").translate()
+            button_3_text = self._translator.get_translation_instance(user_locale).with_text("local_things_button").translate()
+            button_4_text = self._translator.get_translation_instance(user_locale).with_text("physical_activity_button").translate()
+            button_5_text = self._translator.get_translation_instance(user_locale).with_text("cultural_interests_button").translate()
+            button_6_text = self._translator.get_translation_instance(user_locale).with_text("food_and_cooking_button").translate()
+            button_7_text = self._translator.get_translation_instance(user_locale).with_text("cinema_theatre_button").translate()
+            button_8_text = self._translator.get_translation_instance(user_locale).with_text("music_button").translate()
+            button_9_text = self._translator.get_translation_instance(user_locale).with_text("arts_and_crafts_button").translate()
+            button_10_text = self._translator.get_translation_instance(user_locale).with_text("life_ponders_button").translate()
+            button_11_text = self._translator.get_translation_instance(user_locale).with_text("varia_misc_button").translate()
+            response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[3, 3, 3, 2])
+            response_with_buttons.with_textual_option(button_1_text, self.INTENT_STUDYING_CAREER)
+            response_with_buttons.with_textual_option(button_2_text, self.INTENT_LOCAL_UNIVERSITY)
+            response_with_buttons.with_textual_option(button_3_text, self.INTENT_LOCAL_THINGS)
+            response_with_buttons.with_textual_option(button_4_text, self.INTENT_PHYSICAL_ACTIVITY)
+            response_with_buttons.with_textual_option(button_5_text, self.INTENT_CULTURAL_INTERESTS)
+            response_with_buttons.with_textual_option(button_6_text, self.INTENT_FOOD_AND_COOKING)
+            response_with_buttons.with_textual_option(button_7_text, self.INTENT_CINEMA_THEATRE)
+            response_with_buttons.with_textual_option(button_8_text, self.INTENT_MUSIC)
+            response_with_buttons.with_textual_option(button_9_text, self.INTENT_ARTS_AND_CRAFTS)
+            response_with_buttons.with_textual_option(button_10_text, self.INTENT_LIFE_PONDERS)
+            response_with_buttons.with_textual_option(button_11_text, self.INTENT_VARIA_MISC)
             response.with_message(response_with_buttons)
             response.with_context(context)
         else:
             error_message = self._translator.get_translation_instance(user_locale).with_text("question_is_not_text").translate()
             response.with_message(TextualResponse(error_message))
+        return response
+
+    def action_question_2(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+        """
+        Save the domain of the question, and ask whether people that should answer the question should have a similar interest in the domain
+        """
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        context = incoming_event.context
+        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_2)
+        context.with_static_state(self.CONTEXT_QUESTION_DOMAIN, intent)
+        message = self._translator.get_translation_instance(user_locale).with_text("domain_similarity_question")\
+            .with_substitution("domain", self.parse_text_with_markdown(self._translator.get_translation_instance(user_locale).with_text(intent).translate()))\
+            .translate()
+        button_1_text = self._translator.get_translation_instance(user_locale).with_text("answer_similar_domain").translate()
+        button_2_text = self._translator.get_translation_instance(user_locale).with_text("answer_different_domain").translate()
+        button_3_text = self._translator.get_translation_instance(user_locale).with_text("answer_indifferent_domain").translate()
+        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 1])
+        response_with_buttons.with_textual_option(button_1_text, self.INTENT_SIMILAR_DOMAIN)
+        response_with_buttons.with_textual_option(button_2_text, self.INTENT_DIFFERENT_DOMAIN)
+        response_with_buttons.with_textual_option(button_3_text, self.INTENT_INDIFFERENT_DOMAIN)
+        response.with_message(response_with_buttons)
+        response.with_context(context)
+        return response
+
+    def action_question_3(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+        """
+        Save whether people that should answer the question should have a similar interest in the domain, and ask whether people that should answer the question should have a similar belief and values
+        """
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        context = incoming_event.context
+        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_3)
+        context.with_static_state(self.CONTEXT_DOMAIN_INTEREST, intent)
+        message = self._translator.get_translation_instance(user_locale).with_text("belief_values_question").translate()
+        button_1_text = self._translator.get_translation_instance(user_locale).with_text("answer_similar_belief_values").translate()
+        button_2_text = self._translator.get_translation_instance(user_locale).with_text("answer_different_belief_values").translate()
+        button_3_text = self._translator.get_translation_instance(user_locale).with_text("answer_indifferent_belief_values").translate()
+        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 1])
+        response_with_buttons.with_textual_option(button_1_text, self.INTENT_SIMILAR_BELIEF_VALUES)
+        response_with_buttons.with_textual_option(button_2_text, self.INTENT_DIFFERENT_BELIEF_VALUES)
+        response_with_buttons.with_textual_option(button_3_text, self.INTENT_INDIFFERENT_BELIEF_VALUES)
+        response.with_message(response_with_buttons)
+        response.with_context(context)
+        return response
+
+    def action_question_4(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+        """
+        Save whether people that should answer the question should have a similar belief and values, and ask whether the question is sensitive or not
+        """
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        context = incoming_event.context
+        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_4)
+        context.with_static_state(self.CONTEXT_BELIEF_VALUES_SIMILARITY, intent)
+        message = self._translator.get_translation_instance(user_locale).with_text("sensitive_question").translate()
+        button_1_text = self._translator.get_translation_instance(user_locale).with_text("not_sensitive").translate()
+        button_2_text = self._translator.get_translation_instance(user_locale).with_text("sensitive").translate()
+        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2])
+        response_with_buttons.with_textual_option(button_1_text, self.INTENT_NOT_SENSITIVE_QUESTION)
+        response_with_buttons.with_textual_option(button_2_text, self.INTENT_SENSITIVE_QUESTION)
+        response.with_message(response_with_buttons)
+        response.with_context(context)
         return response
 
     def action_question_4_1(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
@@ -643,7 +759,7 @@ class AskForHelpHandler(WenetEventHandler):
         message = self._translator.get_translation_instance(user_locale).with_text("anonymous_question").translate()
         button_1_text = self._translator.get_translation_instance(user_locale).with_text("anonymous").translate()
         button_2_text = self._translator.get_translation_instance(user_locale).with_text("not_anonymous").translate()
-        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1])
+        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2])
         response_with_buttons.with_textual_option(button_1_text, self.INTENT_ANONYMOUS_QUESTION)
         response_with_buttons.with_textual_option(button_2_text, self.INTENT_NOT_ANONYMOUS_QUESTION)
         response.with_message(response_with_buttons)
@@ -664,12 +780,12 @@ class AskForHelpHandler(WenetEventHandler):
             context.with_static_state(self.CONTEXT_SENSITIVE_QUESTION, intent)
         message = self._translator.get_translation_instance(user_locale).with_text("social_closeness_question").translate()
         button_1_text = self._translator.get_translation_instance(user_locale).with_text("answer_socially_close").translate()
-        button_2_text = self._translator.get_translation_instance(user_locale).with_text("answer_socially_indifferent").translate()
-        button_3_text = self._translator.get_translation_instance(user_locale).with_text("answer_socially_distant").translate()
-        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1, 1])
-        response_with_buttons.with_textual_option(button_1_text, self.INTENT_SIMILAR)
-        response_with_buttons.with_textual_option(button_2_text, self.INTENT_INDIFFERENT)
-        response_with_buttons.with_textual_option(button_3_text, self.INTENT_DIFFERENT)
+        button_2_text = self._translator.get_translation_instance(user_locale).with_text("answer_socially_distant").translate()
+        button_3_text = self._translator.get_translation_instance(user_locale).with_text("answer_socially_indifferent").translate()
+        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 1])
+        response_with_buttons.with_textual_option(button_1_text, self.INTENT_SIMILAR_SOCIALLY)
+        response_with_buttons.with_textual_option(button_2_text, self.INTENT_DIFFERENT_SOCIALLY)
+        response_with_buttons.with_textual_option(button_3_text, self.INTENT_INDIFFERENT_SOCIALLY)
         response.with_message(response_with_buttons)
         response.with_context(context)
         return response
@@ -686,7 +802,7 @@ class AskForHelpHandler(WenetEventHandler):
         message = self._translator.get_translation_instance(user_locale).with_text("specify_answerer_location").translate()
         button_1_text = self._translator.get_translation_instance(user_locale).with_text("location_answer_1").translate()
         button_2_text = self._translator.get_translation_instance(user_locale).with_text("location_answer_2").translate()
-        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1])
+        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2])
         response_with_buttons.with_textual_option(button_1_text, self.INTENT_ASK_TO_NEARBY)
         response_with_buttons.with_textual_option(button_2_text, self.INTENT_ASK_TO_ANYWHERE)
         response.with_message(response_with_buttons)
@@ -705,20 +821,34 @@ class AskForHelpHandler(WenetEventHandler):
         response = OutgoingEvent(social_details=incoming_event.social_details)
         context = incoming_event.context
         if not context.has_static_state(self.CONTEXT_ASKED_QUESTION) \
+                or not context.has_static_state(self.CONTEXT_QUESTION_DOMAIN) \
+                or not context.has_static_state(self.CONTEXT_DOMAIN_INTEREST) \
+                or not context.has_static_state(self.CONTEXT_BELIEF_VALUES_SIMILARITY) \
                 or not context.has_static_state(self.CONTEXT_SOCIAL_CLOSENESS) \
                 or not context.has_static_state(self.CONTEXT_SENSITIVE_QUESTION):
-            raise Exception(f"Expected {self.CONTEXT_ASKED_QUESTION}, {self.CONTEXT_SOCIAL_CLOSENESS} and "
-                            f"{self.CONTEXT_SENSITIVE_QUESTION} in the context")
+            logger.error(f"Expected {self.CONTEXT_ASKED_QUESTION}, {self.CONTEXT_QUESTION_DOMAIN}, "
+                         f"{self.CONTEXT_DOMAIN_INTEREST}, {self.CONTEXT_SOCIAL_CLOSENESS}, "
+                         f"{self.CONTEXT_BELIEF_VALUES_SIMILARITY} and {self.CONTEXT_SENSITIVE_QUESTION} in the context")
+            raise Exception(f"Expected {self.CONTEXT_ASKED_QUESTION}, {self.CONTEXT_QUESTION_DOMAIN}, "
+                            f"{self.CONTEXT_DOMAIN_INTEREST}, {self.CONTEXT_SOCIAL_CLOSENESS}, "
+                            f"{self.CONTEXT_BELIEF_VALUES_SIMILARITY} and {self.CONTEXT_SENSITIVE_QUESTION} in the context")
         wenet_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
         question = context.get_static_state(self.CONTEXT_ASKED_QUESTION)
+        domain = context.get_static_state(self.CONTEXT_QUESTION_DOMAIN)
+        domain_interest = context.get_static_state(self.CONTEXT_DOMAIN_INTEREST)
+        belief_values_similarity = context.get_static_state(self.CONTEXT_BELIEF_VALUES_SIMILARITY)
         sensitive = context.get_static_state(self.CONTEXT_SENSITIVE_QUESTION)
         anonymous = context.get_static_state(self.CONTEXT_ANONYMOUS_QUESTION, self.INTENT_NOT_ANONYMOUS_QUESTION)
         social_closeness = context.get_static_state(self.CONTEXT_SOCIAL_CLOSENESS)
         attributes = {
+            "domain": domain,
+            "domainInterest": domain_interest,
+            "beliefsAndValues": belief_values_similarity,
             "sensitive": True if sensitive == self.INTENT_SENSITIVE_QUESTION else False,
             "anonymous": True if anonymous == self.INTENT_ANONYMOUS_QUESTION else False,
             "socialCloseness": social_closeness,
             "positionOfAnswerer": intent,
+            "maxUsers": self.max_users
         }
         question_task = Task(
             None,
@@ -727,7 +857,7 @@ class AskForHelpHandler(WenetEventHandler):
             str(self.task_type_id),
             str(wenet_id),
             self.app_id,
-            None,
+            self.community_id,
             TaskGoal(question, ""),
             [],
             attributes,
@@ -745,6 +875,9 @@ class AskForHelpHandler(WenetEventHandler):
             response.with_message(TextualResponse(message))
         finally:
             context.delete_static_state(self.CONTEXT_ASKED_QUESTION)
+            context.delete_static_state(self.CONTEXT_QUESTION_DOMAIN)
+            context.delete_static_state(self.CONTEXT_DOMAIN_INTEREST)
+            context.delete_static_state(self.CONTEXT_BELIEF_VALUES_SIMILARITY)
             context.delete_static_state(self.CONTEXT_SOCIAL_CLOSENESS)
             context.delete_static_state(self.CONTEXT_SENSITIVE_QUESTION)
             context.delete_static_state(self.CONTEXT_ANONYMOUS_QUESTION)
@@ -792,7 +925,7 @@ class AskForHelpHandler(WenetEventHandler):
 
     def action_answer_picked_question(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
         """
-        /answer flow, when the user picks an answer
+        /questions flow, when the user picks a question to answer to
         """
         if incoming_event.context is not None:
             service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
@@ -842,7 +975,7 @@ class AskForHelpHandler(WenetEventHandler):
             message = self._translator.get_translation_instance(user_locale).with_text("answer_anonymously").translate()
             button_1_text = self._translator.get_translation_instance(user_locale).with_text("anonymous_answer_1").translate()
             button_2_text = self._translator.get_translation_instance(user_locale).with_text("anonymous_answer_2").translate()
-            response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1])
+            response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2])
             response_with_buttons.with_textual_option(button_1_text, self.INTENT_ANSWER_ANONYMOUSLY)
             response_with_buttons.with_textual_option(button_2_text, self.INTENT_ANSWER_NOT_ANONYMOUSLY)
             response.with_message(response_with_buttons)
@@ -985,7 +1118,7 @@ class AskForHelpHandler(WenetEventHandler):
             "username": button_payload.payload["username"],
             "related_buttons": button_ids,
         }
-        response_to_store = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1, 1])
+        response_to_store = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[2, 2])
 
         self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_QUESTION).to_repr(), key=button_ids[0])
         response_to_store.with_textual_option(self._translator.get_translation_instance(user_locale).with_text("answer_question_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
@@ -1012,7 +1145,7 @@ class AskForHelpHandler(WenetEventHandler):
         button_why_reporting_1_text = self._translator.get_translation_instance(user_locale).with_text("button_why_reporting_1_text").translate()
         button_why_reporting_2_text = self._translator.get_translation_instance(user_locale).with_text("button_why_reporting_2_text").translate()
         button_why_reporting_3_text = self._translator.get_translation_instance(user_locale).with_text("button_why_reporting_3_text").translate()
-        message = TelegramRapidAnswerResponse(TextualResponse(message_text), row_displacement=[1, 1, 1])
+        message = TelegramRapidAnswerResponse(TextualResponse(message_text), row_displacement=[2, 1])
         button_ids = [str(uuid.uuid4()) for _ in range(2)]
         payload = button_payload.payload
         payload.update({"related_buttons": button_ids})
@@ -1133,24 +1266,24 @@ class AskForHelpHandler(WenetEventHandler):
             for task in tasks:
                 questioning_user = service_api.get_user_profile(str(task.requester_id))
                 if questioning_user:
-                    task_text = f"#{1 + len(proposed_tasks)}: *{self.parse_text_with_markdown(task.goal.name)}* - {questioning_user.name.first if questioning_user.name.first and not task.attributes.get('anonymous') else 'Anonymous'}"
-                    if task.attributes.get('sensitive'):
+                    task_text = f"#{1 + len(proposed_tasks)}: *{self.parse_text_with_markdown(task.goal.name)}* - {questioning_user.name.first if questioning_user.name.first and not task.attributes.get('anonymous') else self._translator.get_translation_instance(user_locale).with_text('anonymous_user').translate()}"
+                    if task.attributes.get("sensitive"):
                         task_text = task_text + f" - {self._translator.get_translation_instance(user_locale).with_text('sensitive').translate()}"
                     tasks_texts.append(task_text)
                     proposed_tasks.append(task)
             context.with_static_state(self.CONTEXT_PROPOSED_TASKS, [task.task_id for task in proposed_tasks])
-            message_text = '\n'.join([text] + tasks_texts + [self._translator.get_translation_instance(user_locale).with_text("answers_tasks_choose").translate()])
+            message_text = "\n".join([text] + tasks_texts + [self._translator.get_translation_instance(user_locale).with_text("answers_tasks_choose").translate()])
             rapid_answer = RapidAnswerResponse(TextualResponse(message_text))
             for i in range(len(proposed_tasks)):
-                button_id = self.cache.cache(ButtonPayload({"task_id": proposed_tasks[i].task_id, "sensitive": proposed_tasks[i].attributes.get('sensitive')}, self.INTENT_ANSWER_PICKED_QUESTION).to_repr())
+                button_id = self.cache.cache(ButtonPayload({"task_id": proposed_tasks[i].task_id, "sensitive": proposed_tasks[i].attributes.get("sensitive")}, self.INTENT_ANSWER_PICKED_QUESTION).to_repr())
                 rapid_answer.with_textual_option(f"#{1 + i}", self.INTENT_BUTTON_WITH_PAYLOAD.format(button_id))
             response.with_message(rapid_answer)
         response.with_context(context)
         return response
 
-    def action_profile(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
-        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
-        response = OutgoingEvent(incoming_event.social_details)
-        text = self._translator.get_translation_instance(user_locale).with_text("not_implemented").translate()
-        response.with_message(TextualResponse(text))
-        return response
+    # def action_profile(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+    #     user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+    #     response = OutgoingEvent(incoming_event.social_details)
+    #     text = self._translator.get_translation_instance(user_locale).with_text("not_implemented").translate()
+    #     response.with_message(TextualResponse(text))
+    #     return response
