@@ -58,8 +58,8 @@ class AskForHelpHandler(WenetEventHandler):
     CONTEXT_PROPOSED_TASKS = "proposed_tasks"
     CONTEXT_PENDING_ANSWERS = "pending_answers"
     # all the recognize intents
-    INTENT_QUESTION = '/question'
-    INTENT_QUESTION_FIRST = '/question_first'
+    INTENT_ASK = "/ask"
+    INTENT_FIRST_QUESTION = "first_question"
     INTENT_SENSITIVE_QUESTION = "sensitive"
     INTENT_NOT_SENSITIVE_QUESTION = "not_sensitive"
     INTENT_ANONYMOUS_QUESTION = "anonymous"
@@ -79,10 +79,10 @@ class AskForHelpHandler(WenetEventHandler):
     INTENT_REPORT_SPAM = "spam"
     INTENT_ASK_MORE_ANSWERS = "ask_more_answers"
     INTENT_ANSWER_REPORT = "answer_report"
-    INTENT_ANSWER = "/answer"
+    INTENT_QUESTIONS = "/questions"
     INTENT_ANSWER_PICKED_QUESTION = "picked_answer"
     INTENT_BEST_ANSWER = "best_answer"
-    INTENT_PROFILE = '/profile'
+    # INTENT_PROFILE = "/profile"
     # available states
     STATE_QUESTION_0 = "question_0"
     STATE_QUESTION_1 = "question_1"
@@ -120,13 +120,13 @@ class AskForHelpHandler(WenetEventHandler):
         JobManager.instance().add_job(PendingMessagesJob("wenet_ask_for_help_pending_messages_job",
                                                          self._instance_namespace, self._connector, None))
         self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_QUESTION, self.action_question).with_rule(
-                intent=self.INTENT_QUESTION
+            IntentFulfillerV3(self.INTENT_ASK, self.action_question).with_rule(
+                intent=self.INTENT_ASK
             )
         )
         self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_QUESTION_FIRST, self.action_question).with_rule(
-                intent=self.INTENT_QUESTION_FIRST
+            IntentFulfillerV3(self.INTENT_FIRST_QUESTION, self.action_question).with_rule(
+                intent=self.INTENT_FIRST_QUESTION
             )
         )
         self.intent_manager.with_fulfiller(
@@ -211,7 +211,9 @@ class AskForHelpHandler(WenetEventHandler):
             )
         )
         self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_ANSWER, self.action_answer).with_rule(intent=self.INTENT_ANSWER)
+            IntentFulfillerV3(self.INTENT_QUESTIONS, self.action_answer).with_rule(
+                intent=self.INTENT_QUESTIONS
+            )
         )
         # self.intent_manager.with_fulfiller(
         #     IntentFulfillerV3(self.INTENT_PROFILE, self.action_profile).with_rule(intent=self.INTENT_PROFILE)
@@ -310,7 +312,7 @@ class AskForHelpHandler(WenetEventHandler):
         message_3 = self._get_help_and_info_message(user_locale)
         button_text = self._translator.get_translation_instance(user_locale).with_text("start_button").translate()
         final_message_with_button = RapidAnswerResponse(TextualResponse(message_3))
-        final_message_with_button.with_textual_option(button_text, self.INTENT_QUESTION_FIRST)
+        final_message_with_button.with_textual_option(button_text, self.INTENT_FIRST_QUESTION)
         return [
             TextualResponse(message_1),
             TextualResponse(message_2),
@@ -595,7 +597,7 @@ class AskForHelpHandler(WenetEventHandler):
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_0)
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         preamble_message = None
-        if intent == self.INTENT_QUESTION_FIRST:
+        if intent == self.INTENT_FIRST_QUESTION:
             preamble_message = self._translator.get_translation_instance(user_locale).with_text("question_0").translate()
         message = self._translator.get_translation_instance(user_locale).with_text("question_1").translate()
         response = OutgoingEvent(social_details=incoming_event.social_details)
