@@ -144,7 +144,7 @@ Optional variables (to setup Redis):
 - `REDIS_DB` (default is 0)
 
 The _ask for help_ bot has the following optional environment variable:
-* `TRANSLATION_FOLDER_PATH`, indicating the folder in which translations are stored.
+* `TRANSLATION_FOLDER_PATH`, indicating the path of the folder in which translations are stored (default is `../../translations`).
 
 ### Endpoint env variables
 
