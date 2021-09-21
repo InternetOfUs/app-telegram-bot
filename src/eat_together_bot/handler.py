@@ -88,6 +88,7 @@ class EatTogetherHandler(WenetEventHandler):
                  app_id: str,
                  wenet_hub_url: str,
                  task_type_id: str,
+                 community_id: str,
                  wenet_authentication_url: str,
                  wenet_authentication_management_url: str,
                  redirect_url: str,
@@ -119,8 +120,8 @@ class EatTogetherHandler(WenetEventHandler):
         """
         super().__init__(instance_namespace, bot_id, handler_id, telegram_id, wenet_instance_url, wenet_hub_url, app_id,
                          client_secret, redirect_url, wenet_authentication_url, wenet_authentication_management_url,
-                         task_type_id, alert_module, connector, nlp_handler, translator, delay_between_messages_sec,
-                         delay_between_text_sec, logger_connectors)
+                         task_type_id, community_id, alert_module, connector, nlp_handler, translator,
+                         delay_between_messages_sec, delay_between_text_sec, logger_connectors)
         # redirecting the flow in the corresponding points
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.ORGANIZE_Q1, self.organize_q1).with_rule(intent=self.INTENT_ORGANIZE)
@@ -473,7 +474,7 @@ class EatTogetherHandler(WenetEventHandler):
                     str(self.task_type_id),
                     str(wenet_id),
                     self.app_id,
-                    None,
+                    self.community_id,
                     TaskGoal("", ""),
                     [],
                     attributes,

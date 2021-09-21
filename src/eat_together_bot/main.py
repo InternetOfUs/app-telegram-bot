@@ -25,6 +25,7 @@ if __name__ == "__main__":
     wenet_hub_url = os.getenv("WENET_HUB_URL")
     app_id = os.getenv("WENET_APP_ID")
     task_type_id = os.getenv("TASK_TYPE_ID")
+    community_id = os.getenv("COMMUNITY_ID")
     wenet_authentication_url = os.getenv("WENET_AUTHENTICATION_URL")
     redirect_url = os.getenv("REDIRECT_URL")
     client_secret = os.getenv("CLIENT_SECRET")
@@ -38,6 +39,7 @@ if __name__ == "__main__":
         app_id,
         wenet_hub_url,
         task_type_id,
+        community_id,
         wenet_authentication_url,
         wenet_authentication_management_url,
         redirect_url,

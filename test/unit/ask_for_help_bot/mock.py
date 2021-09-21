@@ -39,3 +39,5 @@ class MockAskForHelpHandler(AskForHelpHandler):
         self.wenet_authentication_url = "wenet_authentication_url"
         self.wenet_authentication_management_url = "wenet_authentication_management_url"
         self.task_type_id = "task_type_id"
+        self.community_id = "community_id"
+        self.max_users = 5

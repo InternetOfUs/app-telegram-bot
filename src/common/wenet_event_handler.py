@@ -87,6 +87,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
                  wenet_authentication_url: str,
                  wenet_authentication_management_url: str,
                  task_type_id: str,
+                 community_id: str,
                  alert_module: AlertModule,
                  connector: SocialConnector,
                  nlp_handler: Optional[NLPHandler],
@@ -117,6 +118,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
         self.wenet_authentication_url = wenet_authentication_url
         self.wenet_authentication_management_url = wenet_authentication_management_url
         self.task_type_id = task_type_id
+        self.community_id = community_id
         self.intent_manager = IntentManagerV3()
         self.messages_lock = Lock()
         self.message_parser_for_logs = LogMessageHandler(self.app_id, "Telegram")

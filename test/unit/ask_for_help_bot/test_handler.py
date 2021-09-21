@@ -328,6 +328,20 @@ class TestAskForHelpHandler(TestCase):
         self.assertEqual(11, len(response.messages[0].options))
         self.assertTrue(handler.CONTEXT_CURRENT_STATE in response.context._static_context and response.context._static_context[handler.CONTEXT_CURRENT_STATE] == handler.STATE_QUESTION_1)
 
+    def test_action_question_2(self):
+        handler = MockAskForHelpHandler()
+        translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
+        translator_instance.translate = Mock(return_value="")
+        handler._translator.get_translation_instance = Mock(return_value=translator_instance)
+        handler._get_user_locale_from_incoming_event = Mock(return_value="en")
+
+        response = handler.action_question_2(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", "command", ""), ConversationContext()), handler.INTENT_STUDYING_CAREER)
+        self.assertIsInstance(response, OutgoingEvent)
+        self.assertEqual(1, len(response.messages))
+        self.assertIsInstance(response.messages[0], TelegramRapidAnswerResponse)
+        self.assertEqual(3, len(response.messages[0].options))
+        self.assertTrue(handler.CONTEXT_CURRENT_STATE in response.context._static_context and response.context._static_context[handler.CONTEXT_CURRENT_STATE] == handler.STATE_QUESTION_2)
+
     def test_action_question_4(self):
         handler = MockAskForHelpHandler()
         translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
@@ -335,7 +349,7 @@ class TestAskForHelpHandler(TestCase):
         handler._translator.get_translation_instance = Mock(return_value=translator_instance)
         handler._get_user_locale_from_incoming_event = Mock(return_value="en")
 
-        response = handler.action_question_4(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", "command", ""), ConversationContext()), handler.INTENT_STUDYING_CAREER)
+        response = handler.action_question_4(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", "command", ""), ConversationContext()), handler.INTENT_DIFFERENT_DOMAIN)
         self.assertIsInstance(response, OutgoingEvent)
         self.assertEqual(1, len(response.messages))
         self.assertIsInstance(response.messages[0], TelegramRapidAnswerResponse)
@@ -377,7 +391,7 @@ class TestAskForHelpHandler(TestCase):
         handler._translator.get_translation_instance = Mock(return_value=translator_instance)
         handler._get_user_locale_from_incoming_event = Mock(return_value="en")
 
-        response = handler.action_question_6(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", "command", ""), ConversationContext()), handler.INTENT_SIMILAR)
+        response = handler.action_question_6(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", "command", ""), ConversationContext()), handler.INTENT_SIMILAR_SOCIALLY)
         self.assertIsInstance(response, OutgoingEvent)
         self.assertEqual(1, len(response.messages))
         self.assertIsInstance(response.messages[0], TelegramRapidAnswerResponse)
@@ -398,7 +412,8 @@ class TestAskForHelpHandler(TestCase):
             handler.CONTEXT_WENET_USER_ID: "",
             handler.CONTEXT_ASKED_QUESTION: "question",
             handler.CONTEXT_QUESTION_DOMAIN: handler.INTENT_STUDYING_CAREER,
-            handler.CONTEXT_SOCIAL_CLOSENESS: handler.INTENT_SIMILAR,
+            handler.CONTEXT_DOMAIN_INTEREST: handler.INTENT_DIFFERENT_DOMAIN,
+            handler.CONTEXT_SOCIAL_CLOSENESS: handler.INTENT_SIMILAR_SOCIALLY,
             handler.CONTEXT_SENSITIVE_QUESTION: False
         })), handler.INTENT_ASK_TO_NEARBY)
         self.assertIsInstance(response, OutgoingEvent)
