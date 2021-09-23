@@ -278,7 +278,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
 
                 if notification.context is not None:
                     self._interface_connector.update_user_context(UserConversationContext(
-                        notification.social_details,
+                        social_details=notification.social_details,
                         context=notification.context,
                         version=UserConversationContext.VERSION_V3)
                     )
