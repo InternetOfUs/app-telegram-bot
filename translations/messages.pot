@@ -270,6 +270,30 @@ msgstr ""
 msgid "answers_tasks_choose"
 msgstr ""
 
+msgid "best_answer_0"
+msgstr ""
+
+msgid "best_answer_helpful"
+msgstr ""
+
+msgid "not_at_all_helpful"
+msgstr ""
+
+msgid "slightly_helpful"
+msgstr ""
+
+msgid "somewhat_helpful"
+msgstr ""
+
+msgid "very_helpful"
+msgstr ""
+
+msgid "extremely_helpful"
+msgstr ""
+
+msgid "reason_is_not_text"
+msgstr ""
+
 msgid "best_answer_final_message"
 msgstr ""
 

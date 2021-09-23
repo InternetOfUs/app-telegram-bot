@@ -60,6 +60,9 @@ class AskForHelpHandler(WenetEventHandler):
     CONTEXT_ORIGINAL_QUESTION_REPORTING = "original_question_reporting"
     CONTEXT_PROPOSED_TASKS = "proposed_tasks"
     CONTEXT_PENDING_ANSWERS = "pending_answers"
+    CONTEXT_TASK_ID = "task_id"
+    CONTEXT_TRANSACTION_ID = "transaction_id"
+    CONTEXT_CHOSEN_ANSWER_REASON = "chosen_answer_reason"
     # all the recognize intents
     INTENT_ASK = "/ask"
     INTENT_FIRST_QUESTION = "first_question"
@@ -102,6 +105,11 @@ class AskForHelpHandler(WenetEventHandler):
     INTENT_QUESTIONS = "/questions"
     INTENT_ANSWER_PICKED_QUESTION = "picked_answer"
     INTENT_BEST_ANSWER = "best_answer"
+    INTENT_NOT_AT_ALL_HELPFUL = "notAtAllHelpful"
+    INTENT_SLIGHTLY_HELPFUL = "slightlyHelpful"
+    INTENT_SOMEWHAT_HELPFUL = "somewhatHelpful"
+    INTENT_VERY_HELPFUL = "veryHelpful"
+    INTENT_EXTREMELY_HELPFUL = "extremelyHelpful"
     # INTENT_PROFILE = "/profile"
     # available states
     STATE_QUESTION_0 = "question_0"
@@ -115,6 +123,8 @@ class AskForHelpHandler(WenetEventHandler):
     STATE_ANSWERING = "answer_2"
     STATE_ANSWERING_SENSITIVE = "answer_sensitive"
     STATE_ANSWERING_ANONYMOUSLY = "answer_anonymously"
+    STATE_BEST_ANSWER_0 = "best_answer_0"
+    STATE_BEST_ANSWER_1 = "best_answer_1"
     # transaction labels
     LABEL_ANSWER_TRANSACTION = "answerTransaction"
     LABEL_NOT_ANSWER_TRANSACTION = "notAnswerTransaction"
@@ -257,6 +267,20 @@ class AskForHelpHandler(WenetEventHandler):
                 intent=self.INTENT_QUESTIONS
             )
         )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3("", self.action_best_answer_1).with_rule(
+                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_0)
+            )
+        )
+        answer_rating_intents = [self.INTENT_NOT_AT_ALL_HELPFUL, self.INTENT_SLIGHTLY_HELPFUL,
+                                 self.INTENT_SOMEWHAT_HELPFUL, self.INTENT_VERY_HELPFUL, self.INTENT_EXTREMELY_HELPFUL]
+        for answer_rating_intent in answer_rating_intents:
+            self.intent_manager.with_fulfiller(
+                IntentFulfillerV3(answer_rating_intent, self.action_best_answer_2).with_rule(
+                    intent=answer_rating_intent,
+                    static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_1)
+                )
+            )
         # self.intent_manager.with_fulfiller(
         #     IntentFulfillerV3(self.INTENT_PROFILE, self.action_profile).with_rule(intent=self.INTENT_PROFILE)
         # )
@@ -324,7 +348,8 @@ class AskForHelpHandler(WenetEventHandler):
         """
         statuses = [self.STATE_ANSWERING, self.STATE_ANSWERING_SENSITIVE, self.STATE_ANSWERING_ANONYMOUSLY,
                     self.STATE_QUESTION_0, self.STATE_QUESTION_1, self.STATE_QUESTION_2, self.STATE_QUESTION_3,
-                    self.STATE_QUESTION_4, self.STATE_QUESTION_4_1, self.STATE_QUESTION_5, self.STATE_QUESTION_6]
+                    self.STATE_QUESTION_4, self.STATE_QUESTION_4_1, self.STATE_QUESTION_5, self.STATE_QUESTION_6,
+                    self.STATE_BEST_ANSWER_0, self.STATE_BEST_ANSWER_1]
         current_status = context.get_static_state(self.CONTEXT_CURRENT_STATE, "")
         return current_status in statuses
 
@@ -597,7 +622,7 @@ class AskForHelpHandler(WenetEventHandler):
         elif button_payload.intent == self.INTENT_REPORT_ABUSIVE or button_payload.intent == self.INTENT_REPORT_SPAM:
             return self.action_report_message_1(incoming_event, button_payload)
         elif button_payload.intent == self.INTENT_BEST_ANSWER:
-            return self.action_best_answer(incoming_event, button_payload)
+            return self.action_best_answer_0(incoming_event, button_payload)
         elif button_payload.intent == self.INTENT_ANSWER_NOT:
             return self.action_not_answer_question(incoming_event, button_payload)
         elif button_payload.intent == self.INTENT_ANSWER_QUESTION:
@@ -1216,28 +1241,83 @@ class AskForHelpHandler(WenetEventHandler):
             response.with_context(context)
         return response
 
-    def action_best_answer(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
+    def action_best_answer_0(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
-        task_id = button_payload.payload["task_id"]
-        transaction_id = button_payload.payload["transaction_id"]
+        context = incoming_event.context
+        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_0)
+        context.with_static_state(self.CONTEXT_TASK_ID, button_payload.payload["task_id"])
+        context.with_static_state(self.CONTEXT_TRANSACTION_ID, button_payload.payload["transaction_id"])
+        message = self._translator.get_translation_instance(user_locale).with_text("best_answer_0").translate()
+        response.with_message(TextualResponse(message))
+        response.with_context(context)
+        return response
+
+    def action_best_answer_1(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        if isinstance(incoming_event.incoming_message, IncomingTextMessage):
+            reason = incoming_event.incoming_message.text
+            context = incoming_event.context
+            context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_1)
+            context.with_static_state(self.CONTEXT_CHOSEN_ANSWER_REASON, reason)
+            message = self._translator.get_translation_instance(user_locale).with_text("best_answer_helpful").translate()
+            button_1_text = self._translator.get_translation_instance(user_locale).with_text("not_at_all_helpful").translate()
+            button_2_text = self._translator.get_translation_instance(user_locale).with_text("slightly_helpful").translate()
+            button_3_text = self._translator.get_translation_instance(user_locale).with_text("somewhat_helpful").translate()
+            button_4_text = self._translator.get_translation_instance(user_locale).with_text("very_helpful").translate()
+            button_5_text = self._translator.get_translation_instance(user_locale).with_text("extremely_helpful").translate()
+            response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 2, 1])
+            response_with_buttons.with_textual_option(button_1_text, self.INTENT_NOT_AT_ALL_HELPFUL)
+            response_with_buttons.with_textual_option(button_2_text, self.INTENT_SLIGHTLY_HELPFUL)
+            response_with_buttons.with_textual_option(button_3_text, self.INTENT_SOMEWHAT_HELPFUL)
+            response_with_buttons.with_textual_option(button_4_text, self.INTENT_VERY_HELPFUL)
+            response_with_buttons.with_textual_option(button_5_text, self.INTENT_EXTREMELY_HELPFUL)
+            response.with_message(response_with_buttons)
+            response.with_context(context)
+        else:
+            error_message = self._translator.get_translation_instance(user_locale).with_text("reason_is_not_text").translate()
+            response.with_message(TextualResponse(error_message))
+        return response
+
+    def action_best_answer_2(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+        context = incoming_event.context
+        if not context.has_static_state(self.CONTEXT_TASK_ID) \
+                or not context.has_static_state(self.CONTEXT_TRANSACTION_ID) \
+                or not context.has_static_state(self.CONTEXT_CHOSEN_ANSWER_REASON):
+            logger.error(f"Expected {self.CONTEXT_TASK_ID}, {self.CONTEXT_TRANSACTION_ID} "
+                         f"and {self.CONTEXT_CHOSEN_ANSWER_REASON} in the context")
+            raise Exception(f"Expected {self.CONTEXT_TASK_ID}, {self.CONTEXT_TRANSACTION_ID}, "
+                            f"and {self.CONTEXT_CHOSEN_ANSWER_REASON} in the context")
+        task_id = context.get_static_state(self.CONTEXT_TASK_ID)
+        transaction_id = context.get_static_state(self.CONTEXT_TRANSACTION_ID)
+        reason = context.get_static_state(self.CONTEXT_CHOSEN_ANSWER_REASON)
         service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
         attributes = {
-            "transactionId": transaction_id
+            "transactionId": transaction_id,
+            "reason": reason,
+            "helpful": intent
         }
         actioneer_id = incoming_event.context.get_static_state(self.CONTEXT_WENET_USER_ID)
         try:
             transaction = TaskTransaction(None, task_id, self.LABEL_BEST_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), actioneer_id, attributes, [])
             service_api.create_task_transaction(transaction)
             logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
-            message = self._translator.get_translation_instance(user_locale).with_text(
-                "best_answer_final_message").translate()
+            message = self._translator.get_translation_instance(user_locale).with_text("best_answer_final_message").translate()
             response.with_message(TextualResponse(message))
         except CreationError as e:
             response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
             logger.error(
                 "Error in the creation of the transaction for reporting the task [%s]. The service API responded with code %d and message %s"
                 % (task_id, e.http_status_code, json.dumps(e.server_response)))
+        finally:
+            context.delete_static_state(self.CONTEXT_TASK_ID)
+            context.delete_static_state(self.CONTEXT_TRANSACTION_ID)
+            context.delete_static_state(self.CONTEXT_CHOSEN_ANSWER_REASON)
+            context.delete_static_state(self.CONTEXT_CURRENT_STATE)
+            response.with_context(context)
         return response
 
     def action_answer(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
