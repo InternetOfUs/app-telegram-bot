@@ -14,6 +14,7 @@
 - Integrated belief and values similarity data in the question flow
 - Updated app commands: renamed `/question` into `/ask` and `/answer` into `/questions`
 - Integrated rating flow when accepting an answer
+- Updated common models to fix service APIs methods for getting all tasks of an application and for an user
 - Integrated new structures of the callback messages
 
 ## 1.0.10
