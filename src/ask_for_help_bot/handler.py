@@ -423,10 +423,11 @@ class AskForHelpHandler(WenetEventHandler):
         response = TelegramTextualResponse(f"{title}_{self.parse_text_with_markdown(message.text)}_")
         return NotificationEvent(user_account.social_details, [response], user_account.context)
 
-    def handle_nearby_question(self, message: QuestionToAnswerMessage, user_object: WeNetUserProfile,
-                               questioning_user: WeNetUserProfile, sensitive: bool, anonymous: bool) -> TelegramRapidAnswerResponse:
+    def handle_nearby_question(self, message: QuestionToAnswerMessage, user_object: WeNetUserProfile, questioning_user: WeNetUserProfile) -> TelegramRapidAnswerResponse:
         # Translate the message that someone near has a question and insert the details of the question, treat differently sensitive questions
         message_string = self._translator.get_translation_instance(user_object.locale)
+        sensitive = message.attributes.get("sensitive", False)
+        anonymous = message.attributes.get("anonymous", False)
         if sensitive:
             message_string = message_string.with_text("answer_sensitive_message_nearby")
         else:
@@ -454,10 +455,11 @@ class AskForHelpHandler(WenetEventHandler):
         response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
         return response
 
-    def handle_question(self, message: QuestionToAnswerMessage, user_object: WeNetUserProfile,
-                        questioning_user: WeNetUserProfile, sensitive: bool, anonymous: bool) -> TelegramRapidAnswerResponse:
+    def handle_question(self, message: QuestionToAnswerMessage, user_object: WeNetUserProfile, questioning_user: WeNetUserProfile) -> TelegramRapidAnswerResponse:
         # Translate the message that someone in the community has a question and insert the details of the question, treat differently sensitive questions
         message_string = self._translator.get_translation_instance(user_object.locale)
+        sensitive = message.attributes.get("sensitive", False)
+        anonymous = message.attributes.get("anonymous", False)
         if sensitive:
             message_string = message_string.with_text("answer_sensitive_message_0")
         else:
@@ -487,19 +489,15 @@ class AskForHelpHandler(WenetEventHandler):
         response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[3]))
         return response
 
-    def handle_answered_question(self, message: AnsweredQuestionMessage, user_object: WeNetUserProfile, answerer_user: WeNetUserProfile, question_task: Task) -> TelegramRapidAnswerResponse:
+    def handle_answered_question(self, message: AnsweredQuestionMessage, user_object: WeNetUserProfile, answerer_user: WeNetUserProfile) -> TelegramRapidAnswerResponse:
         answer_text = message.answer
-        question_text = self.parse_text_with_markdown(question_task.goal.name)
-        answer_transaction = None
-        for transaction in question_task.transactions:
-            if transaction.id == message.transaction_id:
-                answer_transaction = transaction
+        question_text = self.parse_text_with_markdown(message.attributes["question"])
         # Translate the message that there is a new answer and insert the details of the question and answer
         message_string = self._translator.get_translation_instance(user_object.locale) \
             .with_text("new_answer_message") \
             .with_substitution("question", question_text) \
             .with_substitution("answer", self.parse_text_with_markdown(answer_text)) \
-            .with_substitution("username", answerer_user.name.first if answerer_user.name.first and not answer_transaction.attributes.get("anonymous") else self._translator.get_translation_instance(user_object.locale).with_text("anonymous_user").translate()) \
+            .with_substitution("username", answerer_user.name.first if answerer_user.name.first and not message.attributes.get("anonymous", False) else self._translator.get_translation_instance(user_object.locale).with_text("anonymous_user").translate()) \
             .translate()
 
         answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 2])
@@ -509,7 +507,7 @@ class AskForHelpHandler(WenetEventHandler):
         button_ids = [str(uuid.uuid4()) for _ in range(3)]
         button_data = {
             "transaction_id": message.transaction_id,
-            "task_id": question_task.task_id,
+            "task_id": message.attributes["taskId"],
             "related_buttons": button_ids,
         }
         self.cache.cache(ButtonPayload(button_data, self.INTENT_BEST_ANSWER).to_repr(), key=button_ids[0])
@@ -520,11 +518,11 @@ class AskForHelpHandler(WenetEventHandler):
         answer.with_textual_option(button_report_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
         return answer
 
-    def handle_answered_picked(self, user_object: WeNetUserProfile, question_task: Task) -> TextualResponse:
+    def handle_answered_picked(self, message: AnsweredPickedMessage, user_object: WeNetUserProfile) -> TextualResponse:
         # Translate the message that the answer to a question was picked as the best and insert the details of the question
         message_string = self._translator.get_translation_instance(user_object.locale) \
             .with_text("picked_best_answer") \
-            .with_substitution("question", self.parse_text_with_markdown(question_task.goal.name)) \
+            .with_substitution("question", self.parse_text_with_markdown(message.attributes["question"])) \
             .translate()
         return TextualResponse(message_string)
 
@@ -547,28 +545,20 @@ class AskForHelpHandler(WenetEventHandler):
             if isinstance(message, QuestionToAnswerMessage):
                 # handle a new question to answer checking if the question is for nearby people
                 questioning_user = service_api.get_user_profile(str(message.user_id))
-                question_task = service_api.get_task(message.task_id)
-
-                #  Extract sensitive and anonymous attributes
-                sensitive = question_task.attributes.get("sensitive")
-                anonymous = question_task.attributes.get("anonymous")
-
-                if question_task.attributes.get("positionOfAnswerer") == self.INTENT_ASK_TO_NEARBY:
-                    response = self.handle_nearby_question(message, user_object, questioning_user, sensitive, anonymous)
+                if message.attributes["positionOfAnswerer"] == self.INTENT_ASK_TO_NEARBY:
+                    response = self.handle_nearby_question(message, user_object, questioning_user)
                 else:
-                    response = self.handle_question(message, user_object, questioning_user, sensitive, anonymous)
+                    response = self.handle_question(message, user_object, questioning_user)
                 return NotificationEvent(user_account.social_details, [response], context)
             elif isinstance(message, AnsweredQuestionMessage):
                 # handle an answer to a question
                 answerer_id = message.user_id
                 answerer_user = service_api.get_user_profile(str(answerer_id))
-                question_task = service_api.get_task(message.task_id)
-                answer = self.handle_answered_question(message, user_object, answerer_user, question_task)
+                answer = self.handle_answered_question(message, user_object, answerer_user)
                 return NotificationEvent(user_account.social_details, [answer], context)
             elif isinstance(message, AnsweredPickedMessage):
                 # handle an answer picked for a question
-                question_task = service_api.get_task(message.task_id)
-                response = self.handle_answered_picked(user_object, question_task)
+                response = self.handle_answered_picked(message, user_object)
                 return NotificationEvent(user_account.social_details, [response], context)
             elif isinstance(message, IncentiveMessage):
                 # handle an incentive message

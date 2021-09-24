@@ -14,6 +14,7 @@
 - Integrated belief and values similarity data in the question flow
 - Updated app commands: renamed `/question` into `/ask` and `/answer` into `/questions`
 - Integrated rating flow when accepting an answer
+- Integrated new structures of the callback messages
 
 ## 1.0.10
 - Changed the `project` field in the messages logged into the Wenet platform. Now the `appId` is used, instead of the `PROJECT_NAME` environment variable

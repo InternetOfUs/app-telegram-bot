@@ -11,7 +11,7 @@ from chatbot_core.v3.model.messages import TelegramRapidAnswerResponse, TextualR
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent
 from wenet.interface.client import Oauth2Client
 from wenet.interface.service_api import ServiceApiInterface
-from wenet.model.callback_message.message import QuestionToAnswerMessage, AnsweredQuestionMessage
+from wenet.model.callback_message.message import QuestionToAnswerMessage, AnsweredQuestionMessage, AnsweredPickedMessage
 from wenet.model.task.task import Task, TaskGoal
 from wenet.model.task.transaction import TaskTransaction
 from wenet.model.user.profile import WeNetUserProfile
@@ -37,10 +37,13 @@ class TestAskForHelpHandler(TestCase):
             {
                 "taskId": "task_id",
                 "userId": "questioning_user",
-                "question": "question"
+                "question": "question",
+                "sensitive": True,
+                "anonymous": True,
+                "positionOfAnswerer": handler.INTENT_ASK_TO_NEARBY
             },
             "question",
-            "user_id"), user_object=WeNetUserProfile.empty("receiver_id"), questioning_user=questioning_user, sensitive=True, anonymous=True)
+            "user_id"), user_object=WeNetUserProfile.empty("receiver_id"), questioning_user=questioning_user)
         self.assertIsInstance(response, TelegramRapidAnswerResponse)
         self.assertEqual(3, len(response.options))
         self.assertEqual(3, len(handler.cache._cache))
@@ -65,10 +68,13 @@ class TestAskForHelpHandler(TestCase):
             {
                 "taskId": "task_id",
                 "userId": "questioning_user",
-                "question": "question"
+                "question": "question",
+                "sensitive": True,
+                "anonymous": False,
+                "positionOfAnswerer": handler.INTENT_ASK_TO_NEARBY
             },
             "question",
-            "user_id"), user_object=WeNetUserProfile.empty("receiver_id"), questioning_user=questioning_user, sensitive=True, anonymous=False)
+            "user_id"), user_object=WeNetUserProfile.empty("receiver_id"), questioning_user=questioning_user)
         self.assertIsInstance(response, TelegramRapidAnswerResponse)
         self.assertEqual(3, len(response.options))
         self.assertEqual(3, len(handler.cache._cache))
@@ -95,10 +101,12 @@ class TestAskForHelpHandler(TestCase):
                 "taskId": "task_id",
                 "userId": "questioning_user",
                 "question": "question",
-                "answer": "yes"
+                "sensitive": False,
+                "anonymous": False,
+                "positionOfAnswerer": handler.INTENT_ASK_TO_NEARBY
             },
             "question",
-            "user_id"), user_object=WeNetUserProfile.empty("receiver_id"), questioning_user=questioning_user, sensitive=False, anonymous=False)
+            "user_id"), user_object=WeNetUserProfile.empty("receiver_id"), questioning_user=questioning_user)
         self.assertIsInstance(response, TelegramRapidAnswerResponse)
         self.assertEqual(3, len(response.options))
         self.assertEqual(3, len(handler.cache._cache))
@@ -124,10 +132,13 @@ class TestAskForHelpHandler(TestCase):
             {
                 "taskId": "task_id",
                 "userId": "questioning_user",
-                "question": "question"
+                "question": "question",
+                "sensitive": True,
+                "anonymous": True,
+                "positionOfAnswerer": handler.INTENT_ASK_TO_ANYWHERE
             },
             "question",
-            "user_id"), user_object=WeNetUserProfile.empty("receiver_id"), questioning_user=questioning_user, sensitive=True, anonymous=True)
+            "user_id"), user_object=WeNetUserProfile.empty("receiver_id"), questioning_user=questioning_user)
         self.assertIsInstance(response, TelegramRapidAnswerResponse)
         self.assertEqual(4, len(response.options))
         self.assertEqual(4, len(handler.cache._cache))
@@ -152,10 +163,13 @@ class TestAskForHelpHandler(TestCase):
             {
                 "taskId": "task_id",
                 "userId": "questioning_user",
-                "question": "question"
+                "question": "question",
+                "sensitive": True,
+                "anonymous": False,
+                "positionOfAnswerer": handler.INTENT_ASK_TO_ANYWHERE
             },
             "question",
-            "user_id"), user_object=WeNetUserProfile.empty("receiver_id"), questioning_user=questioning_user, sensitive=True, anonymous=False)
+            "user_id"), user_object=WeNetUserProfile.empty("receiver_id"), questioning_user=questioning_user)
         self.assertIsInstance(response, TelegramRapidAnswerResponse)
         self.assertEqual(4, len(response.options))
         self.assertEqual(4, len(handler.cache._cache))
@@ -182,10 +196,12 @@ class TestAskForHelpHandler(TestCase):
                 "taskId": "task_id",
                 "userId": "questioning_user",
                 "question": "question",
-                "answer": "yes"
+                "sensitive": False,
+                "anonymous": False,
+                "positionOfAnswerer": handler.INTENT_ASK_TO_ANYWHERE
             },
             "question",
-            "user_id"), user_object=WeNetUserProfile.empty("receiver_id"), questioning_user=questioning_user, sensitive=False, anonymous=False)
+            "user_id"), user_object=WeNetUserProfile.empty("receiver_id"), questioning_user=questioning_user)
         self.assertIsInstance(response, TelegramRapidAnswerResponse)
         self.assertEqual(4, len(response.options))
         self.assertEqual(4, len(handler.cache._cache))
@@ -205,11 +221,6 @@ class TestAskForHelpHandler(TestCase):
         answerer_user.name.first = "name"
         handler.cache._cache = {}
 
-        question_task = Task("task_id", None, None, "task_type_id", "questioning_user", "app_id", None, TaskGoal("question", ""), attributes={
-            "sensitive": True,
-            "anonymous": True,
-            "positionOfAnswerer": "nearby",
-        }, transactions=[TaskTransaction("transaction_id", "task_id", handler.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), "answerer_user", {"answer": "answer", "anonymous": True})])
         response = handler.handle_answered_question(AnsweredQuestionMessage(
             "app_id",
             "receiver_id",
@@ -221,43 +232,9 @@ class TestAskForHelpHandler(TestCase):
                 "userId": "questioning_user",
                 "question": "question",
                 "transactionId": "transaction_id",
-                "answer": "answer"
-            }), user_object=WeNetUserProfile.empty("questioning_user"), answerer_user=answerer_user, question_task=question_task)
-        self.assertIsInstance(response, TelegramRapidAnswerResponse)
-        self.assertEqual(3, len(response.options))
-        self.assertEqual(3, len(handler.cache._cache))
-        for key in handler.cache._cache:
-            cached_item = handler.cache.get(key)
-            self.assertEqual("transaction_id", cached_item["payload"]["transaction_id"])
-            self.assertEqual("task_id", cached_item["payload"]["task_id"])
-
-    def test_handle_answered_question_sensitive(self):
-        handler = MockAskForHelpHandler()
-        translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
-        translator_instance.translate = Mock(return_value="")
-        handler._translator.get_translation_instance = Mock(return_value=translator_instance)
-        answerer_user = WeNetUserProfile.empty("answerer_user")
-        answerer_user.name.first = "name"
-        handler.cache._cache = {}
-
-        question_task = Task("task_id", None, None, "task_type_id", "questioning_user", "app_id", None, TaskGoal("question", ""), attributes={
-            "sensitive": True,
-            "anonymous": False,
-            "positionOfAnswerer": "nearby",
-        }, transactions=[TaskTransaction("transaction_id", "task_id", handler.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), "answerer_user", {"answer": "answer", "anonymous": False})])
-        response = handler.handle_answered_question(AnsweredQuestionMessage(
-            "app_id",
-            "receiver_id",
-            "answer",
-            "transaction_id",
-            "user_id",
-            {
-                "taskId": "task_id",
-                "userId": "questioning_user",
-                "question": "question",
-                "transactionId": "transaction_id",
-                "answer": "answer"
-            }), user_object=WeNetUserProfile.empty("questioning_user"), answerer_user=answerer_user, question_task=question_task)
+                "answer": "answer",
+                "anonymous": True
+            }), user_object=WeNetUserProfile.empty("questioning_user"), answerer_user=answerer_user)
         self.assertIsInstance(response, TelegramRapidAnswerResponse)
         self.assertEqual(3, len(response.options))
         self.assertEqual(3, len(handler.cache._cache))
@@ -275,11 +252,6 @@ class TestAskForHelpHandler(TestCase):
         answerer_user.name.first = "name"
         handler.cache._cache = {}
 
-        question_task = Task("task_id", None, None, "task_type_id", "questioning_user", "app_id", None, TaskGoal("question", ""), attributes={
-            "sensitive": False,
-            "anonymous": False,
-            "positionOfAnswerer": "nearby",
-        }, transactions=[TaskTransaction("transaction_id", "task_id", handler.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), "answerer_user", {"answer": "answer", "anonymous": False})])
         response = handler.handle_answered_question(AnsweredQuestionMessage(
             "app_id",
             "receiver_id",
@@ -291,8 +263,9 @@ class TestAskForHelpHandler(TestCase):
                 "userId": "questioning_user",
                 "question": "question",
                 "transactionId": "transaction_id",
-                "answer": "answer"
-            }), user_object=WeNetUserProfile.empty("questioning_user"), answerer_user=answerer_user, question_task=question_task)
+                "answer": "answer",
+                "anonymous": False
+            }), user_object=WeNetUserProfile.empty("questioning_user"), answerer_user=answerer_user)
         self.assertIsInstance(response, TelegramRapidAnswerResponse)
         self.assertEqual(3, len(response.options))
         self.assertEqual(3, len(handler.cache._cache))
@@ -300,6 +273,27 @@ class TestAskForHelpHandler(TestCase):
             cached_item = handler.cache.get(key)
             self.assertEqual("transaction_id", cached_item["payload"]["transaction_id"])
             self.assertEqual("task_id", cached_item["payload"]["task_id"])
+
+    def test_handle_answered_picked(self):
+        handler = MockAskForHelpHandler()
+        translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
+        translator_instance.translate = Mock(return_value="")
+        handler._translator.get_translation_instance = Mock(return_value=translator_instance)
+        answerer_user = WeNetUserProfile.empty("answerer_user")
+        answerer_user.name.first = "name"
+        handler.cache._cache = {}
+
+        response = handler.handle_answered_picked(AnsweredPickedMessage(
+            "app_id",
+            "receiver_id",
+            "task_id",
+            "transaction_id",
+            {
+                "taskId": "task_id",
+                "question": "question",
+                "transactionId": "transaction_id"
+            }), user_object=WeNetUserProfile.empty("questioning_user"))
+        self.assertIsInstance(response, TextualResponse)
 
     def test_action_question(self):
         handler = MockAskForHelpHandler()
