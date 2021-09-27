@@ -1,3 +1,5 @@
+from __future__ import absolute_import, annotations
+
 import json
 import logging
 import os
@@ -34,12 +36,13 @@ from wenet.model.task.task import Task, TaskGoal
 from wenet.model.task.transaction import TaskTransaction
 from wenet.model.user.profile import WeNetUserProfile
 
+
 logger = logging.getLogger("uhopper.chatbot.wenet.askforhelp.chatbot")
 
 
 class AskForHelpHandler(WenetEventHandler):
     """
-    The class that manages the Ask For Help Wenet chatbot.
+    The class that manages the Ask For Help WeNet chatbot.
 
     This is a DFA (deterministic finite automata), where the next action is given either by the current state,
     the intent of the incoming event or both the two things.
@@ -54,10 +57,6 @@ class AskForHelpHandler(WenetEventHandler):
     CONTEXT_SOCIAL_CLOSENESS = "social_closeness"
     CONTEXT_ANSWER_TO_QUESTION = "answer_to_question"
     CONTEXT_QUESTION_TO_ANSWER = "question_to_answer"
-    CONTEXT_MESSAGE_TO_REPORT = "message_to_report"
-    CONTEXT_REPORTING_IS_QUESTION = "reporting_is_question"
-    CONTEXT_REPORTING_REASON = "reporting_reason"
-    CONTEXT_ORIGINAL_QUESTION_REPORTING = "original_question_reporting"
     CONTEXT_PROPOSED_TASKS = "proposed_tasks"
     CONTEXT_PENDING_ANSWERS = "pending_answers"
     CONTEXT_TASK_ID = "task_id"
@@ -149,8 +148,7 @@ class AskForHelpHandler(WenetEventHandler):
 
         self.max_users = max_users
 
-        JobManager.instance().add_job(PendingMessagesJob("wenet_ask_for_help_pending_messages_job",
-                                                         self._instance_namespace, self._connector, None))
+        JobManager.instance().add_job(PendingMessagesJob("wenet_ask_for_help_pending_messages_job", self._instance_namespace, self._connector, logger_connectors))
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_ASK, self.action_question_0).with_rule(
                 intent=self.INTENT_ASK
@@ -294,7 +292,8 @@ class AskForHelpHandler(WenetEventHandler):
         if not context:
             user_accounts = self.get_user_accounts(wenet_user_id)
             if len(user_accounts) != 1:
-                raise Exception(f"No context associated with Wenet user {wenet_user_id}")
+                logger.error(f"No context associated with WeNet user {wenet_user_id}")
+                raise Exception(f"No context associated with WeNet user {wenet_user_id}")
             context = user_accounts[0].context
         cached_locale = self.cache.get(self.CACHE_LOCALE.format(wenet_user_id))
         if not cached_locale:
@@ -304,8 +303,7 @@ class AskForHelpHandler(WenetEventHandler):
                 logger.info(f"Unable to retrieve user profile [{wenet_user_id}]")
                 return "en"
             locale = user_object.locale if user_object.locale else "en"
-            self.cache.cache({"locale": locale}, ttl=int(os.getenv("LOCALE_TTL", 86400)),
-                             key=self.CACHE_LOCALE.format(wenet_user_id))
+            self.cache.cache({"locale": locale}, ttl=int(os.getenv("LOCALE_TTL", 86400)), key=self.CACHE_LOCALE.format(wenet_user_id))
             return locale
         return cached_locale.get("locale", "en")
 
@@ -334,10 +332,12 @@ class AskForHelpHandler(WenetEventHandler):
 
     def _clear_context(self, context: ConversationContext) -> ConversationContext:
         context_to_remove = [
-            self.CONTEXT_CURRENT_STATE, self.CONTEXT_ASKED_QUESTION, self.CONTEXT_SOCIAL_CLOSENESS,
-            self.CONTEXT_QUESTION_TO_ANSWER, self.CONTEXT_MESSAGE_TO_REPORT,
-            self.CONTEXT_REPORTING_IS_QUESTION, self.CONTEXT_REPORTING_REASON, self.CONTEXT_ORIGINAL_QUESTION_REPORTING,
-            self.CONTEXT_SENSITIVE_QUESTION, self.CONTEXT_ANONYMOUS_QUESTION]
+            self.CONTEXT_CURRENT_STATE, self.CONTEXT_ASKED_QUESTION, self.CONTEXT_QUESTION_DOMAIN,
+            self.CONTEXT_DOMAIN_INTEREST, self.CONTEXT_BELIEF_VALUES_SIMILARITY, self.CONTEXT_SENSITIVE_QUESTION,
+            self.CONTEXT_ANONYMOUS_QUESTION, self.CONTEXT_SOCIAL_CLOSENESS, self.CONTEXT_ANSWER_TO_QUESTION,
+            self.CONTEXT_QUESTION_TO_ANSWER, self.CONTEXT_SENSITIVE_QUESTION, self.CONTEXT_TASK_ID,
+            self.CONTEXT_TRANSACTION_ID, self.CONTEXT_CHOSEN_ANSWER_REASON
+        ]
         for context_key in context_to_remove:
             context.delete_static_state(context_key)
         return context
@@ -346,10 +346,12 @@ class AskForHelpHandler(WenetEventHandler):
         """
         Returns True if the user is in another action (e.g. inside the /ask flow), False otherwise
         """
-        statuses = [self.STATE_ANSWERING, self.STATE_ANSWERING_SENSITIVE, self.STATE_ANSWERING_ANONYMOUSLY,
-                    self.STATE_QUESTION_0, self.STATE_QUESTION_1, self.STATE_QUESTION_2, self.STATE_QUESTION_3,
-                    self.STATE_QUESTION_4, self.STATE_QUESTION_4_1, self.STATE_QUESTION_5, self.STATE_QUESTION_6,
-                    self.STATE_BEST_ANSWER_0, self.STATE_BEST_ANSWER_1]
+        statuses = [
+            self.STATE_ANSWERING, self.STATE_ANSWERING_SENSITIVE, self.STATE_ANSWERING_ANONYMOUSLY,
+            self.STATE_QUESTION_0, self.STATE_QUESTION_1, self.STATE_QUESTION_2, self.STATE_QUESTION_3,
+            self.STATE_QUESTION_4, self.STATE_QUESTION_4_1, self.STATE_QUESTION_5, self.STATE_QUESTION_6,
+            self.STATE_BEST_ANSWER_0, self.STATE_BEST_ANSWER_1
+        ]
         current_status = context.get_static_state(self.CONTEXT_CURRENT_STATE, "")
         return current_status in statuses
 
@@ -384,7 +386,8 @@ class AskForHelpHandler(WenetEventHandler):
             TextualResponse(message_1),
             TextualResponse(message_2),
             TextualResponse(badges_message),
-            final_message_with_button]
+            final_message_with_button
+        ]
 
     def action_start(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
@@ -396,7 +399,7 @@ class AskForHelpHandler(WenetEventHandler):
 
     def _send_new_message_from_wenet_notification(self, user: UserConversationContext) -> None:
         """
-        Clear the context and send a message to the user saying that a new message from wenet has come,
+        Clear the context and send a message to the user saying that a new message from WeNet has come,
         and that the previous operation is lost
         """
         context = self._clear_context(user.context)
@@ -410,9 +413,8 @@ class AskForHelpHandler(WenetEventHandler):
         """
         user_accounts = self.get_user_accounts(message.receiver_id)
         if len(user_accounts) != 1:
-            error_message = f"No context associated with Wenet user {message.receiver_id}"
-            logger.error(error_message)
-            raise ValueError(error_message)
+            logger.error(f"No context associated with WeNet user {message.receiver_id}")
+            raise ValueError(f"No context associated with WeNet user {message.receiver_id}")
 
         user_account = user_accounts[0]
         # in case the user was doing something else, the previous operation is cancelled
@@ -531,7 +533,8 @@ class AskForHelpHandler(WenetEventHandler):
         # incentive messages or badges
         user_accounts = self.get_user_accounts(message.receiver_id)
         if len(user_accounts) != 1:
-            raise Exception(f"No context associated with Wenet user {message.receiver_id}")
+            logger.error(f"No context associated with WeNet user {message.receiver_id}")
+            raise Exception(f"No context associated with WeNet user {message.receiver_id}")
 
         user_account = user_accounts[0]
         context = user_account.context
@@ -572,8 +575,8 @@ class AskForHelpHandler(WenetEventHandler):
             else:
                 logger.warning(f"Received unrecognized message of type {type(message)}: {message.to_repr()}")
                 raise Exception(f"Received unrecognized message of type {type(message)}: {message.to_repr()}")
-        except RefreshTokenExpiredError:
-            logger.exception("Refresh token is not longer valid")
+        except RefreshTokenExpiredError as e:
+            logger.exception("Refresh token is not longer valid", exc_info=e)
             notification_event = NotificationEvent(social_details=user_account.social_details)
             notification_event.with_message(
                 TelegramTextualResponse(
@@ -621,22 +624,23 @@ class AskForHelpHandler(WenetEventHandler):
             return self.action_answer_remind_later(incoming_event, button_payload)
         elif button_payload.intent == self.INTENT_ANSWER_PICKED_QUESTION:
             return self.action_answer_picked_question(incoming_event, button_payload)
-        raise ValueError(f"No action associated with intent [{button_payload.intent}]")
+        else:
+            logger.error(f"No action associated with intent [{button_payload.intent}]")
+            raise ValueError(f"No action associated with intent [{button_payload.intent}]")
 
     def handle_wenet_authentication_result(self, message: WeNetAuthenticationEvent) -> NotificationEvent:
         if not isinstance(self._connector, TelegramSocialConnector):
-            raise Exception("Expected telegram social connector")
+            logger.error(f"Expected telegram social connector, got [{type(self._connector)}]")
+            raise Exception(f"Expected telegram social connector, got [{type(self._connector)}]")
 
-        social_details = TelegramDetails(int(message.external_id), int(message.external_id),
-                                         self._connector.get_telegram_bot_id())
+        social_details = TelegramDetails(int(message.external_id), int(message.external_id), self._connector.get_telegram_bot_id())
         try:
             self._save_wenet_and_telegram_user_id_to_context(message, social_details)
             context = self._interface_connector.get_user_context(social_details)
-            messages = self._get_start_messages(self._get_user_locale_from_wenet_id(
-                context.context.get_static_state(self.CONTEXT_WENET_USER_ID), context.context))
+            messages = self._get_start_messages(self._get_user_locale_from_wenet_id(context.context.get_static_state(self.CONTEXT_WENET_USER_ID), context.context))
             return NotificationEvent(social_details=social_details, messages=messages)
         except Exception as e:
-            logger.exception("Unable to complete the wenet login", exc_info=e)
+            logger.exception("Unable to complete the WeNet login", exc_info=e)
             return NotificationEvent(social_details).with_message(
                 TextualResponse("Unable to complete the WeNetAuthentication")
             )
@@ -826,7 +830,7 @@ class AskForHelpHandler(WenetEventHandler):
 
     def action_question_final(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
         """
-        Conclude the /question flow, with a final message
+        Conclude the /ask flow, with a final message
         """
         if incoming_event.context is not None:
             service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
@@ -902,7 +906,7 @@ class AskForHelpHandler(WenetEventHandler):
 
     def is_first_answer(self, wenet_user_id: str) -> bool:
         """
-        Use Redis to keep track of the fact that a Wenet user has already answered someone else's question.
+        Use Redis to keep track of the fact that a WeNet user has already answered someone else's question.
         This piece of information is used to decide whether or not showing the conduct instructions
         """
         first_answer = self.cache.get(self.FIRST_ANSWER.format(wenet_user_id))
@@ -923,14 +927,13 @@ class AskForHelpHandler(WenetEventHandler):
             is_first_answer = self.is_first_answer(user_id)
             show_conduct_message = is_first_answer or random.randint(1, 10) <= 2
         context.with_static_state(self.CONTEXT_QUESTION_TO_ANSWER, button_payload.payload["task_id"])
-        if button_payload.payload.get("sensitive"):
+        if button_payload.payload.get("sensitive", False):
             context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING_SENSITIVE)
-        else:
-            context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING)
-        if button_payload.payload.get("sensitive"):
             message = self._translator.get_translation_instance(user_locale).with_text("answer_sensitive_question").translate()
         else:
+            context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING)
             message = self._translator.get_translation_instance(user_locale).with_text("answer_question").translate()
+
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_context(context)
         response.with_message(TextualResponse(message))
@@ -953,7 +956,7 @@ class AskForHelpHandler(WenetEventHandler):
         context.delete_static_state(self.CONTEXT_PROPOSED_TASKS)
         user_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
         task = service_api.get_task(button_payload.payload["task_id"])
-        if button_payload.payload.get("sensitive"):
+        if button_payload.payload.get("sensitive", False):
             context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING_SENSITIVE)
             message = self._translator.get_translation_instance(user_locale).with_text("you_are_answering_to_sensitive")\
                 .with_substitution("question", self.parse_text_with_markdown(task.goal.name))\
@@ -979,9 +982,8 @@ class AskForHelpHandler(WenetEventHandler):
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         context = incoming_event.context
         if not context.has_static_state(self.CONTEXT_QUESTION_TO_ANSWER):
-            error_message = "Illegal state, expected the question ID in the context, but it does not exist"
-            logger.error(error_message)
-            raise ValueError(error_message)
+            logger.error("Illegal state, expected the question ID in the context, but it does not exist")
+            raise ValueError("Illegal state, expected the question ID in the context, but it does not exist")
 
         response = OutgoingEvent(social_details=incoming_event.social_details)
         if isinstance(incoming_event.incoming_message, IncomingTextMessage):
@@ -1012,10 +1014,9 @@ class AskForHelpHandler(WenetEventHandler):
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         context = incoming_event.context
 
-        if not context.has_static_state(self.CONTEXT_QUESTION_TO_ANSWER):
-            error_message = "Illegal state, expected the question ID in the context, but it does not exist"
-            logger.error(error_message)
-            raise ValueError(error_message)
+        if not context.has_static_state(self.CONTEXT_QUESTION_TO_ANSWER) or not context.has_static_state(self.CONTEXT_ANSWER_TO_QUESTION):
+            logger.error("Illegal state, expected the question and the answer in the context, but they do not exist")
+            raise ValueError("Illegal state, expected the question and the answer in the context, but they do not exist")
         response = OutgoingEvent(social_details=incoming_event.social_details)
         question_id = context.get_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
         answer = context.get_static_state(self.CONTEXT_ANSWER_TO_QUESTION)
@@ -1033,7 +1034,8 @@ class AskForHelpHandler(WenetEventHandler):
             response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
             logger.error(
                 "Error in the creation of the transaction for answering the task [%s]. The service API responded with code %d and message %s"
-                % (question_id, e.http_status_code, json.dumps(e.server_response)))
+                % (question_id, e.http_status_code, json.dumps(e.server_response))
+            )
         finally:
             context.delete_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
             context.delete_static_state(self.CONTEXT_ANSWER_TO_QUESTION)
@@ -1054,9 +1056,8 @@ class AskForHelpHandler(WenetEventHandler):
         context = incoming_event.context
 
         if not context.has_static_state(self.CONTEXT_QUESTION_TO_ANSWER):
-            error_message = "Illegal state, expected the question ID in the context, but it does not exist"
-            logger.error(error_message)
-            raise ValueError(error_message)
+            logger.error("Illegal state, expected the question ID in the context, but it does not exist")
+            raise ValueError("Illegal state, expected the question ID in the context, but it does not exist")
         response = OutgoingEvent(social_details=incoming_event.social_details)
         if isinstance(incoming_event.incoming_message, IncomingTextMessage):
             question_id = context.get_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
@@ -1072,7 +1073,8 @@ class AskForHelpHandler(WenetEventHandler):
                 response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
                 logger.error(
                     "Error in the creation of the transaction for answering the task [%s]. The service API responded with code %d and message %s"
-                    % (question_id, e.http_status_code, json.dumps(e.server_response)))
+                    % (question_id, e.http_status_code, json.dumps(e.server_response))
+                )
             finally:
                 context.delete_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
                 context.delete_static_state(self.CONTEXT_CURRENT_STATE)
@@ -1101,7 +1103,8 @@ class AskForHelpHandler(WenetEventHandler):
             response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
             logger.error(
                 "Error in the creation of the transaction for not answering the task [%s]. The service API responded with code %d and message %s"
-                % (question_id, e.http_status_code, json.dumps(e.server_response)))
+                % (question_id, e.http_status_code, json.dumps(e.server_response))
+            )
         response.with_context(context)
         return response
 
@@ -1202,7 +1205,8 @@ class AskForHelpHandler(WenetEventHandler):
             response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
             logger.error(
                 "Error in the creation of the transaction for reporting the task [%s]. The service API responded with code %d and message %s"
-                % (task_id, e.http_status_code, json.dumps(e.server_response)))
+                % (task_id, e.http_status_code, json.dumps(e.server_response))
+            )
         return response
 
     def action_more_answers(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
@@ -1225,7 +1229,8 @@ class AskForHelpHandler(WenetEventHandler):
             response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
             logger.error(
                 "Error in the creation of the transaction to ask more responses for the task [%s]. The service API responded with code %d and message %s"
-                % (task_id, e.http_status_code, json.dumps(e.server_response)))
+                % (task_id, e.http_status_code, json.dumps(e.server_response))
+            )
         finally:
             context.delete_static_state(self.CONTEXT_CURRENT_STATE)
             response.with_context(context)
@@ -1301,7 +1306,8 @@ class AskForHelpHandler(WenetEventHandler):
             response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
             logger.error(
                 "Error in the creation of the transaction for reporting the task [%s]. The service API responded with code %d and message %s"
-                % (task_id, e.http_status_code, json.dumps(e.server_response)))
+                % (task_id, e.http_status_code, json.dumps(e.server_response))
+            )
         finally:
             context.delete_static_state(self.CONTEXT_TASK_ID)
             context.delete_static_state(self.CONTEXT_TRANSACTION_ID)
