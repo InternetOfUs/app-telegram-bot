@@ -1198,8 +1198,7 @@ class AskForHelpHandler(WenetEventHandler):
             transaction = TaskTransaction(None, task_id, transaction_label, int(datetime.now().timestamp()), int(datetime.now().timestamp()), actioneer_id, attributes, [])
             service_api.create_task_transaction(transaction)
             logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
-            message = self._translator.get_translation_instance(user_locale).with_text(
-                "report_final_message").translate()
+            message = self._translator.get_translation_instance(user_locale).with_text("report_final_message").translate()
             response.with_message(TextualResponse(message))
         except CreationError as e:
             response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
@@ -1331,7 +1330,8 @@ class AskForHelpHandler(WenetEventHandler):
 
         if not tasks:
             response.with_message(TextualResponse(
-                self._translator.get_translation_instance(user_locale).with_text("answers_no_tasks").translate()))
+                self._translator.get_translation_instance(user_locale).with_text("answers_no_tasks").translate())
+            )
         else:
             if len(tasks) > 3:
                 # if more than 3 tasks, pick 3 random
