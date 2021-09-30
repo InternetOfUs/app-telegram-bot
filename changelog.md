@@ -9,6 +9,13 @@
 - Removed submodules and added the libraries as packages
 - Updated question flow adding social closeness input in the question creation flow instead of similarity and reason
 - Integrated domain data in the question flow
+- Integrated domain similarity data in the question flow
+- Added environment variables for communityId and maxUsers fields
+- Integrated belief and values similarity data in the question flow
+- Updated app commands: renamed `/question` into `/ask` and `/answer` into `/questions`
+- Integrated rating flow when accepting an answer
+- Updated common models to fix service APIs methods for getting all tasks of an application and for an user
+- Integrated new structures of the callback messages
 - Refactored PendingMessagesJob
 
 ## 1.0.10

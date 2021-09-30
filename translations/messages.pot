@@ -48,6 +48,39 @@ msgstr ""
 msgid "domain_question"
 msgstr ""
 
+msgid "studying_career_button"
+msgstr ""
+
+msgid "local_university_button"
+msgstr ""
+
+msgid "local_things_button"
+msgstr ""
+
+msgid "physical_activity_button"
+msgstr ""
+
+msgid "cultural_interests_button"
+msgstr ""
+
+msgid "food_and_cooking_button"
+msgstr ""
+
+msgid "cinema_theatre_button"
+msgstr ""
+
+msgid "music_button"
+msgstr ""
+
+msgid "arts_and_crafts_button"
+msgstr ""
+
+msgid "life_ponders_button"
+msgstr ""
+
+msgid "varia_misc_button"
+msgstr ""
+
 msgid "studying_career"
 msgstr ""
 
@@ -79,6 +112,30 @@ msgid "life_ponders"
 msgstr ""
 
 msgid "varia_misc"
+msgstr ""
+
+msgid "domain_similarity_question"
+msgstr ""
+
+msgid "answer_similar_domain"
+msgstr ""
+
+msgid "answer_different_domain"
+msgstr ""
+
+msgid "answer_indifferent_domain"
+msgstr ""
+
+msgid "belief_values_question"
+msgstr ""
+
+msgid "answer_similar_belief_values"
+msgstr ""
+
+msgid "answer_different_belief_values"
+msgstr ""
+
+msgid "answer_indifferent_belief_values"
 msgstr ""
 
 msgid "sensitive_question"
@@ -211,6 +268,30 @@ msgid "answers_tasks_intro"
 msgstr ""
 
 msgid "answers_tasks_choose"
+msgstr ""
+
+msgid "best_answer_0"
+msgstr ""
+
+msgid "best_answer_helpful"
+msgstr ""
+
+msgid "not_at_all_helpful"
+msgstr ""
+
+msgid "slightly_helpful"
+msgstr ""
+
+msgid "somewhat_helpful"
+msgstr ""
+
+msgid "very_helpful"
+msgstr ""
+
+msgid "extremely_helpful"
+msgstr ""
+
+msgid "reason_is_not_text"
 msgstr ""
 
 msgid "best_answer_final_message"

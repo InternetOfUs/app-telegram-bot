@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-09-14 18:46+0200\n"
+"PO-Revision-Date: 2021-09-23 18:07+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -20,9 +20,10 @@ msgstr ""
 #: src/ask_for_help/handler.py:32
 msgid "info_text"
 msgstr ""
-"/question командаар асуулт асууж болно. /answer командаар нээлттэй байгаа "
+"/ask командаар асуулт асууж болно. /questions командаар нээлттэй байгаа "
 "асуултуудыг шалган хариулж болно. Одоогийн хийгдэж байгаа үйл ажиллагааг "
-"цуцлахыг хүсвэл /cancel -ийг хэрэглэнэ үү."
+"цуцлахыг хүсвэл /cancel -ийг хэрэглэнэ үү. Та support@internetofus.eu имэйл "
+"илгээх замаар алдааны талаар мэдээлэх боломжтой!"
 
 #: src/ask_for_help/handler.py:58
 msgid "start_text_1"
@@ -62,38 +63,101 @@ msgstr ""
 "\n"
 "1/6: Таны асуултын талбар юу вэ?"
 
-msgid "studying_career"
+msgid "studying_career_button"
 msgstr ":book: Суралцах / Ажил"
 
-msgid "local_university"
+msgid "local_university_button"
 msgstr ":mortar_board: Орон нутгийн их сургууль"
 
-msgid "local_things"
+msgid "local_things_button"
 msgstr ":world_map: Орон нутгийн зүйлс"
 
-msgid "physical_activity"
+msgid "physical_activity_button"
 msgstr ":runner: Идэвхтэй хөдөлгөөн хийх"
 
-msgid "cultural_interests"
+msgid "cultural_interests_button"
 msgstr ":classical_building: Соёлын сонирхол"
 
-msgid "food_and_cooking"
+msgid "food_and_cooking_button"
 msgstr ":cooking: Хоол, хоол хийх"
 
-msgid "cinema_theatre"
+msgid "cinema_theatre_button"
 msgstr ":popcorn: Кино, театр"
 
-msgid "music"
+msgid "music_button"
 msgstr ":notes: Хөгжим"
 
-msgid "arts_and_crafts"
+msgid "arts_and_crafts_button"
 msgstr ":art: Урлаг, гар урлал"
 
-msgid "life_ponders"
+msgid "life_ponders_button"
 msgstr ":thinking_face: Амьдрал тунгаан боддог"
 
-msgid "varia_misc"
+msgid "varia_misc_button"
 msgstr ":space_invader: Янз бүрийн / өөр"
+
+msgid "studying_career"
+msgstr "Суралцах / Ажил"
+
+msgid "local_university"
+msgstr "Орон нутгийн их сургууль"
+
+msgid "local_things"
+msgstr "Орон нутгийн зүйлс"
+
+msgid "physical_activity"
+msgstr "Идэвхтэй хөдөлгөөн хийх"
+
+msgid "cultural_interests"
+msgstr "Соёлын сонирхол"
+
+msgid "food_and_cooking"
+msgstr "Хоол, хоол хийх"
+
+msgid "cinema_theatre"
+msgstr "Кино, театр"
+
+msgid "music"
+msgstr "Хөгжим"
+
+msgid "arts_and_crafts"
+msgstr "Урлаг, гар урлал"
+
+msgid "life_ponders"
+msgstr "Амьдрал тунгаан боддог"
+
+msgid "varia_misc"
+msgstr "Янз бүрийн / өөр"
+
+msgid "domain_similarity_question"
+msgstr ""
+"За, одоо бид таны асуултанд ямар хүмүүсийг урихыг зааж өгч болно.\n"
+"\n"
+"2/6: Эдгээр хүмүүс энэ *({domain})-д* тантай ижил *сонирхолтой* байх "
+"хэрэгтэй юу??"
+
+msgid "answer_similar_domain"
+msgstr "Үүнтэй төстэй"
+
+msgid "answer_different_domain"
+msgstr "Өөр өөр"
+
+msgid "answer_indifferent_domain"
+msgstr "Хайхрамжгүй хандаж, анхааралдаа авах хэрэггүй"
+
+msgid "belief_values_question"
+msgstr ""
+"3/6: Эдгээр хүмүүс танаас ижил төстэй эсвэл өөр *итгэл үнэмшил, үнэт "
+"зүйлтэй* байх ёстой юу?"
+
+msgid "answer_similar_belief_values"
+msgstr "Үүнтэй төстэй"
+
+msgid "answer_different_belief_values"
+msgstr "Өөр өөр"
+
+msgid "answer_indifferent_belief_values"
+msgstr "Хайхрамжгүй хандаж, анхааралдаа авах хэрэггүй"
 
 msgid "sensitive_question"
 msgstr ""
@@ -270,9 +334,34 @@ msgstr "Одоогоор байгаа асуултууд:"
 msgid "answers_tasks_choose"
 msgstr "Хариулах асуултаа сонгоно уу"
 
-msgid "best_answer_final_message"
+msgid "best_answer_0"
+msgstr "Та яагаад энэ хариултыг сонгосон бэ?"
+
+msgid "best_answer_helpful"
 msgstr ""
-"Тусалсандаа баяртай байна! Өөр асуулт байгаа бол /question команд ашиглана уу"
+"Таны тодорхой зорилгын дагуу таныг өөр өөр хэрэглэгчидтэй холбоход би хэр "
+"сайн ажилласан бэ?"
+
+msgid "not_at_all_helpful"
+msgstr "1 - огт тус болохгүй"
+
+msgid "slightly_helpful"
+msgstr "2 - Бага зэрэг тустай"
+
+msgid "somewhat_helpful"
+msgstr "3 - Шийдэж чадахгүй байна"
+
+msgid "very_helpful"
+msgstr "4 - тустай"
+
+msgid "extremely_helpful"
+msgstr "5 - Маш тустай"
+
+msgid "reason_is_not_text"
+msgstr "Та яагаад энэ хариултыг сонгосоноо тодруулна уу."
+
+msgid "best_answer_final_message"
+msgstr "Оруулсан танд баярлалаа! Хэзээ ч хамаагүй шинэ асуулт асуугаарай!"
 
 msgid "expired_button_message"
 msgstr "Уучлаарай, энэ товч идэвхгүй байна"

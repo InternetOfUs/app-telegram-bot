@@ -14,6 +14,7 @@ declare -a REQUIRED_ENV_VARS=(
                                 "${WENET_APP_ID}"
                                 "${WENET_HUB_URL}"
                                 "${TASK_TYPE_ID}"
+                                "${COMMUNITY_ID}"
                                 "${CLIENT_SECRET}"
                                 "${WENET_AUTHENTICATION_MANAGEMENT_URL}"
                                 "${REDIRECT_URL}"

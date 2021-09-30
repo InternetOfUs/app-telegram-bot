@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-09-14 18:45+0200\n"
+"PO-Revision-Date: 2021-09-23 18:07+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -20,7 +20,7 @@ msgstr ""
 #: src/ask_for_help/handler.py:32
 msgid "info_text"
 msgstr ""
-"You can ask a question with the /question command. With /answer you can list "
+"You can ask a question with the /ask command. With /questions you can list "
 "the currently open questions to answer. If you want to cancel your current "
 "operation, use /cancel . You can report a bug by sending an email to "
 "support@internetofus.eu !"
@@ -65,38 +65,102 @@ msgstr ""
 "\n"
 "1/6: What’s the domain of your question?"
 
-msgid "studying_career"
+msgid "studying_career_button"
 msgstr ":book: Studying / Career"
 
-msgid "local_university"
+msgid "local_university_button"
 msgstr ":mortar_board: Local university"
 
-msgid "local_things"
+msgid "local_things_button"
 msgstr ":world_map: Local things"
 
-msgid "physical_activity"
+msgid "physical_activity_button"
 msgstr ":runner: Physical activity"
 
-msgid "cultural_interests"
+msgid "cultural_interests_button"
 msgstr ":classical_building: Cultural interests"
 
-msgid "food_and_cooking"
+msgid "food_and_cooking_button"
 msgstr ":cooking: Food and cooking"
 
-msgid "cinema_theatre"
+msgid "cinema_theatre_button"
 msgstr ":popcorn: Cinema, theatre"
 
-msgid "music"
+msgid "music_button"
 msgstr ":notes: Music"
 
-msgid "arts_and_crafts"
+msgid "arts_and_crafts_button"
 msgstr ":art: Arts & crafts"
 
-msgid "life_ponders"
+msgid "life_ponders_button"
 msgstr ":thinking_face: Life ponders"
 
-msgid "varia_misc"
+msgid "varia_misc_button"
 msgstr ":space_invader: Varia / Misc"
+
+msgid "studying_career"
+msgstr "Studying / Career"
+
+msgid "local_university"
+msgstr "Local university"
+
+msgid "local_things"
+msgstr "Local things"
+
+msgid "physical_activity"
+msgstr "Physical activity"
+
+msgid "cultural_interests"
+msgstr "Cultural interests"
+
+msgid "food_and_cooking"
+msgstr "Food and cooking"
+
+msgid "cinema_theatre"
+msgstr "Cinema, theatre"
+
+msgid "music"
+msgstr "Music"
+
+msgid "arts_and_crafts"
+msgstr "Arts & crafts"
+
+msgid "life_ponders"
+msgstr "Life ponders"
+
+msgid "varia_misc"
+msgstr "Varia / Misc"
+
+msgid "domain_similarity_question"
+msgstr ""
+"Okay, now we can specify the type of people that I will invite for your "
+"question.\n"
+"\n"
+"2/6: Should these persons have similar or different *interest in ({domain})* "
+"than you?"
+
+msgid "answer_similar_domain"
+msgstr "Similar"
+
+msgid "answer_different_domain"
+msgstr "Different"
+
+msgid "answer_indifferent_domain"
+msgstr "Indifferent, don’t take into account"
+
+msgid "belief_values_question"
+msgstr ""
+"3/6: Should these persons have similar or different *belief and values* than "
+"you?"
+
+msgid "answer_similar_belief_values"
+msgstr "Similar"
+
+msgid "answer_different_belief_values"
+msgstr "Different"
+
+msgid "answer_indifferent_belief_values"
+msgstr "Indifferent, don’t take into account"
 
 msgid "sensitive_question"
 msgstr ""
@@ -274,10 +338,34 @@ msgstr "Here are the open questions available to answer:"
 msgid "answers_tasks_choose"
 msgstr "Choose a question to answer :point_down:"
 
-msgid "best_answer_final_message"
+msgid "best_answer_0"
+msgstr "Why did you choose this answer?"
+
+msgid "best_answer_helpful"
 msgstr ""
-"Glad I could help! If you need to ask another question, just use the /"
-"question command :wink:"
+"How well did I do with connecting you to different users following your "
+"specific intentions?"
+
+msgid "not_at_all_helpful"
+msgstr "1 - Not helpful at all"
+
+msgid "slightly_helpful"
+msgstr "2 - A bit helpful"
+
+msgid "somewhat_helpful"
+msgstr "3 - Can’t decide"
+
+msgid "very_helpful"
+msgstr "4 - Helpful"
+
+msgid "extremely_helpful"
+msgstr "5 - Very helpful"
+
+msgid "reason_is_not_text"
+msgstr "Please specify why did you choose this answer."
+
+msgid "best_answer_final_message"
+msgstr "Thanks for the input! Feel free to ask a new question anytime!"
 
 msgid "expired_button_message"
 msgstr "I’m sorry, that question is already resolved."
