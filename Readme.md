@@ -137,6 +137,10 @@ Both the chatbots use the following environment variables
 * `REDIRECT_URL`: the redirection URL associated with the WeNet application
 * `PROJECT_NAME` (optional): a string that will be used as name of the log file (with the format `<PROJECT_NAME>.log`). The default value is `wenet-ask-for-help-chatbot`
 * `LOCALE_TTL` (optional): the time to live of the Redis key in which the user locale is saved, in seconds. By default, it is 86400 (24h).
+* `SENTRY_DSN`: (Optional) The data source name for sentry, if not set the project will not create any event
+* `SENTRY_RELEASE`: (Optional) If set, sentry will associate the events to the given release
+* `SENTRY_ENVIRONMENT`: (Optional) If set, sentry will associate the events to the given environment (ex. `production`, `staging`)
+
 
 Optional variables (to setup Redis):
 - `REDIS_HOST` (default is `localhost`)

@@ -2,6 +2,7 @@ from __future__ import absolute_import, annotations
 
 import logging.config
 import os
+import sentry_sdk
 
 from ask_for_help_bot.handler import AskForHelpHandler
 from chatbot_core.translator.translator import Translator
@@ -11,9 +12,22 @@ from chatbot_core.v3.handler.instance_manager import InstanceManager
 from common.logging_config import get_logging_configuration
 from uhopper.utils.alert.module import AlertModule
 from uhopper.utils.mqtt.handler import MqttSubscriptionHandler
+from sentry_sdk.integrations.logging import LoggingIntegration
 
 logging.config.dictConfig(get_logging_configuration(os.getenv("PROJECT_NAME", "wenet-ask-for-help-chatbot")))
 logger = logging.getLogger("uhopper.chatbot.wenet-ask-for-help-chatbot")
+
+sentry_logging = LoggingIntegration(
+    level=logging.INFO,  # Capture info and above as breadcrumbs
+    event_level=logging.ERROR  # Send errors as events
+)
+
+sentry_sdk.init(
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for performance monitoring.
+    # We recommend adjusting this value in production.
+    traces_sample_rate=1.0
+)
 
 if __name__ == "__main__":
     topic = os.getenv("MQTT_TOPIC")

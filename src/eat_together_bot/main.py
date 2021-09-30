@@ -1,5 +1,6 @@
 import logging.config
 import os
+import sentry_sdk
 
 from common.logging_config import get_logging_configuration
 from eat_together_bot.handler import EatTogetherHandler
@@ -8,9 +9,22 @@ from uhopper.utils.mqtt.handler import MqttSubscriptionHandler
 from chatbot_core.v3.connector.social_connectors.telegram_connector import TelegramSocialConnector
 from chatbot_core.v3.handler.event_dipatcher import MultiThreadEventDispatcher
 from chatbot_core.v3.handler.instance_manager import InstanceManager
+from sentry_sdk.integrations.logging import LoggingIntegration
 
 logging.config.dictConfig(get_logging_configuration("wenet-eat-together-chatbot"))
 logger = logging.getLogger("uhopper.chatbot.wenet-eat-together-chatbot")
+
+sentry_logging = LoggingIntegration(
+    level=logging.INFO,  # Capture info and above as breadcrumbs
+    event_level=logging.ERROR  # Send errors as events
+)
+
+sentry_sdk.init(
+    # Set traces_sample_rate to 1.0 to capture 100%
+    # of transactions for performance monitoring.
+    # We recommend adjusting this value in production.
+    traces_sample_rate=1.0
+)
 
 if __name__ == "__main__":
     topic = os.getenv("MQTT_TOPIC")

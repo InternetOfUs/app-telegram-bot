@@ -18,6 +18,12 @@
 - Integrated new structures of the callback messages
 - Refactored PendingMessagesJob
 
+## 1.0.12
+- Added sentry integration
+
+## 1.0.11
+- Updated common models to hotfix for badges messages
+
 ## 1.0.10
 - Changed the `project` field in the messages logged into the Wenet platform. Now the `appId` is used, instead of the `PROJECT_NAME` environment variable
 
