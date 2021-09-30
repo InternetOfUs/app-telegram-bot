@@ -76,18 +76,28 @@
           - name: build
           - name: test
             in_docker: false
+          - name: test
+            type: coverage
           - name: push
+          - name: notify
       staging:
         stages:
           - name: build
             manual: true
           - name: test
             in_docker: false
+          - name: test
+            type: coverage
           - name: push
           - name: trigger
-            manual: true
             git_ref: develop
       mr:
+        stages:
+          - name: test
+            in_docker: false
+          - name: test
+            type: coverage
+      issue:
         stages:
           - name: test
             in_docker: false
