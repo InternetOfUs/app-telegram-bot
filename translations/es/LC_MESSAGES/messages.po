@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-09-14 18:45+0200\n"
+"PO-Revision-Date: 2021-09-20 17:55+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: es\n"
@@ -65,38 +65,88 @@ msgstr ""
 "\n"
 "1/6: ¿Cuál es el dominio de su pregunta?"
 
-msgid "studying_career"
+msgid "studying_career_button"
 msgstr ":book: Estudiar / Carrera"
 
-msgid "local_university"
+msgid "local_university_button"
 msgstr ":mortar_board: Universidad local"
 
-msgid "local_things"
+msgid "local_things_button"
 msgstr ":world_map: Cosas locales"
 
-msgid "physical_activity"
+msgid "physical_activity_button"
 msgstr ":runner: Actividad física"
 
-msgid "cultural_interests"
+msgid "cultural_interests_button"
 msgstr ":classical_building: Intereses culturales"
 
-msgid "food_and_cooking"
+msgid "food_and_cooking_button"
 msgstr ":cooking: Comida y cocina"
 
-msgid "cinema_theatre"
+msgid "cinema_theatre_button"
 msgstr ":popcorn: Cine, teatro"
 
-msgid "music"
+msgid "music_button"
 msgstr ":notes: Música"
 
-msgid "arts_and_crafts"
+msgid "arts_and_crafts_button"
 msgstr ":art: Arte y artesanía"
 
-msgid "life_ponders"
+msgid "life_ponders_button"
 msgstr ":thinking_face: Reflexiones sobre la vida"
 
-msgid "varia_misc"
+msgid "varia_misc_button"
 msgstr ":space_invader: Varia / Misc"
+
+msgid "studying_career"
+msgstr "Estudiar / Carrera"
+
+msgid "local_university"
+msgstr "Universidad local"
+
+msgid "local_things"
+msgstr "Cosas locales"
+
+msgid "physical_activity"
+msgstr "Actividad física"
+
+msgid "cultural_interests"
+msgstr "Intereses culturales"
+
+msgid "food_and_cooking"
+msgstr "Comida y cocina"
+
+msgid "cinema_theatre"
+msgstr "Cine, teatro"
+
+msgid "music"
+msgstr "Música"
+
+msgid "arts_and_crafts"
+msgstr "Arte y artesanía"
+
+msgid "life_ponders"
+msgstr "Reflexiones sobre la vida"
+
+msgid "varia_misc"
+msgstr "Varia / Misc"
+
+msgid "domain_similarity_question"
+msgstr ""
+"Bien, ahora podemos especificar el tipo de personas a las que invitaré para "
+"su pregunta.\n"
+"\n"
+"2/6: ¿Estas personas deberían tener similar o diferente *interés en "
+"({domain})* que usted?"
+
+msgid "answer_similar_domain"
+msgstr "Similar"
+
+msgid "answer_different_domain"
+msgstr "Diferente"
+
+msgid "answer_indifferent_domain"
+msgstr "Indiferente, no lo tomes en cuenta"
 
 msgid "sensitive_question"
 msgstr ""

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-09-14 18:46+0200\n"
+"PO-Revision-Date: 2021-09-21 09:54+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -62,38 +62,87 @@ msgstr ""
 "\n"
 "1/6: Таны асуултын талбар юу вэ?"
 
-msgid "studying_career"
+msgid "studying_career_button"
 msgstr ":book: Суралцах / Ажил"
 
-msgid "local_university"
+msgid "local_university_button"
 msgstr ":mortar_board: Орон нутгийн их сургууль"
 
-msgid "local_things"
+msgid "local_things_button"
 msgstr ":world_map: Орон нутгийн зүйлс"
 
-msgid "physical_activity"
+msgid "physical_activity_button"
 msgstr ":runner: Идэвхтэй хөдөлгөөн хийх"
 
-msgid "cultural_interests"
+msgid "cultural_interests_button"
 msgstr ":classical_building: Соёлын сонирхол"
 
-msgid "food_and_cooking"
+msgid "food_and_cooking_button"
 msgstr ":cooking: Хоол, хоол хийх"
 
-msgid "cinema_theatre"
+msgid "cinema_theatre_button"
 msgstr ":popcorn: Кино, театр"
 
-msgid "music"
+msgid "music_button"
 msgstr ":notes: Хөгжим"
 
-msgid "arts_and_crafts"
+msgid "arts_and_crafts_button"
 msgstr ":art: Урлаг, гар урлал"
 
-msgid "life_ponders"
+msgid "life_ponders_button"
 msgstr ":thinking_face: Амьдрал тунгаан боддог"
 
-msgid "varia_misc"
+msgid "varia_misc_button"
 msgstr ":space_invader: Янз бүрийн / өөр"
+
+msgid "studying_career"
+msgstr "Суралцах / Ажил"
+
+msgid "local_university"
+msgstr "Орон нутгийн их сургууль"
+
+msgid "local_things"
+msgstr "Орон нутгийн зүйлс"
+
+msgid "physical_activity"
+msgstr "Идэвхтэй хөдөлгөөн хийх"
+
+msgid "cultural_interests"
+msgstr "Соёлын сонирхол"
+
+msgid "food_and_cooking"
+msgstr "Хоол, хоол хийх"
+
+msgid "cinema_theatre"
+msgstr "Кино, театр"
+
+msgid "music"
+msgstr "Хөгжим"
+
+msgid "arts_and_crafts"
+msgstr "Урлаг, гар урлал"
+
+msgid "life_ponders"
+msgstr "Амьдрал тунгаан боддог"
+
+msgid "varia_misc"
+msgstr "Янз бүрийн / өөр"
+
+msgid "domain_similarity_question"
+msgstr ""
+"За, одоо бид таны асуултанд ямар хүмүүсийг урихыг зааж өгч болно.\n"
+"\n"
+"2/6: Эдгээр хүмүүс энэ *({domain})-д* тантай ижил *сонирхолтой* байх "
+"хэрэгтэй юу??"
+
+msgid "answer_similar_domain"
+msgstr "Үүнтэй төстэй"
+
+msgid "answer_different_domain"
+msgstr "Өөр өөр"
+
+msgid "answer_indifferent_domain"
+msgstr "Хайхрамжгүй хандаж, анхааралдаа авах хэрэггүй"
 
 msgid "sensitive_question"
 msgstr ""
