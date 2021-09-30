@@ -126,6 +126,18 @@ msgstr ""
 msgid "answer_indifferent_domain"
 msgstr ""
 
+msgid "belief_values_question"
+msgstr ""
+
+msgid "answer_similar_belief_values"
+msgstr ""
+
+msgid "answer_different_belief_values"
+msgstr ""
+
+msgid "answer_indifferent_belief_values"
+msgstr ""
+
 msgid "sensitive_question"
 msgstr ""
 

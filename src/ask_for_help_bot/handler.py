@@ -48,6 +48,7 @@ class AskForHelpHandler(WenetEventHandler):
     CONTEXT_ASKED_QUESTION = "asked_question"
     CONTEXT_QUESTION_DOMAIN = "question_domain"
     CONTEXT_DOMAIN_INTEREST = "domain_interest"
+    CONTEXT_BELIEF_VALUES_SIMILARITY = "belief_values_similarity"
     CONTEXT_SENSITIVE_QUESTION = "sensitive_question"
     CONTEXT_ANONYMOUS_QUESTION = "anonymous_question"
     CONTEXT_SOCIAL_CLOSENESS = "social_closeness"
@@ -76,6 +77,9 @@ class AskForHelpHandler(WenetEventHandler):
     INTENT_SIMILAR_DOMAIN = "similar"
     INTENT_INDIFFERENT_DOMAIN = "indifferent"
     INTENT_DIFFERENT_DOMAIN = "different"
+    INTENT_SIMILAR_BELIEF_VALUES = "similar"
+    INTENT_INDIFFERENT_BELIEF_VALUES = "indifferent"
+    INTENT_DIFFERENT_BELIEF_VALUES = "different"
     INTENT_SENSITIVE_QUESTION = "sensitive"
     INTENT_NOT_SENSITIVE_QUESTION = "not_sensitive"
     INTENT_ANONYMOUS_QUESTION = "anonymous"
@@ -167,9 +171,18 @@ class AskForHelpHandler(WenetEventHandler):
                                      self.INTENT_INDIFFERENT_DOMAIN]
         for domain_similarity_intent in domain_similarity_intents:
             self.intent_manager.with_fulfiller(
-                IntentFulfillerV3(domain_similarity_intent, self.action_question_4).with_rule(
+                IntentFulfillerV3(domain_similarity_intent, self.action_question_3).with_rule(
                     intent=domain_similarity_intent,
                     static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_2)
+                )
+            )
+        belief_values_similarity_intents = [self.INTENT_SIMILAR_BELIEF_VALUES, self.INTENT_DIFFERENT_BELIEF_VALUES,
+                                            self.INTENT_INDIFFERENT_BELIEF_VALUES]
+        for belief_values_similarity_intent in belief_values_similarity_intents:
+            self.intent_manager.with_fulfiller(
+                IntentFulfillerV3(belief_values_similarity_intent, self.action_question_4).with_rule(
+                    intent=belief_values_similarity_intent,
+                    static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_3)
                 )
             )
         self.intent_manager.with_fulfiller(
@@ -692,15 +705,36 @@ class AskForHelpHandler(WenetEventHandler):
         response.with_context(context)
         return response
 
+    def action_question_3(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+        """
+        Save whether people that should answer the question should have a similar interest in the domain, and ask whether people that should answer the question should have a similar belief and values
+        """
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        context = incoming_event.context
+        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_3)
+        context.with_static_state(self.CONTEXT_DOMAIN_INTEREST, intent)
+        message = self._translator.get_translation_instance(user_locale).with_text("belief_values_question").translate()
+        button_1_text = self._translator.get_translation_instance(user_locale).with_text("answer_similar_belief_values").translate()
+        button_2_text = self._translator.get_translation_instance(user_locale).with_text("answer_different_belief_values").translate()
+        button_3_text = self._translator.get_translation_instance(user_locale).with_text("answer_indifferent_belief_values").translate()
+        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 1])
+        response_with_buttons.with_textual_option(button_1_text, self.INTENT_SIMILAR_BELIEF_VALUES)
+        response_with_buttons.with_textual_option(button_2_text, self.INTENT_DIFFERENT_BELIEF_VALUES)
+        response_with_buttons.with_textual_option(button_3_text, self.INTENT_INDIFFERENT_BELIEF_VALUES)
+        response.with_message(response_with_buttons)
+        response.with_context(context)
+        return response
+
     def action_question_4(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
         """
-        Save whether people that should answer the question should have a similar interest in the domain, and ask whether the question is sensitive or not
+        Save whether people that should answer the question should have a similar belief and values, and ask whether the question is sensitive or not
         """
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         response = OutgoingEvent(social_details=incoming_event.social_details)
         context = incoming_event.context
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_4)
-        context.with_static_state(self.CONTEXT_DOMAIN_INTEREST, intent)
+        context.with_static_state(self.CONTEXT_BELIEF_VALUES_SIMILARITY, intent)
         message = self._translator.get_translation_instance(user_locale).with_text("sensitive_question").translate()
         button_1_text = self._translator.get_translation_instance(user_locale).with_text("not_sensitive").translate()
         button_2_text = self._translator.get_translation_instance(user_locale).with_text("sensitive").translate()
@@ -787,24 +821,27 @@ class AskForHelpHandler(WenetEventHandler):
         if not context.has_static_state(self.CONTEXT_ASKED_QUESTION) \
                 or not context.has_static_state(self.CONTEXT_QUESTION_DOMAIN) \
                 or not context.has_static_state(self.CONTEXT_DOMAIN_INTEREST) \
+                or not context.has_static_state(self.CONTEXT_BELIEF_VALUES_SIMILARITY) \
                 or not context.has_static_state(self.CONTEXT_SOCIAL_CLOSENESS) \
                 or not context.has_static_state(self.CONTEXT_SENSITIVE_QUESTION):
             logger.error(f"Expected {self.CONTEXT_ASKED_QUESTION}, {self.CONTEXT_QUESTION_DOMAIN}, "
-                         f"{self.CONTEXT_DOMAIN_INTEREST}, {self.CONTEXT_SOCIAL_CLOSENESS} "
-                         f"and {self.CONTEXT_SENSITIVE_QUESTION} in the context")
+                         f"{self.CONTEXT_DOMAIN_INTEREST}, {self.CONTEXT_SOCIAL_CLOSENESS}, "
+                         f"{self.CONTEXT_BELIEF_VALUES_SIMILARITY} and {self.CONTEXT_SENSITIVE_QUESTION} in the context")
             raise Exception(f"Expected {self.CONTEXT_ASKED_QUESTION}, {self.CONTEXT_QUESTION_DOMAIN}, "
-                            f"{self.CONTEXT_DOMAIN_INTEREST}, {self.CONTEXT_SOCIAL_CLOSENESS} "
-                            f"and {self.CONTEXT_SENSITIVE_QUESTION} in the context")
+                            f"{self.CONTEXT_DOMAIN_INTEREST}, {self.CONTEXT_SOCIAL_CLOSENESS}, "
+                            f"{self.CONTEXT_BELIEF_VALUES_SIMILARITY} and {self.CONTEXT_SENSITIVE_QUESTION} in the context")
         wenet_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
         question = context.get_static_state(self.CONTEXT_ASKED_QUESTION)
         domain = context.get_static_state(self.CONTEXT_QUESTION_DOMAIN)
         domain_interest = context.get_static_state(self.CONTEXT_DOMAIN_INTEREST)
+        belief_values_similarity = context.get_static_state(self.CONTEXT_BELIEF_VALUES_SIMILARITY)
         sensitive = context.get_static_state(self.CONTEXT_SENSITIVE_QUESTION)
         anonymous = context.get_static_state(self.CONTEXT_ANONYMOUS_QUESTION, self.INTENT_NOT_ANONYMOUS_QUESTION)
         social_closeness = context.get_static_state(self.CONTEXT_SOCIAL_CLOSENESS)
         attributes = {
             "domain": domain,
             "domainInterest": domain_interest,
+            "beliefsAndValues": belief_values_similarity,
             "sensitive": True if sensitive == self.INTENT_SENSITIVE_QUESTION else False,
             "anonymous": True if anonymous == self.INTENT_ANONYMOUS_QUESTION else False,
             "socialCloseness": social_closeness,
@@ -838,6 +875,7 @@ class AskForHelpHandler(WenetEventHandler):
             context.delete_static_state(self.CONTEXT_ASKED_QUESTION)
             context.delete_static_state(self.CONTEXT_QUESTION_DOMAIN)
             context.delete_static_state(self.CONTEXT_DOMAIN_INTEREST)
+            context.delete_static_state(self.CONTEXT_BELIEF_VALUES_SIMILARITY)
             context.delete_static_state(self.CONTEXT_SOCIAL_CLOSENESS)
             context.delete_static_state(self.CONTEXT_SENSITIVE_QUESTION)
             context.delete_static_state(self.CONTEXT_ANONYMOUS_QUESTION)
