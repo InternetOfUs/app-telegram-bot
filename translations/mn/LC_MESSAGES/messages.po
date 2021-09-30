@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-09-21 16:39+0200\n"
+"PO-Revision-Date: 2021-09-23 18:07+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -334,9 +334,34 @@ msgstr "Одоогоор байгаа асуултууд:"
 msgid "answers_tasks_choose"
 msgstr "Хариулах асуултаа сонгоно уу"
 
-msgid "best_answer_final_message"
+msgid "best_answer_0"
+msgstr "Та яагаад энэ хариултыг сонгосон бэ?"
+
+msgid "best_answer_helpful"
 msgstr ""
-"Тусалсандаа баяртай байна! Өөр асуулт байгаа бол /question команд ашиглана уу"
+"Таны тодорхой зорилгын дагуу таныг өөр өөр хэрэглэгчидтэй холбоход би хэр "
+"сайн ажилласан бэ?"
+
+msgid "not_at_all_helpful"
+msgstr "1 - огт тус болохгүй"
+
+msgid "slightly_helpful"
+msgstr "2 - Бага зэрэг тустай"
+
+msgid "somewhat_helpful"
+msgstr "3 - Шийдэж чадахгүй байна"
+
+msgid "very_helpful"
+msgstr "4 - тустай"
+
+msgid "extremely_helpful"
+msgstr "5 - Маш тустай"
+
+msgid "reason_is_not_text"
+msgstr "Та яагаад энэ хариултыг сонгосоноо тодруулна уу."
+
+msgid "best_answer_final_message"
+msgstr "Оруулсан танд баярлалаа! Хэзээ ч хамаагүй шинэ асуулт асуугаарай!"
 
 msgid "expired_button_message"
 msgstr "Уучлаарай, энэ товч идэвхгүй байна"
