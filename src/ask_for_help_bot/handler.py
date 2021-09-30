@@ -61,8 +61,8 @@ class AskForHelpHandler(WenetEventHandler):
     CONTEXT_PROPOSED_TASKS = "proposed_tasks"
     CONTEXT_PENDING_ANSWERS = "pending_answers"
     # all the recognize intents
-    INTENT_QUESTION = "/question"
-    INTENT_QUESTION_FIRST = "/question_first"
+    INTENT_ASK = "/ask"
+    INTENT_FIRST_QUESTION = "first_question"
     INTENT_STUDYING_CAREER = "studying_career"
     INTENT_LOCAL_UNIVERSITY = "local_university"
     INTENT_LOCAL_THINGS = "local_things"
@@ -99,10 +99,10 @@ class AskForHelpHandler(WenetEventHandler):
     INTENT_REPORT_SPAM = "spam"
     INTENT_ASK_MORE_ANSWERS = "ask_more_answers"
     INTENT_ANSWER_REPORT = "answer_report"
-    INTENT_ANSWER = "/answer"
+    INTENT_QUESTIONS = "/questions"
     INTENT_ANSWER_PICKED_QUESTION = "picked_answer"
     INTENT_BEST_ANSWER = "best_answer"
-    INTENT_PROFILE = "/profile"
+    # INTENT_PROFILE = "/profile"
     # available states
     STATE_QUESTION_0 = "question_0"
     STATE_QUESTION_1 = "question_1"
@@ -142,13 +142,13 @@ class AskForHelpHandler(WenetEventHandler):
         JobManager.instance().add_job(PendingMessagesJob("wenet_ask_for_help_pending_messages_job",
                                                          self._instance_namespace, self._connector, None))
         self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_QUESTION, self.action_question).with_rule(
-                intent=self.INTENT_QUESTION
+            IntentFulfillerV3(self.INTENT_ASK, self.action_question_0).with_rule(
+                intent=self.INTENT_ASK
             )
         )
         self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_QUESTION_FIRST, self.action_question).with_rule(
-                intent=self.INTENT_QUESTION_FIRST
+            IntentFulfillerV3(self.INTENT_FIRST_QUESTION, self.action_question_0).with_rule(
+                intent=self.INTENT_FIRST_QUESTION
             )
         )
         self.intent_manager.with_fulfiller(
@@ -253,7 +253,9 @@ class AskForHelpHandler(WenetEventHandler):
             )
         )
         self.intent_manager.with_fulfiller(
-            IntentFulfillerV3(self.INTENT_ANSWER, self.action_answer).with_rule(intent=self.INTENT_ANSWER)
+            IntentFulfillerV3(self.INTENT_QUESTIONS, self.action_answer).with_rule(
+                intent=self.INTENT_QUESTIONS
+            )
         )
         # self.intent_manager.with_fulfiller(
         #     IntentFulfillerV3(self.INTENT_PROFILE, self.action_profile).with_rule(intent=self.INTENT_PROFILE)
@@ -318,7 +320,7 @@ class AskForHelpHandler(WenetEventHandler):
 
     def _is_doing_another_action(self, context: ConversationContext) -> bool:
         """
-        Returns True if the user is in another action (e.g. inside the /question flow), False otherwise
+        Returns True if the user is in another action (e.g. inside the /ask flow), False otherwise
         """
         statuses = [self.STATE_ANSWERING, self.STATE_ANSWERING_SENSITIVE, self.STATE_ANSWERING_ANONYMOUSLY,
                     self.STATE_QUESTION_0, self.STATE_QUESTION_1, self.STATE_QUESTION_2, self.STATE_QUESTION_3,
@@ -352,7 +354,7 @@ class AskForHelpHandler(WenetEventHandler):
         message_3 = self._get_help_and_info_message(user_locale)
         button_text = self._translator.get_translation_instance(user_locale).with_text("start_button").translate()
         final_message_with_button = RapidAnswerResponse(TextualResponse(message_3))
-        final_message_with_button.with_textual_option(button_text, self.INTENT_QUESTION_FIRST)
+        final_message_with_button.with_textual_option(button_text, self.INTENT_FIRST_QUESTION)
         return [
             TextualResponse(message_1),
             TextualResponse(message_2),
@@ -624,15 +626,15 @@ class AskForHelpHandler(WenetEventHandler):
                 TextualResponse("Unable to complete the WeNetAuthentication")
             )
 
-    def action_question(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+    def action_question_0(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
         """
-        Beginning of the /question command
+        Beginning of the /ask command
         """
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         response = OutgoingEvent(social_details=incoming_event.social_details)
         context = incoming_event.context
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_0)
-        if intent == self.INTENT_QUESTION_FIRST:
+        if intent == self.INTENT_FIRST_QUESTION:
             preamble_message = self._translator.get_translation_instance(user_locale).with_text("question_0").translate()
             response.with_message(TextualResponse(preamble_message))
         message = self._translator.get_translation_instance(user_locale).with_text("question_1").translate()
@@ -923,7 +925,7 @@ class AskForHelpHandler(WenetEventHandler):
 
     def action_answer_picked_question(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
         """
-        /answer flow, when the user picks an answer
+        /questions flow, when the user picks a question to answer to
         """
         if incoming_event.context is not None:
             service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
@@ -1279,9 +1281,9 @@ class AskForHelpHandler(WenetEventHandler):
         response.with_context(context)
         return response
 
-    def action_profile(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
-        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
-        response = OutgoingEvent(incoming_event.social_details)
-        text = self._translator.get_translation_instance(user_locale).with_text("not_implemented").translate()
-        response.with_message(TextualResponse(text))
-        return response
+    # def action_profile(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+    #     user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+    #     response = OutgoingEvent(incoming_event.social_details)
+    #     text = self._translator.get_translation_instance(user_locale).with_text("not_implemented").translate()
+    #     response.with_message(TextualResponse(text))
+    #     return response

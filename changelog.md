@@ -12,6 +12,7 @@
 - Integrated domain similarity data in the question flow
 - Added environment variables for communityId and maxUsers fields
 - Integrated belief and values similarity data in the question flow
+- Updated app commands: renamed `/question` into `/ask` and `/answer` into `/questions`.
 
 ## 1.0.10
 - Changed the `project` field in the messages logged into the Wenet platform. Now the `appId` is used, instead of the `PROJECT_NAME` environment variable
