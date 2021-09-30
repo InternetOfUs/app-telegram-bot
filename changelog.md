@@ -16,6 +16,7 @@
 - Integrated rating flow when accepting an answer
 - Updated common models to fix service APIs methods for getting all tasks of an application and for an user
 - Integrated new structures of the callback messages
+- Refactored PendingMessagesJob
 
 ## 1.0.10
 - Changed the `project` field in the messages logged into the Wenet platform. Now the `appId` is used, instead of the `PROJECT_NAME` environment variable
