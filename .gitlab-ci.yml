@@ -495,7 +495,6 @@ badges:default:
     paths:
       - template.svg
       - deploy.svg
-      - utils-py.svg
     expire_in: 1 day
   only:
     - master

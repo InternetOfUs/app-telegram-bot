@@ -3,7 +3,6 @@
 DEFAULT_VERSION="latest"
 
 
-
 clean () {
     echo "Cleaning."
     rm -R -f ${SCRIPT_DIR}/src
@@ -13,7 +12,6 @@ clean () {
 
     rm -R ${SCRIPT_DIR}/test
 
-    rm -R ${SCRIPT_DIR}/utils-py-requirements.txt
 }
 
 SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
@@ -29,9 +27,6 @@ cp -r ${PROJECT_DIR}/translations ${SCRIPT_DIR}/translations
 
 mkdir ${SCRIPT_DIR}/test
 cp -R ${PROJECT_DIR}/test/* ${SCRIPT_DIR}/test
-
-cp -R ${PROJECT_DIR}/utils-py/src/* ${SCRIPT_DIR}/src
-cp -R ${PROJECT_DIR}/utils-py/requirements.txt ${SCRIPT_DIR}/utils-py-requirements.txt
 
 
 # Building image

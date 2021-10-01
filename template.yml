@@ -10,7 +10,7 @@
       - test
       - docker
       - ci_cd
-
+    project_python_submodules: []
     docker_python_image_base_image: public.registry.u-hopper.com/python:3.8
     project_python_test_folder: test
     docker_image_name: wenet/bots
