@@ -23,7 +23,7 @@ from common.cache import BotCache
 from common.messages_to_log import LogMessageHandler
 from uhopper.utils.alert.module import AlertModule
 from wenet.interface.client import Oauth2Client
-from wenet.interface.exceptions import NotFound, RefreshTokenExpiredError
+from wenet.interface.exceptions import NotFound, RefreshTokenExpiredError, CreationError
 from wenet.interface.service_api import ServiceApiInterface
 from wenet.model.callback_message.builder import MessageBuilder
 from wenet.model.callback_message.event import WeNetAuthenticationEvent
@@ -254,10 +254,11 @@ class WenetEventHandler(EventHandler, abc.ABC):
                 # logging incoming notification
                 logged_notification = self.message_parser_for_logs.create_notification(message, message.receiver_id)
                 try:
-                    if not service_api.log_message(logged_notification):
-                        logger.warning("Unable to log the incoming message to the service API")
+                    service_api.log_message(logged_notification)
                 except TypeError as e:
                     logger.warning("Unsupported message to log", exc_info=e)
+                except CreationError:
+                    logger.warning("Unable to log the incoming message to the service API")
 
                 if isinstance(message, TextualMessage):
                     notification = self.handle_wenet_textual_message(message)
@@ -271,12 +272,11 @@ class WenetEventHandler(EventHandler, abc.ABC):
                 # logging outgoing messages
                 for outgoing_message in notification.messages:
                     try:
-                        if not service_api.log_message(self.message_parser_for_logs.create_response(
-                                outgoing_message, user_accounts[0].context.get_static_state(self.CONTEXT_WENET_USER_ID),
-                                logged_notification.message_id)):
-                            logger.warning("Unable to send logs to the service API")
+                        service_api.log_message(self.message_parser_for_logs.create_response(outgoing_message, user_accounts[0].context.get_static_state(self.CONTEXT_WENET_USER_ID), logged_notification.message_id))
                     except TypeError as e:
                         logger.warning("Unsupported message to log", exc_info=e)
+                    except CreationError:
+                        logger.warning("Unable to send logs to the service API")
 
                 if notification.context is not None:
                     self._interface_connector.update_user_context(UserConversationContext(
@@ -330,10 +330,11 @@ class WenetEventHandler(EventHandler, abc.ABC):
         try:
             # logging incoming event
             try:
-                if not service_api.log_message(logged_incoming_message):
-                    logger.warning("Unable to log the incoming message to the service API")
+                service_api.log_message(logged_incoming_message)
             except TypeError as e:
                 logger.warning("Unsupported message to log", exc_info=e)
+            except CreationError:
+                logger.warning("Unable to log the incoming message to the service API")
 
             outgoing_event, fulfiller, satisfying_rule = self.intent_manager.manage(incoming_event)
             context.with_dynamic_state(self.PREVIOUS_INTENT, fulfiller.intent_id)
@@ -347,14 +348,13 @@ class WenetEventHandler(EventHandler, abc.ABC):
         # logging outgoing messages
         for outgoing_message in outgoing_event.messages:
             try:
-                if not service_api.log_message(self.message_parser_for_logs.create_response(
-                        outgoing_message, context.get_static_state(self.CONTEXT_WENET_USER_ID),
-                        logged_incoming_message.message_id)):
-                    logger.warning("Unable to send logs to the service API")
+                service_api.log_message(self.message_parser_for_logs.create_response(outgoing_message, context.get_static_state(self.CONTEXT_WENET_USER_ID), logged_incoming_message.message_id))
             except TypeError as e:
                 logger.warning("Unsupported message to log", exc_info=e)
             except RefreshTokenExpiredError:
                 outgoing_event = self.handle_oauth_login(incoming_event, "")
+            except CreationError:
+                logger.warning("Unable to send logs to the service API")
         return outgoing_event
 
     def _save_wenet_and_telegram_user_id_to_context(self, message: WeNetAuthenticationEvent, social_details: TelegramDetails) -> None:
