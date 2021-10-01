@@ -17,6 +17,7 @@ variables:
   DOCKER_TLS_CERTDIR: ""
   DOCKER_HOST: "tcp://docker:2375"
   GIT_SUBMODULE_STRATEGY: recursive
+  PIP_CACHE_DIR: "$CI_PROJECT_DIR/.cache/pip"
 
 #
 # Workflow defining rules for running the pipeline.
@@ -101,7 +102,7 @@ stages:
 #
 
 
-build:production:
+docker image:production:
   stage: build
   script:
     - *apk-before-script
@@ -112,18 +113,63 @@ build:production:
     paths:
       - docker_image.tar.gz
     expire_in: 1 day
+  needs: []
   only:
     - tags
 
 
-test:production:
+unit:production:
   stage: test
+  image: public.registry.u-hopper.com/python:3.8
   script:
-    - *apk-before-script
-    - docker load -i docker_image.tar.gz
-    - ./docker-support/runner.sh -t $CI_COMMIT_TAG
-  dependencies:
-    - build:production
+    - python -v
+    - mkdir -p ~/.config/pip
+    - echo "$PIP_CONF_DOCKER" > ~/.config/pip/pip.conf
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+    - cp -r test src/
+    - cp docker-support/run_tests.sh src/
+    - cd src
+    - ./run_tests.sh
+  cache:
+    paths:
+      - .cache/pip
+      - venv/
+  needs: []
+  only:
+    - tags
+
+
+coverage:production:
+  stage: test
+  image: public.registry.u-hopper.com/python:3.8
+  allow_failure: true
+  script:
+    - python -v
+    - mkdir -p ~/.config/pip
+    - echo "$PIP_CONF_DOCKER" > ~/.config/pip/pip.conf
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+    - pip install coverage pytest-cov
+    - cp -r test src/
+    - cp docker-support/run_test_coverage.sh src/
+    - cp docker-support/.coveragerc src/
+    - cd src
+    - PYTHONPATH=. ./run_test_coverage.sh test .
+  cache:
+    paths:
+      - .cache/pip
+      - venv/
+  artifacts:
+    when: always
+    reports:
+      junit: src/report.xml
+      cobertura: src/coverage.xml
+  needs: []
   only:
     - tags
 
@@ -136,8 +182,10 @@ push:production:
     - docker load -i docker_image.tar.gz
     - ./docker-support/runner.sh -p $CI_COMMIT_TAG
   dependencies:
-    - build:production
-    - test:production
+    - docker image:production
+  needs: 
+    - docker image:production
+    - unit:production
   only:
     - tags
 
@@ -154,8 +202,8 @@ notify:production:
     - export DEPLOY_TRIGGERED="no"
     - ansible-playbook ansible/notify.yml
   dependencies:
-    - build:production
-    - test:production
+    - docker image:production
+    - unit:production
     - push:production
   allow_failure: true
   only:
@@ -167,7 +215,7 @@ notify:production:
 #
 
 
-build:staging:
+docker image:staging:
   stage: build
   script:
     - *apk-before-script
@@ -180,18 +228,63 @@ build:staging:
     expire_in: 1 day
   when: manual
   allow_failure: false
+  needs: []
   only:
     - develop
 
 
-test:staging:
+unit:staging:
   stage: test
+  image: public.registry.u-hopper.com/python:3.8
   script:
-    - *apk-before-script
-    - docker load -i docker_image.tar.gz
-    - ./docker-support/runner.sh -t latest
-  dependencies:
-    - build:staging
+    - python -v
+    - mkdir -p ~/.config/pip
+    - echo "$PIP_CONF_DOCKER" > ~/.config/pip/pip.conf
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+    - cp -r test src/
+    - cp docker-support/run_tests.sh src/
+    - cd src
+    - ./run_tests.sh
+  cache:
+    paths:
+      - .cache/pip
+      - venv/
+  needs: []
+  only:
+    - develop
+
+
+coverage:staging:
+  stage: test
+  image: public.registry.u-hopper.com/python:3.8
+  allow_failure: true
+  script:
+    - python -v
+    - mkdir -p ~/.config/pip
+    - echo "$PIP_CONF_DOCKER" > ~/.config/pip/pip.conf
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+    - pip install coverage pytest-cov
+    - cp -r test src/
+    - cp docker-support/run_test_coverage.sh src/
+    - cp docker-support/.coveragerc src/
+    - cd src
+    - PYTHONPATH=. ./run_test_coverage.sh test .
+  cache:
+    paths:
+      - .cache/pip
+      - venv/
+  artifacts:
+    when: always
+    reports:
+      junit: src/report.xml
+      cobertura: src/coverage.xml
+  needs: []
   only:
     - develop
 
@@ -204,8 +297,10 @@ push:staging:
     - docker load -i docker_image.tar.gz
     - ./docker-support/runner.sh -p latest
   dependencies:
-    - build:staging
-    - test:staging
+    - docker image:staging
+  needs: 
+    - docker image:staging
+    - unit:staging
   only:
     - develop
 
@@ -213,17 +308,14 @@ push:staging:
 trigger:staging:
   stage: deploy
   image: public.registry.u-hopper.com/alpine:3.13
+  allow_failure: false
   script:
     - *apk-before-script
     - *ansible-script
     - export GIT_REF="develop"
     - ansible-playbook ansible/trigger.yml
-  dependencies:
-    - build:staging
-    - test:staging
+  needs: 
     - push:staging
-  allow_failure: false
-  when: manual
   only:
     - develop
 
@@ -233,75 +325,178 @@ trigger:staging:
 #
 
 
-build:mr:
-  stage: build
-  script:
-    - *apk-before-script
-    - *docker-script
-
-    - ./docker-support/runner.sh -bs latest
-  artifacts:
-    paths:
-      - docker_image.tar.gz
-    expire_in: 1 day
-  only:
-    - merge_requests
-
-
-test:mr:
+unit:mr:
   stage: test
+  image: public.registry.u-hopper.com/python:3.8
   script:
-    - *apk-before-script
-    - docker load -i docker_image.tar.gz
-    - ./docker-support/runner.sh -t latest
-  dependencies:
-    - build:mr
+    - python -v
+    - mkdir -p ~/.config/pip
+    - echo "$PIP_CONF_DOCKER" > ~/.config/pip/pip.conf
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+    - cp -r test src/
+    - cp docker-support/run_tests.sh src/
+    - cd src
+    - ./run_tests.sh
+  cache:
+    paths:
+      - .cache/pip
+      - venv/
+  needs: []
   only:
     - merge_requests
 
 
-# 
-# Stages for master.
-# Allows to build badges and run the test coverage.
-# 
+coverage:mr:
+  stage: test
+  image: public.registry.u-hopper.com/python:3.8
+  allow_failure: true
+  script:
+    - python -v
+    - mkdir -p ~/.config/pip
+    - echo "$PIP_CONF_DOCKER" > ~/.config/pip/pip.conf
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+    - pip install coverage pytest-cov
+    - cp -r test src/
+    - cp docker-support/run_test_coverage.sh src/
+    - cp docker-support/.coveragerc src/
+    - cd src
+    - PYTHONPATH=. ./run_test_coverage.sh test .
+  cache:
+    paths:
+      - .cache/pip
+      - venv/
+  artifacts:
+    when: always
+    reports:
+      junit: src/report.xml
+      cobertura: src/coverage.xml
+  needs: []
+  only:
+    - merge_requests
 
-build:badges:
+
+#
+# Stages for issue.
+#
+
+
+unit:issue:
+  stage: test
+  image: public.registry.u-hopper.com/python:3.8
+  script:
+    - python -v
+    - mkdir -p ~/.config/pip
+    - echo "$PIP_CONF_DOCKER" > ~/.config/pip/pip.conf
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+    - cp -r test src/
+    - cp docker-support/run_tests.sh src/
+    - cd src
+    - ./run_tests.sh
+  cache:
+    paths:
+      - .cache/pip
+      - venv/
+  needs: []
+  only:
+    - /^feature.*$/i
+    - /^hotfix.*$/i
+    - /^milestone.*$/i
+
+
+coverage:issue:
+  stage: test
+  image: public.registry.u-hopper.com/python:3.8
+  allow_failure: true
+  script:
+    - python -v
+    - mkdir -p ~/.config/pip
+    - echo "$PIP_CONF_DOCKER" > ~/.config/pip/pip.conf
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+    - pip install coverage pytest-cov
+    - cp -r test src/
+    - cp docker-support/run_test_coverage.sh src/
+    - cp docker-support/.coveragerc src/
+    - cd src
+    - PYTHONPATH=. ./run_test_coverage.sh test .
+  cache:
+    paths:
+      - .cache/pip
+      - venv/
+  artifacts:
+    when: always
+    reports:
+      junit: src/report.xml
+      cobertura: src/coverage.xml
+  needs: []
+  only:
+    - /^feature.*$/i
+    - /^hotfix.*$/i
+    - /^milestone.*$/i
+
+
+#
+# Stages for default.
+#
+
+
+coverage:default:
+  stage: test
+  image: public.registry.u-hopper.com/python:3.8
+  allow_failure: true
+  script:
+    - python -v
+    - mkdir -p ~/.config/pip
+    - echo "$PIP_CONF_DOCKER" > ~/.config/pip/pip.conf
+    - python -m venv venv
+    - source venv/bin/activate
+    - pip install --upgrade pip
+    - pip install -r requirements.txt
+    - pip install coverage pytest-cov
+    - cp -r test src/
+    - cp docker-support/run_test_coverage.sh src/
+    - cp docker-support/.coveragerc src/
+    - cd src
+    - PYTHONPATH=. ./run_test_coverage.sh test .
+  cache:
+    paths:
+      - .cache/pip
+      - venv/
+  artifacts:
+    when: always
+    reports:
+      junit: src/report.xml
+      cobertura: src/coverage.xml
+  needs: []
+  only:
+    - master
+
+
+badges:default:
   stage: build
   image: public.registry.u-hopper.com/python:3.8
   script:
     - pip install PyYAML anybadge
     - python docker-support/badges.py
+  needs: []
+  allow_failure: true
   artifacts:
     paths:
       - template.svg
       - deploy.svg
-      - wenet-common-models.svg
-      - chatbot-core.svg
-      - utils.svg
+      - utils-py.svg
     expire_in: 1 day
   only:
     - master
 
-build:master:
-  stage: build
-  script:
-    - *apk-before-script
-    - *docker-script
-    - ./docker-support/runner.sh -bs latest
-  artifacts:
-    paths:
-      - docker_image.tar.gz
-    expire_in: 1 day
-  only:
-    - master
-
-test:coverage:
-  stage: test
-  script:
-    - *apk-before-script
-    - docker load -i docker_image.tar.gz
-    - ./docker-support/runner.sh -c latest
-  dependencies:
-    - build:master
-  only:
-    - master

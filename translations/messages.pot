@@ -42,28 +42,145 @@ msgstr ""
 msgid "question_1"
 msgstr ""
 
-msgid "question_2"
-msgstr ""
-
-msgid "type_answer_1"
-msgstr ""
-
-msgid "type_answer_2"
-msgstr ""
-
-msgid "type_answer_3"
-msgstr ""
-
 msgid "question_is_not_text"
 msgstr ""
 
-msgid "specify_answerer"
+msgid "domain_question"
 msgstr ""
 
-msgid "question_4"
+msgid "studying_career_button"
 msgstr ""
 
-msgid "answerer_details_are_not_text"
+msgid "local_university_button"
+msgstr ""
+
+msgid "local_things_button"
+msgstr ""
+
+msgid "physical_activity_button"
+msgstr ""
+
+msgid "cultural_interests_button"
+msgstr ""
+
+msgid "food_and_cooking_button"
+msgstr ""
+
+msgid "cinema_theatre_button"
+msgstr ""
+
+msgid "music_button"
+msgstr ""
+
+msgid "arts_and_crafts_button"
+msgstr ""
+
+msgid "life_ponders_button"
+msgstr ""
+
+msgid "varia_misc_button"
+msgstr ""
+
+msgid "studying_career"
+msgstr ""
+
+msgid "local_university"
+msgstr ""
+
+msgid "local_things"
+msgstr ""
+
+msgid "physical_activity"
+msgstr ""
+
+msgid "cultural_interests"
+msgstr ""
+
+msgid "food_and_cooking"
+msgstr ""
+
+msgid "cinema_theatre"
+msgstr ""
+
+msgid "music"
+msgstr ""
+
+msgid "arts_and_crafts"
+msgstr ""
+
+msgid "life_ponders"
+msgstr ""
+
+msgid "varia_misc"
+msgstr ""
+
+msgid "domain_similarity_question"
+msgstr ""
+
+msgid "answer_similar_domain"
+msgstr ""
+
+msgid "answer_different_domain"
+msgstr ""
+
+msgid "answer_indifferent_domain"
+msgstr ""
+
+msgid "belief_values_question"
+msgstr ""
+
+msgid "answer_similar_belief_values"
+msgstr ""
+
+msgid "answer_different_belief_values"
+msgstr ""
+
+msgid "answer_indifferent_belief_values"
+msgstr ""
+
+msgid "sensitive_question"
+msgstr ""
+
+msgid "not_sensitive"
+msgstr ""
+
+msgid "sensitive"
+msgstr ""
+
+msgid "anonymous_question"
+msgstr ""
+
+msgid "anonymous_user"
+msgstr ""
+
+msgid "anonymous"
+msgstr ""
+
+msgid "not_anonymous"
+msgstr ""
+
+msgid "social_closeness_question"
+msgstr ""
+
+msgid "answer_socially_close"
+msgstr ""
+
+msgid "answer_socially_indifferent"
+msgstr ""
+
+msgid "answer_socially_distant"
+msgstr ""
+
+msgid "specify_answerer_location"
+msgstr ""
+
+msgid "location_answer_1"
+msgstr ""
+
+msgid "location_answer_2"
+msgstr ""
+
+msgid "question_final"
 msgstr ""
 
 msgid "question_0"
@@ -73,6 +190,21 @@ msgid "error_task_creation"
 msgstr ""
 
 msgid "answer_message_0"
+msgstr ""
+
+msgid "answer_sensitive_message_0"
+msgstr ""
+
+msgid "answer_message_nearby"
+msgstr ""
+
+msgid "answer_sensitive_message_nearby"
+msgstr ""
+
+msgid "answer_question"
+msgstr ""
+
+msgid "answer_sensitive_question"
 msgstr ""
 
 msgid "answer_question_button"
@@ -91,6 +223,9 @@ msgid "answerer_is_not_text"
 msgstr ""
 
 msgid "answered_message"
+msgstr ""
+
+msgid "answered_message_anonymously"
 msgstr ""
 
 msgid "not_answer_response"
@@ -135,6 +270,30 @@ msgstr ""
 msgid "answers_tasks_choose"
 msgstr ""
 
+msgid "best_answer_0"
+msgstr ""
+
+msgid "best_answer_helpful"
+msgstr ""
+
+msgid "not_at_all_helpful"
+msgstr ""
+
+msgid "slightly_helpful"
+msgstr ""
+
+msgid "somewhat_helpful"
+msgstr ""
+
+msgid "very_helpful"
+msgstr ""
+
+msgid "extremely_helpful"
+msgstr ""
+
+msgid "reason_is_not_text"
+msgstr ""
+
 msgid "best_answer_final_message"
 msgstr ""
 
@@ -148,6 +307,18 @@ msgid "not_implemented"
 msgstr ""
 
 msgid "you_are_answering_to"
+msgstr ""
+
+msgid "you_are_answering_to_sensitive"
+msgstr ""
+
+msgid "answer_anonymously"
+msgstr ""
+
+msgid "anonymous_answer_1"
+msgstr ""
+
+msgid "anonymous_answer_2"
 msgstr ""
 
 msgid "picked_best_answer"

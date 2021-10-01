@@ -1,7 +1,7 @@
 from unittest import TestCase
 
 from messages.ws import MessageInterface
-from test.test_messages.mock import MockMqttPublishHandler
+from test.unit.messages.mock import MockMqttPublishHandler
 
 
 class CommonTestCase(TestCase):

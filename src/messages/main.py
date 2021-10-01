@@ -5,7 +5,7 @@ import sentry_sdk
 
 from common.logging_config import get_logging_configuration
 from messages.ws import MessageInterface
-from uhopper.utils.mqtt import MqttPublishHandler
+from uhopper.utils.mqtt.handler import MqttPublishHandler
 from sentry_sdk.integrations.logging import LoggingIntegration
 from sentry_sdk.integrations.flask import FlaskIntegration
 

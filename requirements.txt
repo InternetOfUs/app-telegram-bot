@@ -4,3 +4,9 @@ Flask-RESTful
 gunicorn
 sentry-sdk==1.3.1
 blinker==1.4
+requests
+emoji
+uhopper-chatbot==1.5.2
+wenet-common==2.0.1a4
+uhopper-alert==2.0.0
+uhopper-mqtt==1.1.0

@@ -43,10 +43,11 @@
           - ${MQTT_TOPIC}
           - ${INTERFACE_APIKEY}
           - ${INSTANCE_NAMESPACE}
-          - ${WENET_BACKEND_URL}
+          - ${WENET_INSTANCE_URL}
           - ${WENET_APP_ID}
           - ${WENET_HUB_URL}
           - ${TASK_TYPE_ID}
+          - ${COMMUNITY_ID}
           - ${CLIENT_SECRET}
           - ${WENET_AUTHENTICATION_MANAGEMENT_URL}
           - ${REDIRECT_URL}
@@ -61,10 +62,11 @@
           - ${MQTT_TOPIC}
           - ${INTERFACE_APIKEY}
           - ${INSTANCE_NAMESPACE}
-          - ${WENET_BACKEND_URL}
+          - ${WENET_INSTANCE_URL}
           - ${WENET_APP_ID}
           - ${WENET_HUB_URL}
           - ${TASK_TYPE_ID}
+          - ${COMMUNITY_ID}
           - ${CLIENT_SECRET}
           - ${WENET_AUTHENTICATION_MANAGEMENT_URL}
           - ${REDIRECT_URL}
@@ -73,9 +75,9 @@
         stages:
           - name: build
           - name: test
-            in_docker: true #TODO disable when the submodules are removed
-#          - name: test
-#            type: coverage
+            in_docker: false
+          - name: test
+            type: coverage
           - name: push
           - name: notify
       staging:
@@ -83,31 +85,30 @@
           - name: build
             manual: true
           - name: test
-            in_docker: true #TODO disable when the submodules are removed
+            in_docker: false
+          - name: test
+            type: coverage
           - name: push
           - name: trigger
-            manual: true
             git_ref: develop
       mr:
         stages:
-          - name: build
           - name: test
-            in_docker: true #TODO disable when the submodules are removed
-#          - name: test
-#            type: coverage
+            in_docker: false
+          - name: test
+            type: coverage
+      issue:
+        stages:
+          - name: test
+            in_docker: false
+          - name: test
+            type: coverage
       default:
         stages:
-          - name: build
+          - name: test
+            type: coverage
           - name: build
             type: badge
-#          - name: test
-#            type: coverage
 
-
-    project_python_submodules:
-      - name: wenet-common-models
-      - name: chatbot-core
-      - name: utils
-        path: chatbot-core/utils-py
   roles:
     - uh.project-template

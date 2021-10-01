@@ -2,11 +2,11 @@ import re
 from datetime import datetime
 from typing import Optional
 
-from wenet.common.model.task.task import Task
-from wenet.common.model.user.authentication_account import WeNetUserWithAccounts, TelegramAuthenticationAccount
+from wenet.model.task.task import Task
 
 
 class Utils:
+
     @staticmethod
     def parse_datetime(text: str) -> Optional[datetime]:
         match = re.match("(?P<year>[0-9]{4}) (?P<month>[0-9]{2}) (?P<day>[0-9]{2}) (?P<hour>[0-9]{2}) "
@@ -18,13 +18,6 @@ class Utils:
                 return timestamp
             except ValueError:
                 return None
-        return None
-
-    @staticmethod
-    def extract_telegram_account(user: WeNetUserWithAccounts) -> Optional[TelegramAuthenticationAccount]:
-        for account in user.accounts:
-            if isinstance(account, TelegramAuthenticationAccount):
-                return account
         return None
 
     @staticmethod

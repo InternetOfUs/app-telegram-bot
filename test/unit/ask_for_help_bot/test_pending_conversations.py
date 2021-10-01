@@ -7,6 +7,7 @@ from chatbot_core.v3.model.messages import TelegramRapidAnswerResponse, TextualR
 
 
 class TestPendingQuestionToAnswer(TestCase):
+
     def test_repr(self):
         message = TelegramRapidAnswerResponse(TextualResponse("message"))
         message.with_textual_option("text", "payload")
