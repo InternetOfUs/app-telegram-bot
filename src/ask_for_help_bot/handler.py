@@ -1324,9 +1324,10 @@ class AskForHelpHandler(WenetEventHandler):
         else:
             raise Exception(f"Missing conversation context for event {incoming_event}")
         user_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
-        tasks = [t for t in service_api.get_all_tasks_of_application(self.app_id)
-                 if t.requester_id != user_id and user_id not in set(
-                [transaction.actioneer_id for transaction in t.transactions if transaction.label == "answerTransaction"])]
+        tasks = [
+            t for t in service_api.get_all_tasks(app_id=self.app_id, task_type_id=self.task_type_id, has_close_ts=False) if t.requester_id != user_id
+            and user_id not in set([transaction.actioneer_id for transaction in t.transactions if transaction.label == self.LABEL_ANSWER_TRANSACTION])
+        ]
 
         if not tasks:
             response.with_message(TextualResponse(

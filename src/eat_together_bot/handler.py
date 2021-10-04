@@ -871,7 +871,7 @@ class EatTogetherHandler(WenetEventHandler):
             self._alert_module.alert(error_message)
             raise ValueError(error_message)
         wenet_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
-        task_list = service_api.get_opened_tasks_of_user(str(wenet_id), self.app_id)
+        task_list = service_api.get_all_tasks(app_id=self.app_id, task_type_id=self.task_type_id, requester_id=str(wenet_id), has_close_ts=False)
         # filter on the malformed tasks (those without "where" and "maxPeople" attributes)
         task_list = [x for x in task_list if "where" in x.attributes and "maxPeople" in x.attributes]
         if len(task_list) > 0:
