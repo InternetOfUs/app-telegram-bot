@@ -5,7 +5,7 @@
 ## next
 - Integrated position data in the question and answer flow
 - Integrated sensitive and anonymous information data in the question and answer flow
-- Update to project template 4.3.3
+- Update to project template 4.5.1
 - Removed submodules and added the libraries as packages
 - Updated question flow adding social closeness input in the question creation flow instead of similarity and reason
 - Integrated domain data in the question flow
@@ -17,6 +17,7 @@
 - Updated common models to fix service APIs methods for getting all tasks of an application and for an user
 - Integrated new structures of the callback messages
 - Refactored PendingMessagesJob
+- Added `/badges` command to request insights on badge status
 
 ## 1.0.12
 - Added sentry integration

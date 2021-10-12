@@ -329,3 +329,6 @@ msgstr ""
 
 msgid "badges_promo"
 msgstr ""
+
+msgid "badges"
+msgstr ""

@@ -109,6 +109,7 @@ class AskForHelpHandler(WenetEventHandler):
     INTENT_SOMEWHAT_HELPFUL = "somewhatHelpful"
     INTENT_VERY_HELPFUL = "veryHelpful"
     INTENT_EXTREMELY_HELPFUL = "extremelyHelpful"
+    INTENT_BADGES = "/badges"
     # INTENT_PROFILE = "/profile"
     # available states
     STATE_QUESTION_0 = "question_0"
@@ -279,8 +280,15 @@ class AskForHelpHandler(WenetEventHandler):
                     static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_1)
                 )
             )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_BADGES, self.action_badges).with_rule(
+                intent=self.INTENT_BADGES
+            )
+        )
         # self.intent_manager.with_fulfiller(
-        #     IntentFulfillerV3(self.INTENT_PROFILE, self.action_profile).with_rule(intent=self.INTENT_PROFILE)
+        #     IntentFulfillerV3(self.INTENT_PROFILE, self.action_profile).with_rule(
+        #         intent=self.INTENT_PROFILE
+        #     )
         # )
         # keep this as the last one!
         self.intent_manager.with_fulfiller(
@@ -502,7 +510,7 @@ class AskForHelpHandler(WenetEventHandler):
             .with_substitution("username", answerer_user.name.first if answerer_user.name.first and not message.attributes.get("anonymous", False) else self._translator.get_translation_instance(user_object.locale).with_text("anonymous_user").translate()) \
             .translate()
 
-        answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 2])
+        answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1])
         button_report_text = self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate()
         button_more_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("more_answers_button").translate()
         button_best_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("best_answers_button").translate()
@@ -684,7 +692,7 @@ class AskForHelpHandler(WenetEventHandler):
             button_9_text = self._translator.get_translation_instance(user_locale).with_text("arts_and_crafts_button").translate()
             button_10_text = self._translator.get_translation_instance(user_locale).with_text("life_ponders_button").translate()
             button_11_text = self._translator.get_translation_instance(user_locale).with_text("varia_misc_button").translate()
-            response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[3, 3, 3, 2])
+            response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 2, 2, 2, 2, 1])
             response_with_buttons.with_textual_option(button_1_text, self.INTENT_STUDYING_CAREER)
             response_with_buttons.with_textual_option(button_2_text, self.INTENT_LOCAL_UNIVERSITY)
             response_with_buttons.with_textual_option(button_3_text, self.INTENT_LOCAL_THINGS)
@@ -759,7 +767,7 @@ class AskForHelpHandler(WenetEventHandler):
         message = self._translator.get_translation_instance(user_locale).with_text("sensitive_question").translate()
         button_1_text = self._translator.get_translation_instance(user_locale).with_text("not_sensitive").translate()
         button_2_text = self._translator.get_translation_instance(user_locale).with_text("sensitive").translate()
-        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2])
+        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1])
         response_with_buttons.with_textual_option(button_1_text, self.INTENT_NOT_SENSITIVE_QUESTION)
         response_with_buttons.with_textual_option(button_2_text, self.INTENT_SENSITIVE_QUESTION)
         response.with_message(response_with_buttons)
@@ -778,7 +786,7 @@ class AskForHelpHandler(WenetEventHandler):
         message = self._translator.get_translation_instance(user_locale).with_text("anonymous_question").translate()
         button_1_text = self._translator.get_translation_instance(user_locale).with_text("anonymous").translate()
         button_2_text = self._translator.get_translation_instance(user_locale).with_text("not_anonymous").translate()
-        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2])
+        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1])
         response_with_buttons.with_textual_option(button_1_text, self.INTENT_ANONYMOUS_QUESTION)
         response_with_buttons.with_textual_option(button_2_text, self.INTENT_NOT_ANONYMOUS_QUESTION)
         response.with_message(response_with_buttons)
@@ -821,7 +829,7 @@ class AskForHelpHandler(WenetEventHandler):
         message = self._translator.get_translation_instance(user_locale).with_text("specify_answerer_location").translate()
         button_1_text = self._translator.get_translation_instance(user_locale).with_text("location_answer_1").translate()
         button_2_text = self._translator.get_translation_instance(user_locale).with_text("location_answer_2").translate()
-        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2])
+        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1])
         response_with_buttons.with_textual_option(button_1_text, self.INTENT_ASK_TO_NEARBY)
         response_with_buttons.with_textual_option(button_2_text, self.INTENT_ASK_TO_ANYWHERE)
         response.with_message(response_with_buttons)
@@ -1356,6 +1364,16 @@ class AskForHelpHandler(WenetEventHandler):
                 rapid_answer.with_textual_option(f"#{1 + i}", self.INTENT_BUTTON_WITH_PAYLOAD.format(button_id))
             response.with_message(rapid_answer)
         response.with_context(context)
+        return response
+
+    def action_badges(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+        response = OutgoingEvent(incoming_event.social_details)
+        badges_message = self._translator.get_translation_instance(user_locale).with_text("badges") \
+            .with_substitution("base_url", self.wenet_hub_url) \
+            .with_substitution("app_id", self.app_id) \
+            .translate()
+        response.with_message(TextualResponse(badges_message))
         return response
 
     # def action_profile(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
