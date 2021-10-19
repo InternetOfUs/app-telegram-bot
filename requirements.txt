@@ -7,6 +7,6 @@ blinker==1.4
 requests
 emoji
 uhopper-chatbot==1.5.2
-wenet-common==3.0.0
+wenet-common==3.1.0
 uhopper-alert==2.0.0
 uhopper-mqtt==1.1.0
