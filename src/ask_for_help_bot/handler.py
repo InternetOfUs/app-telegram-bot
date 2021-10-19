@@ -22,7 +22,7 @@ from chatbot_core.v3.connector.social_connectors.telegram_connector import Teleg
 from chatbot_core.v3.handler.helpers.intent_manager import IntentFulfillerV3
 from chatbot_core.v3.job.job_manager import JobManager
 from chatbot_core.v3.logger.event_logger import LoggerConnector
-from chatbot_core.v3.model.messages import TextualResponse, RapidAnswerResponse, TelegramRapidAnswerResponse, \
+from chatbot_core.v3.model.messages import TextualResponse, TelegramRapidAnswerResponse, \
     UrlImageResponse, ResponseMessage, TelegramTextualResponse
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEvent
 from common.button_payload import ButtonPayload
@@ -139,7 +139,7 @@ class AskForHelpHandler(WenetEventHandler):
     def __init__(self, instance_namespace: str, bot_id: str, handler_id: str, telegram_id: str, wenet_instance_url: str,
                  wenet_hub_url: str, app_id: str, client_secret: str, redirect_url: str, wenet_authentication_url: str,
                  wenet_authentication_management_url: str, task_type_id: str, community_id: str, max_users: int,
-                 alert_module: AlertModule, connector: SocialConnector, nlp_handler: Optional[NLPHandler],
+                 survey_url: str, alert_module: AlertModule, connector: SocialConnector, nlp_handler: Optional[NLPHandler],
                  translator: Optional[Translator], delay_between_messages_sec: Optional[int] = None,
                  delay_between_text_sec: Optional[float] = None, logger_connectors: Optional[List[LoggerConnector]] = None):
         super().__init__(instance_namespace, bot_id, handler_id, telegram_id, wenet_instance_url, wenet_hub_url, app_id,
@@ -148,6 +148,7 @@ class AskForHelpHandler(WenetEventHandler):
                          delay_between_messages_sec, delay_between_text_sec, logger_connectors)
 
         self.max_users = max_users
+        self.survey_url = survey_url
 
         JobManager.instance().add_job(PendingMessagesJob("wenet_ask_for_help_pending_messages_job", self._instance_namespace, self._connector, logger_connectors))
         self.intent_manager.with_fulfiller(
@@ -382,17 +383,21 @@ class AskForHelpHandler(WenetEventHandler):
     def _get_start_messages(self, user_locale: str) -> List[ResponseMessage]:
         message_1 = self._translator.get_translation_instance(user_locale).with_text("start_text_1").translate()
         message_2 = self._translator.get_translation_instance(user_locale).with_text("start_text_2").translate()
+        survey_message = self._translator.get_translation_instance(user_locale).with_text("survey_promo") \
+            .with_substitution("survey_url", self.survey_url) \
+            .translate()
         badges_message = self._translator.get_translation_instance(user_locale).with_text("badges_promo")\
             .with_substitution("base_url", self.wenet_hub_url)\
             .with_substitution("app_id", self.app_id)\
             .translate()
         message_3 = self._get_help_and_info_message(user_locale)
         button_text = self._translator.get_translation_instance(user_locale).with_text("start_button").translate()
-        final_message_with_button = RapidAnswerResponse(TextualResponse(message_3))
+        final_message_with_button = TelegramRapidAnswerResponse(TextualResponse(message_3))
         final_message_with_button.with_textual_option(button_text, self.INTENT_FIRST_QUESTION)
         return [
             TextualResponse(message_1),
             TextualResponse(message_2),
+            TextualResponse(survey_message),
             TextualResponse(badges_message),
             final_message_with_button
         ]
@@ -1358,7 +1363,7 @@ class AskForHelpHandler(WenetEventHandler):
                     proposed_tasks.append(task)
             context.with_static_state(self.CONTEXT_PROPOSED_TASKS, [task.task_id for task in proposed_tasks])
             message_text = "\n".join([text] + tasks_texts + [self._translator.get_translation_instance(user_locale).with_text("answers_tasks_choose").translate()])
-            rapid_answer = RapidAnswerResponse(TextualResponse(message_text))
+            rapid_answer = TelegramRapidAnswerResponse(TextualResponse(message_text))
             for i in range(len(proposed_tasks)):
                 button_id = self.cache.cache(ButtonPayload({"task_id": proposed_tasks[i].task_id, "sensitive": proposed_tasks[i].attributes.get("sensitive")}, self.INTENT_ANSWER_PICKED_QUESTION).to_repr())
                 rapid_answer.with_textual_option(f"#{1 + i}", self.INTENT_BUTTON_WITH_PAYLOAD.format(button_id))

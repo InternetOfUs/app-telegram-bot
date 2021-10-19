@@ -70,6 +70,7 @@
           - ${CLIENT_SECRET}
           - ${WENET_AUTHENTICATION_MANAGEMENT_URL}
           - ${REDIRECT_URL}
+          - ${SURVEY_URL}
     ci_environments:
       production:
         stages:

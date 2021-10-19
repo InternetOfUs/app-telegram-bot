@@ -44,6 +44,7 @@ if __name__ == "__main__":
     task_type_id = os.getenv("TASK_TYPE_ID")
     community_id = os.getenv("COMMUNITY_ID")
     max_users = int(os.getenv("MAX_USERS", 5))
+    survey_url = os.getenv("SURVEY_URL")
     wenet_authentication_url = os.getenv("WENET_AUTHENTICATION_URL")
     redirect_url = os.getenv("REDIRECT_URL")
     client_secret = os.getenv("CLIENT_SECRET")
@@ -72,6 +73,7 @@ if __name__ == "__main__":
         task_type_id,
         community_id,
         max_users,
+        survey_url,
         alert_module,
         connector,
         None,

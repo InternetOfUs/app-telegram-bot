@@ -18,6 +18,7 @@ declare -a REQUIRED_ENV_VARS=(
                                 "${CLIENT_SECRET}"
                                 "${WENET_AUTHENTICATION_MANAGEMENT_URL}"
                                 "${REDIRECT_URL}"
+                                "${SURVEY_URL}"
                               )
 
 for e in "${REQUIRED_ENV_VARS[@]}"

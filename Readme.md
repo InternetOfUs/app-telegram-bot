@@ -126,12 +126,13 @@ Both the chatbots use the following environment variables
 * `MQTT_TOPIC`: MQTT topic to listen on
 * `INTERFACE_APIKEY`: bot interface api key
 * `INSTANCE_NAMESPACE`: bot instance namespace
-* `WENET_INSTANCE_URL`: the url to the WeNet instance
+* `WENET_INSTANCE_URL`: the url of the WeNet instance
 * `WENET_APP_ID`: WeNet App ID used by the bot
 * `WENET_HUB_URL`: url of the WeNet hub
 * `TASK_TYPE_ID`: the type ID of the tasks
 * `COMMUNITY_ID`: the community ID
 * `MAX_USERS`: the maximum number of users that should receive the question in the ask4help bot (default is 5)
+* `SURVEY_URL`: the url of the survey
 * `CLIENT_SECRET`: the secret key of the WeNet application
 * `WENET_AUTHENTICATION_MANAGEMENT_URL`: the URL that manages OAuth in WeNet
 * `REDIRECT_URL`: the redirection URL associated with the WeNet application

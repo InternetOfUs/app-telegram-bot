@@ -22,6 +22,7 @@
 - Integrated new structures of the callback messages
 - Refactored PendingMessagesJob
 - Added `/badges` command to request insights on badge status
+- Added a survey promo message in the welcome messages
 
 ## 1.0.12
 - Added sentry integration
