@@ -10,13 +10,15 @@ declare -a REQUIRED_ENV_VARS=(
                                 "${MQTT_TOPIC}"
                                 "${INTERFACE_APIKEY}"
                                 "${INSTANCE_NAMESPACE}"
-                                "${WENET_BACKEND_URL}"
+                                "${WENET_INSTANCE_URL}"
                                 "${WENET_APP_ID}"
                                 "${WENET_HUB_URL}"
                                 "${TASK_TYPE_ID}"
+                                "${COMMUNITY_ID}"
                                 "${CLIENT_SECRET}"
                                 "${WENET_AUTHENTICATION_MANAGEMENT_URL}"
                                 "${REDIRECT_URL}"
+                                "${SURVEY_URL}"
                               )
 
 for e in "${REQUIRED_ENV_VARS[@]}"

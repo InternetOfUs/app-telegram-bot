@@ -4,10 +4,11 @@ from flask import Flask
 from flask_restful import Api
 
 from messages.instance import InstanceResourcesBuilder
-from uhopper.utils.mqtt import MqttPublishHandler
+from uhopper.utils.mqtt.handler import MqttPublishHandler
 
 
 class MessageInterface:
+
     def __init__(self,
                  mqtt_publisher: MqttPublishHandler,
                  mqtt_topic: str,

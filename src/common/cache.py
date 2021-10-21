@@ -2,13 +2,13 @@ from __future__ import absolute_import, annotations
 
 from typing import Optional
 
-from wenet.common.storage.cache import RedisCache
+from wenet.storage.cache import RedisCache
 
 
 class BotCache(RedisCache):
 
     def cache(self, data: dict, ttl: int = 604800, key: Optional[str] = None) -> str:
-        return super().cache(data, ttl, key)
+        return super().cache(data, key, ttl=ttl)
 
     @staticmethod
     def build_from_env() -> BotCache:

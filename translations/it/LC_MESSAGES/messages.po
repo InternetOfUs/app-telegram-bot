@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-05-31 10:38+0200\n"
+"PO-Revision-Date: 2021-10-19 12:04+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -14,21 +14,23 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 2.4.2\n"
+"X-Generator: Poedit 3.0\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: src/ask_for_help/handler.py:32
 msgid "info_text"
 msgstr ""
-"Puoi fare una domanda con il comando /question. Usando /answer puoi vedere "
-"le risposte aperte e rispondere. Se vuoi interrompere un’azione che stai "
-"facendo, usa il comando /cancel"
+"Puoi fare una domanda con il comando /ask. Usando /questions puoi vedere le "
+"risposte aperte e rispondere. Con /badges puoi ottenere informazioni sullo "
+"stato dei tuoi badge. Se vuoi interrompere un’azione che stai facendo, usa "
+"il comando /cancel . You can report a bug by sending an email to "
+"support@internetofus.eu !"
 
 #: src/ask_for_help/handler.py:58
 msgid "start_text_1"
 msgstr ""
 "Grazie per esserti connesso! :wave: Io sono il chatbot *AskAAU*, il mio "
-"scopo è aiutare gli studenti con domande e risposte"
+"scopo è aiutare gli studenti con domande e risposte."
 
 #: src/ask_for_help/handler.py:59
 msgid "start_text_2"
@@ -52,33 +54,166 @@ msgstr "L’operazione corrente è stata cancellata"
 msgid "question_1"
 msgstr "Cosa vorresti chiedere ai componenti della community?"
 
-msgid "question_2"
-msgstr "A quale tipo di persona dovrei chiedere?"
-
-msgid "type_answer_1"
-msgstr "Diversa da me"
-
-msgid "type_answer_2"
-msgstr "Simile a me"
-
-msgid "type_answer_3"
-msgstr "A chiunque"
-
 msgid "question_is_not_text"
 msgstr "Per piacere scrivi la tua domanda"
 
-msgid "specify_answerer"
-msgstr "Puoi dirmi perchè hai scelto questo tipo di persona?"
+msgid "domain_question"
+msgstr ""
+"Ok, chiederò ad altri di rispondere alla tua domanda. Adesso ti farò alcune "
+"domande per specificare a chi chiedere più precisamente :dart:.\n"
+"\n"
+"1/6: Qual è il dominio della tua domanda?"
 
-msgid "question_4"
+msgid "studying_career_button"
+msgstr ":book: Studiare / Carriera"
+
+msgid "local_university_button"
+msgstr ":mortar_board: Università locale"
+
+msgid "local_things_button"
+msgstr ":world_map: Cose locali"
+
+msgid "physical_activity_button"
+msgstr ":runner: Attività fisica"
+
+msgid "cultural_interests_button"
+msgstr ":classical_building: Interessi culturali"
+
+msgid "food_and_cooking_button"
+msgstr ":cooking: Cibo e cucina"
+
+msgid "cinema_theatre_button"
+msgstr ":popcorn: Cinema, teatro"
+
+msgid "music_button"
+msgstr ":notes: Musica"
+
+msgid "arts_and_crafts_button"
+msgstr ":art: Arti e mestieri"
+
+msgid "life_ponders_button"
+msgstr ":thinking_face: Riflessioni sulla vita"
+
+msgid "varia_misc_button"
+msgstr ":space_invader: Varia / Misc"
+
+msgid "studying_career"
+msgstr "Studiare / Carriera"
+
+msgid "local_university"
+msgstr "Università locale"
+
+msgid "local_things"
+msgstr "Cose locali"
+
+msgid "physical_activity"
+msgstr "Attività fisica"
+
+msgid "cultural_interests"
+msgstr "Interessi culturali"
+
+msgid "food_and_cooking"
+msgstr "Cibo e cucina"
+
+msgid "cinema_theatre"
+msgstr "Cinema, teatro"
+
+msgid "music"
+msgstr "Musica"
+
+msgid "arts_and_crafts"
+msgstr "Arti e mestieri"
+
+msgid "life_ponders"
+msgstr "Riflessioni sulla vita"
+
+msgid "varia_misc"
+msgstr "Varia / Misc"
+
+msgid "domain_similarity_question"
+msgstr ""
+"Ok, ora possiamo specificare il tipo di persone che inviterò per la tua "
+"domanda.\n"
+"\n"
+"2/6: Queste persone dovrebbero avere un *interesse per ({domain})* simile o "
+"diverso dal tuo?"
+
+msgid "answer_similar_domain"
+msgstr "Simile"
+
+msgid "answer_different_domain"
+msgstr "Diverso"
+
+msgid "answer_indifferent_domain"
+msgstr "Indifferente, non tenerne conto"
+
+msgid "belief_values_question"
+msgstr ""
+"3/6: Queste persone dovrebbero avere *credenze e valori* simili o diversi "
+"dai tuoi?"
+
+msgid "answer_similar_belief_values"
+msgstr "Simili"
+
+msgid "answer_different_belief_values"
+msgstr "Diversi"
+
+msgid "answer_indifferent_belief_values"
+msgstr "Indifferente, non tenerne conto"
+
+msgid "sensitive_question"
+msgstr ""
+"4/6: È una domanda dal contenuto sensible? Se lo è, farò sapere alle altre "
+"persone di prestare particolare attenzione nel rispondere."
+
+msgid "not_sensitive"
+msgstr "Non sensibile"
+
+msgid "sensitive"
+msgstr ":warning: Sensibile"
+
+msgid "anonymous_question"
+msgstr "Preferisci chiederlo in forma anonima?"
+
+msgid "anonymous_user"
+msgstr "Anonimo"
+
+msgid "anonymous"
+msgstr "Chiedilo in modo anonimo"
+
+msgid "not_anonymous"
+msgstr "Chiedilo normalmente"
+
+msgid "social_closeness_question"
+msgstr ""
+"5/6: Le persone dovrebbero essere più vicine o più lontane da te "
+"*socialmente*? Più vicine sono le persone che potresti conoscere o con cui "
+"hai interagito in precedenza tramite il chatbot."
+
+msgid "answer_socially_close"
+msgstr "Vicine a me"
+
+msgid "answer_socially_indifferent"
+msgstr "Indifferente, non tenerne conto"
+
+msgid "answer_socially_distant"
+msgstr "Distanti da me"
+
+msgid "specify_answerer_location"
+msgstr ""
+"6/6: Le persone dovrebbero essere nelle tue vicinanze in questo momento o di "
+"recente?"
+
+msgid "location_answer_1"
+msgstr "In prossimità"
+
+msgid "location_answer_2"
+msgstr "Non importa"
+
+msgid "question_final"
 msgstr ""
 "Bene, inoltrerò la tua domanda ad altri utenti. Appena avrò risposta ti faro "
 "sapere"
-
-msgid "answerer_details_are_not_text"
-msgstr ""
-"Per piacere specifica a parole a che tipo di persona dovrei proporre la tua "
-"domanda"
 
 msgid "question_0"
 msgstr ""
@@ -99,14 +234,48 @@ msgstr "Qualcosa è andato storto :pensive: Riprova più tardi"
 
 msgid "answer_message_0"
 msgstr ""
-"C’è una domanda alla quale potresti rispondere!\n"
+"Qualcuno nella community ha una domanda alla quale potresti rispondere!\n"
 "\n"
-"*{question}* - {user}\n"
+"“{question}” - {user}"
+
+msgid "answer_sensitive_message_0"
+msgstr ""
+"Qualcuno nella community ha una domanda dal contenuto sensible alla quale "
+"potresti rispondere!\n"
 "\n"
-"Puoi rispondere velocemente?"
+"“{question}” - {user}\n"
+"\n"
+":warning: L’utente ha contrassegnato questa domanda come dal contenuto "
+"sensibile, quindi fai molta attenzione nel rispondere :)"
+
+msgid "answer_message_nearby"
+msgstr ""
+"Qualcuno *vicino a te in questo momento* ha una domanda alla quale potresti "
+"rispondere!\n"
+"\n"
+"“{question}” - {user}"
+
+msgid "answer_sensitive_message_nearby"
+msgstr ""
+"Qualcuno *vicino a te in questo momento* ha una domanda dal contenuto "
+"sensible alla quale potresti rispondere!\n"
+"\n"
+"“{question}” - {user}\n"
+"\n"
+":warning: L’utente ha contrassegnato questa domanda come dal contenuto "
+"sensibile, quindi fai molta attenzione nel rispondere :)"
+
+msgid "answer_question"
+msgstr "Vai avanti con la tua risposta :point_down:"
+
+msgid "answer_sensitive_question"
+msgstr ""
+"Vai avanti con la tua risposta :point_down:\n"
+"Per favore sii attento nella tua risposta, l’utente l’ha contrassegnata come "
+"dal contenuto sensibile."
 
 msgid "answer_question_button"
-msgstr "Rispondi"
+msgstr "Rispondo subito!"
 
 msgid "answer_remind_later_button"
 msgstr ":clock2: Ricordamelo dopo"
@@ -115,13 +284,17 @@ msgid "answer_not_button"
 msgstr ":x: Non so aiutare"
 
 msgid "answer_report_button"
-msgstr "Segnala"
+msgstr ":exclamation: Segnala"
 
 msgid "answerer_is_not_text"
 msgstr "La tua risposta deve essere un testo, e non un allegato"
 
 msgid "answered_message"
-msgstr "Grazie! Ora invio la tua risposta alla persona interessata"
+msgstr "Grazie! Ora invio la tua risposta alla persona interessata."
+
+msgid "answered_message_anonymously"
+msgstr ""
+"Grazie! Inoltrerò la tua risposta in modo anonimo alla persona interessata."
 
 msgid "not_answer_response"
 msgstr "Ok"
@@ -139,7 +312,7 @@ msgid "button_why_reporting_2_text"
 msgstr "È spam"
 
 msgid "button_why_reporting_3_text"
-msgstr ":x:Ho cambiato idea"
+msgstr ":x: Ho cambiato idea"
 
 msgid "report_comment_text"
 msgstr "Aggiungi un commento:"
@@ -156,7 +329,7 @@ msgstr ""
 "{answer} - {username}"
 
 msgid "more_answers_button"
-msgstr "Chiedi a più persone"
+msgstr ":game_die: Chiedi a più persone"
 
 msgid "ask_more_answers_text"
 msgstr "Ok, chiederò a più persone"
@@ -170,22 +343,66 @@ msgstr "Queste sono le domande a cui puoi rispondere:"
 msgid "answers_tasks_choose"
 msgstr "Scegli una domanda a cui rispondere"
 
+msgid "best_answer_0"
+msgstr "Perché hai scelto questa risposta?"
+
+msgid "best_answer_helpful"
+msgstr ""
+"Quanto bene ho fatto a connetterti a diversi utenti seguendo le tue "
+"intenzioni specifiche?"
+
+msgid "not_at_all_helpful"
+msgstr "1 - Per niente utile"
+
+msgid "slightly_helpful"
+msgstr "2 - Un po’ utile"
+
+msgid "somewhat_helpful"
+msgstr "3 - Non riesco a decidere"
+
+msgid "very_helpful"
+msgstr "4 - Utile"
+
+msgid "extremely_helpful"
+msgstr "5 - Molto utile"
+
+msgid "reason_is_not_text"
+msgstr "Specifica perché hai scelto questa risposta."
+
 msgid "best_answer_final_message"
 msgstr ""
-"Sono contento di essere stato d’aiuto. Se devi chiedere altro, usa il "
-"comando /question"
+"Grazie per l’input! Sentiti libero di fare una nuova domanda in qualsiasi "
+"momento!"
 
 msgid "expired_button_message"
 msgstr "Mi dispiace ma hai premuto su un bottone scaduto"
 
 msgid "best_answers_button"
-msgstr "Mi piace!"
+msgstr ":white_check_mark: Mi piace!"
 
 msgid "not_implemented"
 msgstr "Mi dispiace, ma questo comando non è ancora disponibile :grimacing:"
 
 msgid "you_are_answering_to"
-msgstr "Stai rispondendo alla seguente domanda:"
+msgstr ""
+"Stai rispondendo alla seguente domanda:\n"
+"_{question}_"
+
+msgid "you_are_answering_to_sensitive"
+msgstr ""
+"Stai rispondendo alla seguente domanda:\n"
+"_{question}_\n"
+"Per favore sii attento nella tua risposta, l’utente l’ha contrassegnata come "
+"dal contenuto sensibile."
+
+msgid "answer_anonymously"
+msgstr "Preferisci inviare questa risposta in forma anonima?"
+
+msgid "anonymous_answer_1"
+msgstr "Invia la risposta in forma anonima"
+
+msgid "anonymous_answer_2"
+msgstr "Invia la risposta normalmente"
 
 msgid "picked_best_answer"
 msgstr ""
@@ -202,5 +419,45 @@ msgstr ""
 "guardarli qui :point_right: {base_url}/wenetapp/user-app-details?id={app_id}"
 "&back=profile"
 
-#~ msgid "not_inclusive"
-#~ msgstr "Please use more "
+msgid "badges"
+msgstr ""
+"Puoi controllare I tuoi badge qui :point_right: {base_url}/wenetapp/user-app-"
+"details?id={app_id}&back=profile"
+
+msgid "survey_promo"
+msgstr ""
+"Prima di iniziare a porre domande, assicurati di aver compilato il sondaggio "
+"al seguente link {survey_url}."
+
+#~ msgid "type_answer_1"
+#~ msgstr "Diversa da me"
+
+#~ msgid "type_answer_2"
+#~ msgstr "Simile a me"
+
+#~ msgid "type_answer_3"
+#~ msgstr "A chiunque"
+
+#~ msgid "question_2"
+#~ msgstr "A quale tipo di persona dovrei chiedere?"
+
+#~ msgid "specify_answerer"
+#~ msgstr "Puoi dirmi perchè hai scelto questo tipo di persona?"
+
+#~ msgid "answerer_details_are_not_text"
+#~ msgstr ""
+#~ "Per piacere specifica a parole a che tipo di persona dovrei proporre la "
+#~ "tua domanda"
+
+#~ msgid "question_5"
+#~ msgstr ""
+#~ "Bene, inoltrerò la tua domanda ad altri utenti. Appena avrò risposta ti "
+#~ "faro sapere"
+
+#~ msgid "location_answer_3"
+#~ msgstr "Ovunque"
+
+#~ msgid "question_4"
+#~ msgstr ""
+#~ "Bene, inoltrerò la tua domanda ad altri utenti. Appena avrò risposta ti "
+#~ "faro sapere"

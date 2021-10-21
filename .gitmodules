@@ -1,6 +1,0 @@
-[submodule "chatbot-core"]
-	path = chatbot-core
-	url = ../../chatbot/framework/chatbot-core.git
-[submodule "wenet-common-models"]
-	path = wenet-common-models
-	url = ../../wenet/wenet-common-models.git

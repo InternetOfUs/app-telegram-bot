@@ -2,8 +2,33 @@
 
 # Versions
 
+## 2.0.0
+- Integrated position data in the question and answer flow
+- Integrated sensitive and anonymous information data in the question and answer flow
+- Update to project template 4.5.1
+- Removed submodules and added the libraries as packages:
+  - `uhopper-chatbot` version `1.5.2`;
+  - `wenet-common` version `3.1.0`;
+  - `uhopper-alert` version `2.0.0`;
+  - `uhopper-mqtt` version `1.1.0`.
+- Updated question flow adding social closeness input in the question creation flow instead of similarity and reason
+- Integrated domain data in the question flow
+- Integrated domain similarity data in the question flow
+- Added environment variables for communityId and maxUsers fields
+- Integrated belief and values similarity data in the question flow
+- Updated app commands: renamed `/question` into `/ask` and `/answer` into `/questions`
+- Integrated rating flow when accepting an answer
+- Updated common models to fix service APIs methods for getting all tasks of an application and for an user
+- Integrated new structures of the callback messages
+- Refactored PendingMessagesJob
+- Added `/badges` command to request insights on badge status
+- Added a survey promo message in the welcome messages
+
 ## 1.0.12
 - Added sentry integration
+
+## 1.0.11
+- Updated common models to hotfix for badges messages
 
 ## 1.0.10
 - Changed the `project` field in the messages logged into the Wenet platform. Now the `appId` is used, instead of the `PROJECT_NAME` environment variable
@@ -22,10 +47,10 @@
 - Updated text of english messages with the new translations provided by Peter
 
 ## 1.0.5
-* Removed redundant messages.
-* Added new logic allowing to clean context once new messages from WeNet are received.
-* Added support for "answer picked" notification message.
-* Added support for "textual message" notification message.
+- Removed redundant messages.
+- Added new logic allowing to clean context once new messages from WeNet are received.
+- Added support for "answer picked" notification message.
+- Added support for "textual message" notification message.
 
 ## 1.0.4
 - Several small fixes, such as typos, removal of the command `/profile` and `/report`

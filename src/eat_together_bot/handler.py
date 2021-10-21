@@ -23,13 +23,13 @@ from chatbot_core.v3.model.messages import TextualResponse, RapidAnswerResponse,
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEvent
 from common.utils import Utils
 from common.wenet_event_handler import WenetEventHandler
-from uhopper.utils.alert import AlertModule
-from wenet.common.interface.exceptions import TaskCreationError, TaskTransactionCreationError, RefreshTokenExpiredError
-from wenet.common.model.message.event import WeNetAuthenticationEvent
-from wenet.common.model.message.message import TextualMessage, \
+from uhopper.utils.alert.module import AlertModule
+from wenet.interface.exceptions import CreationError, RefreshTokenExpiredError
+from wenet.model.callback_message.event import WeNetAuthenticationEvent
+from wenet.model.callback_message.message import TextualMessage, \
     TaskProposalNotification, TaskVolunteerNotification, TaskSelectionNotification, Message, TaskConcludedNotification
-from wenet.common.model.task.task import Task, TaskGoal
-from wenet.common.model.task.transaction import TaskTransaction
+from wenet.model.task.task import Task, TaskGoal
+from wenet.model.task.transaction import TaskTransaction
 
 logger = logging.getLogger("uhopper.chatbot.wenet.eattogether.chatbot")
 
@@ -84,10 +84,11 @@ class EatTogetherHandler(WenetEventHandler):
                  bot_id: str,
                  handler_id: str,
                  telegram_id: str,
-                 wenet_backend_url: str,
+                 wenet_instance_url: str,
                  app_id: str,
                  wenet_hub_url: str,
                  task_type_id: str,
+                 community_id: str,
                  wenet_authentication_url: str,
                  wenet_authentication_management_url: str,
                  redirect_url: str,
@@ -105,7 +106,7 @@ class EatTogetherHandler(WenetEventHandler):
         :param bot_id: id of the bot
         :param handler_id: id of the handler
         :param telegram_id: telegram secret code to communicate with Telegram APIs
-        :param wenet_backend_url: backend of the service APIs (with the protocol - e.g. https)
+        :param wenet_instance_url: wenet instance url (with the protocol - e.g. https)
         :param app_id: WeNet app id with which the bot works
         :param wenet_hub_url: url of the hub, where to redirect not authenticated users
         :param task_type_id: the ID of the type of the tasks the bot will create
@@ -117,10 +118,10 @@ class EatTogetherHandler(WenetEventHandler):
         :param delay_between_text_sec:
         :param logger_connectors:
         """
-        super().__init__(instance_namespace, bot_id, handler_id, telegram_id, wenet_backend_url, wenet_hub_url, app_id,
+        super().__init__(instance_namespace, bot_id, handler_id, telegram_id, wenet_instance_url, wenet_hub_url, app_id,
                          client_secret, redirect_url, wenet_authentication_url, wenet_authentication_management_url,
-                         task_type_id, alert_module, connector, nlp_handler, translator, delay_between_messages_sec,
-                         delay_between_text_sec, logger_connectors)
+                         task_type_id, community_id, alert_module, connector, nlp_handler, translator,
+                         delay_between_messages_sec, delay_between_text_sec, logger_connectors)
         # redirecting the flow in the corresponding points
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.ORGANIZE_Q1, self.organize_q1).with_rule(intent=self.INTENT_ORGANIZE)
@@ -473,7 +474,7 @@ class EatTogetherHandler(WenetEventHandler):
                     str(self.task_type_id),
                     str(wenet_id),
                     self.app_id,
-                    None,
+                    self.community_id,
                     TaskGoal("", ""),
                     [],
                     attributes,
@@ -620,8 +621,8 @@ class EatTogetherHandler(WenetEventHandler):
             logger.info("Task [%s] created successfully by user [%s]" % (task.goal.name, str(task.requester_id)))
             response.with_message(TextualResponse(emojize("Your event has been saved successfully :tada:",
                                                           use_aliases=True)))
-        except TaskCreationError as e:
-            logger.error(f"The service API responded with code {e.http_status} and message {json.dumps(e.json_response)}")
+        except CreationError as e:
+            logger.error(f"The service API responded with code {e.http_status_code} and message {json.dumps(e.server_response)}")
             response.with_message(TextualResponse("I'm sorry, but something went wrong with the creation of your task."
                                                   " Try again later"))
         finally:
@@ -658,11 +659,11 @@ class EatTogetherHandler(WenetEventHandler):
             response.with_message(TextualResponse(emojize("Great! I immediately send a notification to the task creator! "
                                                           "I'll let you know if you are selected to participate :wink:",
                                                           use_aliases=True)))
-        except TaskTransactionCreationError as e:
+        except CreationError as e:
             response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
             error_message = "Error in the creation of the transaction for confirming the partecipation of user" \
                             " [%s] to task [%s]. The service API resonded with code %d and message %s" \
-                            % (volunteer_id, task.task_id, e.http_status, json.dumps(e.json_response))
+                            % (volunteer_id, task.task_id, e.http_status_code, json.dumps(e.server_response))
             logger.error(error_message)
         return response
 
@@ -689,11 +690,11 @@ class EatTogetherHandler(WenetEventHandler):
                                           int(datetime.now().timestamp()), volunteer_id, {}, [])
             service_api.create_task_transaction(transaction)
             logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
-        except TaskTransactionCreationError as e:
+        except CreationError as e:
             error_message = "Error in the creation of the transaction for communicating that the user" \
                             " [%s] refused to participate to task [%s]. " \
                             "The service API resonded with code %d and message %s" \
-                            % (volunteer_id, task.task_id, e.http_status, json.dumps(e.json_response))
+                            % (volunteer_id, task.task_id, e.http_status_code, json.dumps(e.server_response))
             logger.error(error_message)
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_message(TextualResponse(emojize("All right :+1:", use_aliases=True)))
@@ -774,10 +775,10 @@ class EatTogetherHandler(WenetEventHandler):
             service_api.create_task_transaction(transaction)
             logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
             outcome = True
-        except TaskTransactionCreationError as e:
+        except CreationError as e:
             logger.error("Error in the creation of the transaction with creator decision about the partecipation of user"
                          " [%s] to task [%s]. The service API resonded with code %d and message %s"
-                         % (volunteer_id, task_id, e.http_status, json.dumps(e.json_response)))
+                         % (volunteer_id, task_id, e.http_status_code, json.dumps(e.server_response)))
             outcome = False
         finally:
             candidatures.pop(candidature_id, None)
@@ -870,7 +871,7 @@ class EatTogetherHandler(WenetEventHandler):
             self._alert_module.alert(error_message)
             raise ValueError(error_message)
         wenet_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
-        task_list = service_api.get_opened_tasks_of_user(str(wenet_id), self.app_id)
+        task_list = service_api.get_all_tasks(app_id=self.app_id, task_type_id=self.task_type_id, requester_id=str(wenet_id), has_close_ts=False)
         # filter on the malformed tasks (those without "where" and "maxPeople" attributes)
         task_list = [x for x in task_list if "where" in x.attributes and "maxPeople" in x.attributes]
         if len(task_list) > 0:
@@ -1047,10 +1048,10 @@ class EatTogetherHandler(WenetEventHandler):
             context.delete_static_state(self.CONTEXT_USER_TASK_LIST)
             context.delete_static_state(self.CONTEXT_USER_TASK_INDEX)
             context.delete_static_state(self.CONTEXT_CURRENT_STATE)
-        except TaskTransactionCreationError as e:
+        except CreationError as e:
             response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
             logger.error("Error in the creation of the transaction for concluding the task [%s]. The service API resonded with code %d and message %s"
-                         % (task_list[current_index].task_id, e.http_status, json.dumps(e.json_response)))
+                         % (task_list[current_index].task_id, e.http_status_code, json.dumps(e.server_response)))
 
         response.with_context(context)
         return response
@@ -1065,7 +1066,8 @@ class EatTogetherHandler(WenetEventHandler):
                "*/conclude* to close an existing social meal\n" \
                "To interrupt an ongoing procedure at any time, type */cancel*"
 
-    def handle_expired_click(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+    @staticmethod
+    def handle_expired_click(incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
         if isinstance(incoming_event.incoming_message, IncomingCommand):
             logger.info("The user clicked on an expired button: %s" % incoming_event.incoming_message.command)

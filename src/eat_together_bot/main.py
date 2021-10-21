@@ -4,8 +4,8 @@ import sentry_sdk
 
 from common.logging_config import get_logging_configuration
 from eat_together_bot.handler import EatTogetherHandler
-from uhopper.utils.alert import AlertModule
-from uhopper.utils.mqtt import MqttSubscriptionHandler
+from uhopper.utils.alert.module import AlertModule
+from uhopper.utils.mqtt.handler import MqttSubscriptionHandler
 from chatbot_core.v3.connector.social_connectors.telegram_connector import TelegramSocialConnector
 from chatbot_core.v3.handler.event_dipatcher import MultiThreadEventDispatcher
 from chatbot_core.v3.handler.instance_manager import InstanceManager
@@ -35,11 +35,11 @@ if __name__ == "__main__":
     bot_token = os.getenv("TELEGRAM_KEY")
     connector = TelegramSocialConnector(bot_token)
     alert_module = AlertModule("wenet-eat-together-chatbot")
-    alert_module.with_slack(["@nicolo.pomini"])
-    wenet_backend_url = os.getenv("WENET_BACKEND_URL")
+    wenet_instance_url = os.getenv("WENET_INSTANCE_URL")
     wenet_hub_url = os.getenv("WENET_HUB_URL")
     app_id = os.getenv("WENET_APP_ID")
     task_type_id = os.getenv("TASK_TYPE_ID")
+    community_id = os.getenv("COMMUNITY_ID")
     wenet_authentication_url = os.getenv("WENET_AUTHENTICATION_URL")
     redirect_url = os.getenv("REDIRECT_URL")
     client_secret = os.getenv("CLIENT_SECRET")
@@ -49,10 +49,11 @@ if __name__ == "__main__":
         "wenet-eat-together",
         "wenet-eat-together-handler",
         bot_token,
-        wenet_backend_url,
+        wenet_instance_url,
         app_id,
         wenet_hub_url,
         task_type_id,
+        community_id,
         wenet_authentication_url,
         wenet_authentication_management_url,
         redirect_url,
