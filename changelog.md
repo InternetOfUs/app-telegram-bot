@@ -2,7 +2,7 @@
 
 # Versions
 
-## next
+## 2.0.0
 - Integrated position data in the question and answer flow
 - Integrated sensitive and anonymous information data in the question and answer flow
 - Update to project template 4.5.1
