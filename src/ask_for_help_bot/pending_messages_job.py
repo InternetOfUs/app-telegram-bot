@@ -68,7 +68,6 @@ class PendingMessagesJob(SocialJob):
                 self.send_notification(notification)
             except Exception as e:
                 logger.exception(f"An exception [{type(e)}] occurs sending the notification [{notification}]", exc_info=e)
-                continue
 
         for question_id in questions_to_remove:
             pending_answers.pop(question_id)
