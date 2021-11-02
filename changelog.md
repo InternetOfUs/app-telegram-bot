@@ -2,6 +2,9 @@
 
 # Versions
 
+## 2.0.1
+- Refactored PendingMessagesJob handling errors and deleting messages that cause these errors
+
 ## 2.0.0
 - Integrated position data in the question and answer flow
 - Integrated sensitive and anonymous information data in the question and answer flow
