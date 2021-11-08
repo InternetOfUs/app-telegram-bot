@@ -2,6 +2,10 @@
 
 # Versions
 
+## next
+- Updated translations
+
+
 ## 2.0.1
 - Refactored PendingMessagesJob handling errors and deleting messages that cause these errors
 

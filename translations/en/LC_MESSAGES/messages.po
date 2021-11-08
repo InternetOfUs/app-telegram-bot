@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-11-08 14:53+0100\n"
+"PO-Revision-Date: 2021-11-08 16:01+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -51,7 +51,7 @@ msgstr ""
 
 #: src/ask_for_help/handler.py:52
 msgid "cancel_text"
-msgstr "No problem, the current operation has been cancelled successfully!"
+msgstr "No problem, the current operation has been canceled successfully!"
 
 msgid "question_1"
 msgstr "What would you like to ask from the community members? :point_down:"
@@ -73,7 +73,7 @@ msgid "local_university_button"
 msgstr ":mortar_board: Local university"
 
 msgid "local_things_button"
-msgstr ":world_map: Local things"
+msgstr ":world_map: Local / city things"
 
 msgid "physical_activity_button"
 msgstr ":runner: Physical activity"
