@@ -4,7 +4,7 @@
 
 ## next
 - Updated translations
-
+- Fixed Emojis are not rendered correctly, demojize is applied to user texts and emojize is applied to platform texts
 
 ## 2.0.1
 - Refactored PendingMessagesJob handling errors and deleting messages that cause these errors
