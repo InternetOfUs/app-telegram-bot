@@ -392,15 +392,17 @@ class AskForHelpHandler(WenetEventHandler):
             .with_substitution("base_url", self.wenet_hub_url)\
             .with_substitution("app_id", self.app_id)\
             .translate()
-        message_3 = self._get_help_and_info_message(user_locale)
+        info_message = self._get_help_and_info_message(user_locale)
+        final_message = self._translator.get_translation_instance(user_locale).with_text("question_0").translate()
         button_text = self._translator.get_translation_instance(user_locale).with_text("start_button").translate()
-        final_message_with_button = TelegramRapidAnswerResponse(TextualResponse(message_3))
+        final_message_with_button = TelegramRapidAnswerResponse(TextualResponse(final_message))
         final_message_with_button.with_textual_option(button_text, self.INTENT_FIRST_QUESTION)
         return [
             TextualResponse(message_1),
             TextualResponse(message_2),
             TextualResponse(survey_message),
             TextualResponse(badges_message),
+            TextualResponse(info_message),
             final_message_with_button
         ]
 
@@ -660,7 +662,7 @@ class AskForHelpHandler(WenetEventHandler):
                 TextualResponse("Unable to complete the WeNetAuthentication")
             )
 
-    def action_question_0(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+    def action_question_0(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         """
         Beginning of the /ask command
         """
@@ -668,9 +670,6 @@ class AskForHelpHandler(WenetEventHandler):
         response = OutgoingEvent(social_details=incoming_event.social_details)
         context = incoming_event.context
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_0)
-        if intent == self.INTENT_FIRST_QUESTION:
-            preamble_message = self._translator.get_translation_instance(user_locale).with_text("question_0").translate()
-            response.with_message(TextualResponse(preamble_message))
         message = self._translator.get_translation_instance(user_locale).with_text("question_1").translate()
         response.with_message(TextualResponse(message))
         response.with_context(context)
