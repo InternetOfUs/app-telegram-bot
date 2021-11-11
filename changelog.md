@@ -2,7 +2,7 @@
 
 # Versions
 
-## next
+## 2.0.2
 - Updated translations
 - Fixed Emojis are not rendered correctly, demojize is applied to user texts and emojize is applied to platform texts
 - Added code of conduct message to the start messages
