@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-10-19 12:03+0200\n"
+"PO-Revision-Date: 2021-11-11 15:44+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -29,8 +29,8 @@ msgstr ""
 #: src/ask_for_help/handler.py:58
 msgid "start_text_1"
 msgstr ""
-"Thanks for connecting! :wave: This is the *Ask for Help* chatbot. I help "
-"students sharing their questions and get answers from their peers."
+"Thanks for connecting! :wave: This is the WeNet chatbot. I help students "
+"sharing their questions and get answers from their peers."
 
 #: src/ask_for_help/handler.py:59
 msgid "start_text_2"
@@ -46,12 +46,12 @@ msgstr "Ask a question! :thinking_face:"
 #: src/ask_for_help/handler.py:46
 msgid "error_text"
 msgstr ""
-"I’m very sorry, but I didn’t understand :pensive: Write /info to learn how I "
-"can assist!"
+"I’m very sorry, but I didn’t understand :pensive: or maybe you clicked an "
+"inactive button. Write /info to learn how I can assist!"
 
 #: src/ask_for_help/handler.py:52
 msgid "cancel_text"
-msgstr "No problem, the current operation has been cancelled successfully!"
+msgstr "No problem, the current operation has been canceled successfully!"
 
 msgid "question_1"
 msgstr "What would you like to ask from the community members? :point_down:"
@@ -64,7 +64,7 @@ msgstr ""
 "Okay, I will ask others to answer your question. Now I will ask you a few "
 "questions to specify who to ask more precisely :dart:.\n"
 "\n"
-"1/6: What’s the domain of your question?"
+"1/6: What’s the *domain* of your question?"
 
 msgid "studying_career_button"
 msgstr ":book: Studying / Career"
@@ -73,7 +73,7 @@ msgid "local_university_button"
 msgstr ":mortar_board: Local university"
 
 msgid "local_things_button"
-msgstr ":world_map: Local things"
+msgstr ":world_map: Local / city things"
 
 msgid "physical_activity_button"
 msgstr ":runner: Physical activity"
@@ -97,7 +97,7 @@ msgid "life_ponders_button"
 msgstr ":thinking_face: Life ponders"
 
 msgid "varia_misc_button"
-msgstr ":space_invader: Varia / Misc"
+msgstr ":space_invader: Miscellanous"
 
 msgid "studying_career"
 msgstr "Studying / Career"
@@ -106,7 +106,7 @@ msgid "local_university"
 msgstr "Local university"
 
 msgid "local_things"
-msgstr "Local things"
+msgstr "Local / city things"
 
 msgid "physical_activity"
 msgstr "Physical activity"
@@ -130,7 +130,7 @@ msgid "life_ponders"
 msgstr "Life ponders"
 
 msgid "varia_misc"
-msgstr "Varia / Misc"
+msgstr "Miscellaneous"
 
 msgid "domain_similarity_question"
 msgstr ""
@@ -147,7 +147,7 @@ msgid "answer_different_domain"
 msgstr "Different"
 
 msgid "answer_indifferent_domain"
-msgstr "Indifferent, don’t take into account"
+msgstr "Skip this :point_down:"
 
 msgid "belief_values_question"
 msgstr ""
@@ -161,18 +161,18 @@ msgid "answer_different_belief_values"
 msgstr "Different"
 
 msgid "answer_indifferent_belief_values"
-msgstr "Indifferent, don’t take into account"
+msgstr "Skip this :point_down:"
 
 msgid "sensitive_question"
 msgstr ""
-"4/6: Is this a potentially sensitive question? If it is, I will let other "
+"4/6: Is this a potentially *sensitive* question? If it is, I will let other "
 "people know to take extra care in answering."
 
 msgid "not_sensitive"
 msgstr "Not sensitive"
 
 msgid "sensitive"
-msgstr ":warning: Sensitive"
+msgstr ":shushing_face: Sensitive"
 
 msgid "anonymous_question"
 msgstr "Would you prefer to ask it anonymously?"
@@ -181,21 +181,21 @@ msgid "anonymous_user"
 msgstr "Anonymous"
 
 msgid "anonymous"
-msgstr "Ask it anonymously"
+msgstr "Anonymously"
 
 msgid "not_anonymous"
-msgstr "Ask it normally"
+msgstr "Normally"
 
 msgid "social_closeness_question"
 msgstr ""
-"5/6: Should the people be closer or further from you *socially*? Closer are "
+"5/6: Should the people be *socially* closer or further from you? Closer are "
 "people you might know or have interacted with earlier through the chatbot."
 
 msgid "answer_socially_close"
 msgstr "Closer to me"
 
 msgid "answer_socially_indifferent"
-msgstr "Indifferent, don’t take into account"
+msgstr "Skip this :point_down:"
 
 msgid "answer_socially_distant"
 msgstr "Distant to me"
@@ -207,7 +207,7 @@ msgid "location_answer_1"
 msgstr "In proximity"
 
 msgid "location_answer_2"
-msgstr "Doesn’t matter"
+msgstr "Skip this :point_down:"
 
 msgid "question_final"
 msgstr ""
@@ -243,7 +243,7 @@ msgstr ""
 "\n"
 "“{question}” - {user}\n"
 "\n"
-":warning: The user marked this question sensitive, so please be extra "
+":shushing_face: The user marked this question sensitive, so please be extra "
 "careful in answering :)"
 
 msgid "answer_message_nearby"
@@ -259,7 +259,7 @@ msgstr ""
 "\n"
 "“{question}” - {user}\n"
 "\n"
-":warning: The user marked this question sensitive, so please be extra "
+":shushing_face: The user marked this question sensitive, so please be extra "
 "careful in answering :)"
 
 msgid "answer_question"
@@ -283,7 +283,7 @@ msgid "answer_report_button"
 msgstr ":exclamation: Report"
 
 msgid "answerer_is_not_text"
-msgstr "You answer must be a text message, not an attachment, image or poll."
+msgstr "Your answer must be a text message, not an attachment, image or poll."
 
 msgid "answered_message"
 msgstr "Thanks! I will forward your answer to the person."
@@ -340,12 +340,13 @@ msgid "answers_tasks_choose"
 msgstr "Choose a question to answer :point_down:"
 
 msgid "best_answer_0"
-msgstr "Why did you choose this answer?"
+msgstr ""
+"Please help my :crystal_ball: algorithms, why did you choose this answer?"
 
 msgid "best_answer_helpful"
 msgstr ""
-"How well did I do with connecting you to different users following your "
-"specific intentions?"
+"Thinking back on the people you wanted to reach with your question, how "
+"helpful was I to connect you to others?"
 
 msgid "not_at_all_helpful"
 msgstr "1 - Not helpful at all"
@@ -363,7 +364,7 @@ msgid "extremely_helpful"
 msgstr "5 - Very helpful"
 
 msgid "reason_is_not_text"
-msgstr "Please specify why did you choose this answer."
+msgstr "Please specify why did you choose this answer:"
 
 msgid "best_answer_final_message"
 msgstr "Thanks for the input! Feel free to ask a new question anytime!"
@@ -392,10 +393,10 @@ msgid "answer_anonymously"
 msgstr "Would you prefer to send this answer anonymously?"
 
 msgid "anonymous_answer_1"
-msgstr "Send the answer anonymously"
+msgstr "Send anonymously"
 
 msgid "anonymous_answer_2"
-msgstr "Send the answer normally"
+msgstr "Send normally"
 
 msgid "picked_best_answer"
 msgstr ""
@@ -404,8 +405,8 @@ msgstr ""
 
 msgid "message_from_wenet"
 msgstr ""
-"There’s a new notification from WeNet, I needed to cancel your current "
-"operation."
+"There’s a new notification from the WeNet platform, I needed to cancel your "
+"current operation."
 
 msgid "badges_promo"
 msgstr ""
@@ -420,8 +421,8 @@ msgstr ""
 
 msgid "survey_promo"
 msgstr ""
-"Before you start asking questions, please make sure you have filled the "
-"survey at the following link {survey_url}."
+"Before you start asking questions from the community, please make sure you "
+"have filled the survey here :point_right: {survey_url}"
 
 #~ msgid "type_answer_1"
 #~ msgstr "Different than me"

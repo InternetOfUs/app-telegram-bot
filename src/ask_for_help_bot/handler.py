@@ -8,6 +8,8 @@ import uuid
 from datetime import datetime
 from typing import Optional, List
 
+from emoji import emojize, demojize
+
 from ask_for_help_bot.pending_conversations import PendingQuestionToAnswer
 from ask_for_help_bot.pending_messages_job import PendingMessagesJob
 from chatbot_core.model.context import ConversationContext
@@ -390,15 +392,17 @@ class AskForHelpHandler(WenetEventHandler):
             .with_substitution("base_url", self.wenet_hub_url)\
             .with_substitution("app_id", self.app_id)\
             .translate()
-        message_3 = self._get_help_and_info_message(user_locale)
+        info_message = self._get_help_and_info_message(user_locale)
+        final_message = self._translator.get_translation_instance(user_locale).with_text("question_0").translate()
         button_text = self._translator.get_translation_instance(user_locale).with_text("start_button").translate()
-        final_message_with_button = TelegramRapidAnswerResponse(TextualResponse(message_3))
+        final_message_with_button = TelegramRapidAnswerResponse(TextualResponse(final_message))
         final_message_with_button.with_textual_option(button_text, self.INTENT_FIRST_QUESTION)
         return [
             TextualResponse(message_1),
             TextualResponse(message_2),
             TextualResponse(survey_message),
             TextualResponse(badges_message),
+            TextualResponse(info_message),
             final_message_with_button
         ]
 
@@ -448,7 +452,7 @@ class AskForHelpHandler(WenetEventHandler):
         else:
             message_string = message_string.with_text("answer_message_nearby")
 
-        message_string = message_string.with_substitution("question", self.parse_text_with_markdown(message.question)) \
+        message_string = message_string.with_substitution("question", self.parse_text_with_markdown(emojize(message.question, use_aliases=True))) \
             .with_substitution("user", questioning_user.name.first if questioning_user.name.first and not anonymous else self._translator.get_translation_instance(user_object.locale).with_text("anonymous_user").translate()) \
             .translate()
 
@@ -456,7 +460,7 @@ class AskForHelpHandler(WenetEventHandler):
         button_ids = [str(uuid.uuid4()) for _ in range(3)]
         button_data = {
             "task_id": message.task_id,
-            "question": message.question,
+            "question": emojize(message.question, use_aliases=True),
             "sensitive": sensitive,
             "username": questioning_user.name.first if questioning_user.name.first and not anonymous else self._translator.get_translation_instance(user_object.locale).with_text("anonymous_user").translate(),
             "related_buttons": button_ids,
@@ -480,7 +484,7 @@ class AskForHelpHandler(WenetEventHandler):
         else:
             message_string = message_string.with_text("answer_message_0")
 
-        message_string = message_string.with_substitution("question", self.parse_text_with_markdown(message.question)) \
+        message_string = message_string.with_substitution("question", self.parse_text_with_markdown(emojize(message.question, use_aliases=True))) \
             .with_substitution("user", questioning_user.name.first if questioning_user.name.first and not anonymous else self._translator.get_translation_instance(user_object.locale).with_text("anonymous_user").translate()) \
             .translate()
 
@@ -488,7 +492,7 @@ class AskForHelpHandler(WenetEventHandler):
         button_ids = [str(uuid.uuid4()) for _ in range(4)]
         button_data = {
             "task_id": message.task_id,
-            "question": message.question,
+            "question": emojize(message.question, use_aliases=True),
             "sensitive": sensitive,
             "username": questioning_user.name.first if questioning_user.name.first and not anonymous else self._translator.get_translation_instance(user_object.locale).with_text("anonymous_user").translate(),
             "related_buttons": button_ids,
@@ -505,8 +509,8 @@ class AskForHelpHandler(WenetEventHandler):
         return response
 
     def handle_answered_question(self, message: AnsweredQuestionMessage, user_object: WeNetUserProfile, answerer_user: WeNetUserProfile) -> TelegramRapidAnswerResponse:
-        answer_text = message.answer
-        question_text = self.parse_text_with_markdown(message.attributes["question"])
+        answer_text = emojize(message.answer, use_aliases=True)
+        question_text = self.parse_text_with_markdown(emojize(message.attributes["question"], use_aliases=True))
         # Translate the message that there is a new answer and insert the details of the question and answer
         message_string = self._translator.get_translation_instance(user_object.locale) \
             .with_text("new_answer_message") \
@@ -537,7 +541,7 @@ class AskForHelpHandler(WenetEventHandler):
         # Translate the message that the answer to a question was picked as the best and insert the details of the question
         message_string = self._translator.get_translation_instance(user_object.locale) \
             .with_text("picked_best_answer") \
-            .with_substitution("question", self.parse_text_with_markdown(message.attributes["question"])) \
+            .with_substitution("question", self.parse_text_with_markdown(emojize(message.attributes["question"], use_aliases=True))) \
             .translate()
         return TextualResponse(message_string)
 
@@ -658,7 +662,7 @@ class AskForHelpHandler(WenetEventHandler):
                 TextualResponse("Unable to complete the WeNetAuthentication")
             )
 
-    def action_question_0(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+    def action_question_0(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         """
         Beginning of the /ask command
         """
@@ -666,9 +670,6 @@ class AskForHelpHandler(WenetEventHandler):
         response = OutgoingEvent(social_details=incoming_event.social_details)
         context = incoming_event.context
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_0)
-        if intent == self.INTENT_FIRST_QUESTION:
-            preamble_message = self._translator.get_translation_instance(user_locale).with_text("question_0").translate()
-            response.with_message(TextualResponse(preamble_message))
         message = self._translator.get_translation_instance(user_locale).with_text("question_1").translate()
         response.with_message(TextualResponse(message))
         response.with_context(context)
@@ -681,7 +682,7 @@ class AskForHelpHandler(WenetEventHandler):
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         response = OutgoingEvent(social_details=incoming_event.social_details)
         if isinstance(incoming_event.incoming_message, IncomingTextMessage):
-            question = incoming_event.incoming_message.text
+            question = demojize(incoming_event.incoming_message.text)
             context = incoming_event.context
             context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_1)
             context.with_static_state(self.CONTEXT_ASKED_QUESTION, question)
@@ -972,12 +973,12 @@ class AskForHelpHandler(WenetEventHandler):
         if button_payload.payload.get("sensitive", False):
             context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING_SENSITIVE)
             message = self._translator.get_translation_instance(user_locale).with_text("you_are_answering_to_sensitive")\
-                .with_substitution("question", self.parse_text_with_markdown(task.goal.name))\
+                .with_substitution("question", self.parse_text_with_markdown(emojize(task.goal.name, use_aliases=True)))\
                 .translate()
         else:
             context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING)
             message = self._translator.get_translation_instance(user_locale).with_text("you_are_answering_to")\
-                .with_substitution("question", self.parse_text_with_markdown(task.goal.name))\
+                .with_substitution("question", self.parse_text_with_markdown(emojize(task.goal.name, use_aliases=True)))\
                 .translate()
 
         response = OutgoingEvent(social_details=incoming_event.social_details)
@@ -1001,7 +1002,7 @@ class AskForHelpHandler(WenetEventHandler):
         response = OutgoingEvent(social_details=incoming_event.social_details)
         if isinstance(incoming_event.incoming_message, IncomingTextMessage):
             context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING_ANONYMOUSLY)
-            context.with_static_state(self.CONTEXT_ANSWER_TO_QUESTION, incoming_event.incoming_message.text)
+            context.with_static_state(self.CONTEXT_ANSWER_TO_QUESTION, demojize(incoming_event.incoming_message.text))
             message = self._translator.get_translation_instance(user_locale).with_text("answer_anonymously").translate()
             button_1_text = self._translator.get_translation_instance(user_locale).with_text("anonymous_answer_1").translate()
             button_2_text = self._translator.get_translation_instance(user_locale).with_text("anonymous_answer_2").translate()
@@ -1044,7 +1045,7 @@ class AskForHelpHandler(WenetEventHandler):
                 message = self._translator.get_translation_instance(user_locale).with_text("answered_message").translate()
             response.with_message(TextualResponse(message))
         except CreationError as e:
-            response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
+            response.with_message(TextualResponse(self._translator.get_translation_instance(user_locale).with_text("error_task_creation").translate()))
             logger.error(
                 "Error in the creation of the transaction for answering the task [%s]. The service API responded with code %d and message %s"
                 % (question_id, e.http_status_code, json.dumps(e.server_response))
@@ -1074,7 +1075,7 @@ class AskForHelpHandler(WenetEventHandler):
         response = OutgoingEvent(social_details=incoming_event.social_details)
         if isinstance(incoming_event.incoming_message, IncomingTextMessage):
             question_id = context.get_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
-            answer = incoming_event.incoming_message.text
+            answer = demojize(incoming_event.incoming_message.text)
             actioneer_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
             try:
                 transaction = TaskTransaction(None, question_id, self.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), actioneer_id, {"answer": answer, "anonymous": False}, [])
@@ -1083,7 +1084,7 @@ class AskForHelpHandler(WenetEventHandler):
                 message = self._translator.get_translation_instance(user_locale).with_text("answered_message").translate()
                 response.with_message(TextualResponse(message))
             except CreationError as e:
-                response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
+                response.with_message(TextualResponse(self._translator.get_translation_instance(user_locale).with_text("error_task_creation").translate()))
                 logger.error(
                     "Error in the creation of the transaction for answering the task [%s]. The service API responded with code %d and message %s"
                     % (question_id, e.http_status_code, json.dumps(e.server_response))
@@ -1113,7 +1114,7 @@ class AskForHelpHandler(WenetEventHandler):
             message = self._translator.get_translation_instance(user_locale).with_text("not_answer_response").translate()
             response.with_message(TextualResponse(message))
         except CreationError as e:
-            response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
+            response.with_message(TextualResponse(self._translator.get_translation_instance(user_locale).with_text("error_task_creation").translate()))
             logger.error(
                 "Error in the creation of the transaction for not answering the task [%s]. The service API responded with code %d and message %s"
                 % (question_id, e.http_status_code, json.dumps(e.server_response))
@@ -1214,7 +1215,7 @@ class AskForHelpHandler(WenetEventHandler):
             message = self._translator.get_translation_instance(user_locale).with_text("report_final_message").translate()
             response.with_message(TextualResponse(message))
         except CreationError as e:
-            response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
+            response.with_message(TextualResponse(self._translator.get_translation_instance(user_locale).with_text("error_task_creation").translate()))
             logger.error(
                 "Error in the creation of the transaction for reporting the task [%s]. The service API responded with code %d and message %s"
                 % (task_id, e.http_status_code, json.dumps(e.server_response))
@@ -1238,7 +1239,7 @@ class AskForHelpHandler(WenetEventHandler):
             message = self._translator.get_translation_instance(user_locale).with_text("ask_more_answers_text").translate()
             response.with_message(TextualResponse(message))
         except CreationError as e:
-            response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
+            response.with_message(TextualResponse(self._translator.get_translation_instance(user_locale).with_text("error_task_creation").translate()))
             logger.error(
                 "Error in the creation of the transaction to ask more responses for the task [%s]. The service API responded with code %d and message %s"
                 % (task_id, e.http_status_code, json.dumps(e.server_response))
@@ -1264,7 +1265,7 @@ class AskForHelpHandler(WenetEventHandler):
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         response = OutgoingEvent(social_details=incoming_event.social_details)
         if isinstance(incoming_event.incoming_message, IncomingTextMessage):
-            reason = incoming_event.incoming_message.text
+            reason = demojize(incoming_event.incoming_message.text)
             context = incoming_event.context
             context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_1)
             context.with_static_state(self.CONTEXT_CHOSEN_ANSWER_REASON, reason)
@@ -1315,7 +1316,7 @@ class AskForHelpHandler(WenetEventHandler):
             message = self._translator.get_translation_instance(user_locale).with_text("best_answer_final_message").translate()
             response.with_message(TextualResponse(message))
         except CreationError as e:
-            response.with_message(TextualResponse("I'm sorry, something went wrong, try again later"))
+            response.with_message(TextualResponse(self._translator.get_translation_instance(user_locale).with_text("error_task_creation").translate()))
             logger.error(
                 "Error in the creation of the transaction for reporting the task [%s]. The service API responded with code %d and message %s"
                 % (task_id, e.http_status_code, json.dumps(e.server_response))
@@ -1356,7 +1357,7 @@ class AskForHelpHandler(WenetEventHandler):
             for task in tasks:
                 questioning_user = service_api.get_user_profile(str(task.requester_id))
                 if questioning_user:
-                    task_text = f"#{1 + len(proposed_tasks)}: *{self.parse_text_with_markdown(task.goal.name)}* - {questioning_user.name.first if questioning_user.name.first and not task.attributes.get('anonymous') else self._translator.get_translation_instance(user_locale).with_text('anonymous_user').translate()}"
+                    task_text = f"#{1 + len(proposed_tasks)}: *{self.parse_text_with_markdown(emojize(task.goal.name, use_aliases=True))}* - {questioning_user.name.first if questioning_user.name.first and not task.attributes.get('anonymous') else self._translator.get_translation_instance(user_locale).with_text('anonymous_user').translate()}"
                     if task.attributes.get("sensitive"):
                         task_text = task_text + f" - {self._translator.get_translation_instance(user_locale).with_text('sensitive').translate()}"
                     tasks_texts.append(task_text)

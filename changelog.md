@@ -2,13 +2,19 @@
 
 # Versions
 
+## 2.0.2
+- Updated translations
+- Fixed Emojis are not rendered correctly, demojize is applied to user texts and emojize is applied to platform texts
+- Added code of conduct message to the start messages
+- Updated to project template `4.6.0`
+
 ## 2.0.1
 - Refactored PendingMessagesJob handling errors and deleting messages that cause these errors
 
 ## 2.0.0
 - Integrated position data in the question and answer flow
 - Integrated sensitive and anonymous information data in the question and answer flow
-- Update to project template 4.5.1
+- Updated to project template `4.5.1`
 - Removed submodules and added the libraries as packages:
   - `uhopper-chatbot` version `1.5.2`;
   - `wenet-common` version `3.1.0`;
