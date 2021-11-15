@@ -2,6 +2,10 @@
 
 # Versions
 
+## next
+- Fixed non-ascii characters are not rendered correctly, json.dumps is applied to user texts and json.loads is applied to platform texts
+- Reversed the order of the buttons of the sensitive question
+
 ## 2.0.2
 - Updated translations
 - Fixed Emojis are not rendered correctly, demojize is applied to user texts and emojize is applied to platform texts
