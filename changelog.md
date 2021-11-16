@@ -2,7 +2,7 @@
 
 # Versions
 
-## next
+## 2.0.3
 - Fixed non-ascii characters are not rendered correctly, json.dumps is applied to user texts and json.loads is applied to platform texts
 - Reversed the order of the buttons of the sensitive question
 - Reminded to the user the attributes he chose when accepting the question
