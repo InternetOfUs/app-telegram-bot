@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-11-11 16:04+0100\n"
+"PO-Revision-Date: 2021-11-16 13:38+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: mn\n"
@@ -323,6 +323,34 @@ msgstr ""
 "Шинэ хариулт байна:\n"
 "\n"
 "{answer} - {username}"
+
+msgid "asked_message"
+msgstr ""
+"Та өөрийн {domain} домэйнтэй “*{question}*” гэсэн асуултад хүмүүсийн "
+"хариултыг асуусан:"
+
+msgid "asked_sensitive_message"
+msgstr ""
+"Та {domain} домэйнтэй “*{question}*” гэсэн эмзэг асуултдаа хүмүүсийн "
+"хариултыг асуусан:"
+
+msgid "domain_interest_asked_message"
+msgstr "- домэйны сонирхол: {similarity}"
+
+msgid "beliefs_values_asked_message"
+msgstr "- итгэл үнэмшил, үнэт зүйлс: {similarity}"
+
+msgid "social_closeness_asked_message"
+msgstr "- нийгмийн хувьд: {similarity}"
+
+msgid "similar"
+msgstr "ижил төстэй"
+
+msgid "different"
+msgstr "өөр"
+
+msgid "nearby"
+msgstr "ойролцоо"
 
 msgid "more_answers_button"
 msgstr ":game_die: Илүү олон хүнээс асуух"

@@ -1221,7 +1221,11 @@ class AskForHelpHandler(WenetEventHandler):
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         task_id = button_payload.payload["task_id"]
         transaction_id = button_payload.payload.get("transaction_id", None)
-        service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
+        if incoming_event.context is not None:
+            service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
+        else:
+            raise Exception(f"Missing conversation context for event {incoming_event}")
+
         attributes = {
             "reason": button_payload.intent,
         }
@@ -1253,6 +1257,7 @@ class AskForHelpHandler(WenetEventHandler):
             service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
         else:
             raise Exception(f"Missing conversation context for event {incoming_event}")
+
         task_id = button_payload.payload["task_id"]
         actioneer_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
         try:
@@ -1276,10 +1281,57 @@ class AskForHelpHandler(WenetEventHandler):
         response = OutgoingEvent(social_details=incoming_event.social_details)
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         context = incoming_event.context
+        if context is not None:
+            service_api = self._get_service_api_interface_connector_from_context(context)
+        else:
+            raise Exception(f"Missing conversation context for event {incoming_event}")
+
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_0)
         context.with_static_state(self.CONTEXT_TASK_ID, button_payload.payload["task_id"])
         context.with_static_state(self.CONTEXT_TRANSACTION_ID, button_payload.payload["transaction_id"])
-        message = self._translator.get_translation_instance(user_locale).with_text("best_answer_0").translate()
+        task = service_api.get_task(button_payload.payload["task_id"])
+        question = self.parse_text_with_markdown(self._prepare_string_to_telegram(task.goal.name))
+        domain = task.attributes["domain"]
+        domain_interest = task.attributes["domainInterest"]
+        belief_values_similarity = task.attributes["beliefsAndValues"]
+        sensitive = task.attributes.get("sensitive", False)
+        social_closeness = task.attributes["socialCloseness"]
+        position_of_answerer = task.attributes["positionOfAnswerer"]
+
+        message = ""
+        if domain_interest != self.INTENT_INDIFFERENT_DOMAIN or belief_values_similarity != self.INTENT_INDIFFERENT_BELIEF_VALUES or social_closeness != self.INTENT_INDIFFERENT_SOCIALLY or position_of_answerer != self.INTENT_ASK_TO_ANYWHERE:
+            if sensitive:
+                message = self._translator.get_translation_instance(user_locale) \
+                    .with_text("asked_sensitive_message") \
+                    .with_substitution("question", question) \
+                    .with_substitution("domain", self._translator.get_translation_instance(user_locale).with_text(domain).translate().lower()) \
+                    .translate()
+            else:
+                message = self._translator.get_translation_instance(user_locale) \
+                    .with_text("asked_message") \
+                    .with_substitution("question", question) \
+                    .with_substitution("domain", self._translator.get_translation_instance(user_locale).with_text(domain).translate().lower()) \
+                    .translate()
+            if domain_interest != self.INTENT_INDIFFERENT_DOMAIN:
+                message = message + "\n" + self._translator.get_translation_instance(user_locale) \
+                    .with_text("domain_interest_asked_message") \
+                    .with_substitution("similarity", self._translator.get_translation_instance(user_locale).with_text(domain_interest).translate().lower()) \
+                    .translate()
+            if belief_values_similarity != self.INTENT_INDIFFERENT_BELIEF_VALUES:
+                message = message + "\n" + self._translator.get_translation_instance(user_locale) \
+                    .with_text("beliefs_values_asked_message") \
+                    .with_substitution("similarity", self._translator.get_translation_instance(user_locale).with_text(belief_values_similarity).translate().lower()) \
+                    .translate()
+            if social_closeness != self.INTENT_INDIFFERENT_SOCIALLY:
+                message = message + "\n" + self._translator.get_translation_instance(user_locale) \
+                    .with_text("social_closeness_asked_message") \
+                    .with_substitution("similarity", self._translator.get_translation_instance(user_locale).with_text(social_closeness).translate().lower()) \
+                    .translate()
+            if position_of_answerer != self.INTENT_ASK_TO_ANYWHERE:
+                message = message + "\n" + f"- {self._translator.get_translation_instance(user_locale).with_text('nearby').translate()}"
+            message = message + "\n\n"
+
+        message = message + self._translator.get_translation_instance(user_locale).with_text("best_answer_0").translate()
         response.with_message(TextualResponse(message))
         response.with_context(context)
         return response
@@ -1315,6 +1367,11 @@ class AskForHelpHandler(WenetEventHandler):
         response = OutgoingEvent(social_details=incoming_event.social_details)
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         context = incoming_event.context
+        if context is not None:
+            service_api = self._get_service_api_interface_connector_from_context(context)
+        else:
+            raise Exception(f"Missing conversation context for event {incoming_event}")
+
         if not context.has_static_state(self.CONTEXT_TASK_ID) \
                 or not context.has_static_state(self.CONTEXT_TRANSACTION_ID) \
                 or not context.has_static_state(self.CONTEXT_CHOSEN_ANSWER_REASON):
@@ -1325,7 +1382,6 @@ class AskForHelpHandler(WenetEventHandler):
         task_id = context.get_static_state(self.CONTEXT_TASK_ID)
         transaction_id = context.get_static_state(self.CONTEXT_TRANSACTION_ID)
         reason = context.get_static_state(self.CONTEXT_CHOSEN_ANSWER_REASON)
-        service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
         attributes = {
             "transactionId": transaction_id,
             "reason": reason,
