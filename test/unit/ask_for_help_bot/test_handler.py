@@ -481,9 +481,14 @@ class TestAskForHelpHandler(TestCase):
         handler._get_user_locale_from_incoming_event = Mock(return_value="en")
         service_api = ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
         service_api.get_task = Mock(return_value=Task("task_id", None, None, "task_type_id", "questioning_user", "app_id", None, TaskGoal("question", ""), attributes={
+            "domain": handler.INTENT_STUDYING_CAREER,
+            "domainInterest": handler.INTENT_DIFFERENT_DOMAIN,
+            "beliefsAndValues": handler.INTENT_DIFFERENT_BELIEF_VALUES,
             "sensitive": True,
             "anonymous": True,
-            "positionOfAnswerer": "nearby",
+            "socialCloseness": handler.INTENT_SIMILAR_SOCIALLY,
+            "positionOfAnswerer":  handler.INTENT_ASK_TO_NEARBY,
+            "maxUsers": 10
         }, transactions=[TaskTransaction("transaction_id", "task_id", handler.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), "answerer_user", {"answer": "answer", "anonymous": True})]))
         handler._get_service_api_interface_connector_from_context = Mock(return_value=service_api)
 
@@ -511,9 +516,14 @@ class TestAskForHelpHandler(TestCase):
         handler._get_user_locale_from_incoming_event = Mock(return_value="en")
         service_api = ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
         service_api.get_task = Mock(return_value=Task("task_id", None, None, "task_type_id", "questioning_user", "app_id", None, TaskGoal("question", ""), attributes={
+            "domain": handler.INTENT_STUDYING_CAREER,
+            "domainInterest": handler.INTENT_DIFFERENT_DOMAIN,
+            "beliefsAndValues": handler.INTENT_DIFFERENT_BELIEF_VALUES,
             "sensitive": False,
             "anonymous": False,
-            "positionOfAnswerer": "nearby",
+            "socialCloseness": handler.INTENT_SIMILAR_SOCIALLY,
+            "positionOfAnswerer":  handler.INTENT_ASK_TO_NEARBY,
+            "maxUsers": 10
         }, transactions=[TaskTransaction("transaction_id", "task_id", handler.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), "answerer_user", {"answer": "answer", "anonymous": True})]))
         handler._get_service_api_interface_connector_from_context = Mock(return_value=service_api)
 
@@ -592,6 +602,19 @@ class TestAskForHelpHandler(TestCase):
         translator_instance.translate = Mock(return_value="")
         handler._translator.get_translation_instance = Mock(return_value=translator_instance)
         handler._get_user_locale_from_incoming_event = Mock(return_value="en")
+        service_api = ServiceApiInterface(
+            Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
+        service_api.get_task = Mock(return_value=Task("task_id", None, None, "task_type_id", "questioning_user", "app_id", None, TaskGoal("question", ""), attributes={
+            "domain": handler.INTENT_STUDYING_CAREER,
+            "domainInterest": handler.INTENT_DIFFERENT_DOMAIN,
+            "beliefsAndValues": handler.INTENT_DIFFERENT_BELIEF_VALUES,
+            "sensitive": False,
+            "anonymous": False,
+            "socialCloseness": handler.INTENT_SIMILAR_SOCIALLY,
+            "positionOfAnswerer":  handler.INTENT_ASK_TO_NEARBY,
+            "maxUsers": 10
+        }, transactions=[TaskTransaction("transaction_id", "task_id", handler.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), "answerer_user", {"answer": "answer", "anonymous": True})]))
+        handler._get_service_api_interface_connector_from_context = Mock(return_value=service_api)
 
         response = handler.action_best_answer_0(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_BEST_ANSWER, ""), ConversationContext(static_context={})), ButtonPayload({
             "transaction_id": "transaction_id",
