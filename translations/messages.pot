@@ -255,6 +255,30 @@ msgstr ""
 msgid "new_answer_message"
 msgstr ""
 
+msgid "asked_message"
+msgstr ""
+
+msgid "asked_sensitive_message"
+msgstr ""
+
+msgid "domain_interest_asked_message"
+msgstr ""
+
+msgid "beliefs_values_asked_message"
+msgstr ""
+
+msgid "social_closeness_asked_message"
+msgstr ""
+
+msgid "similar"
+msgstr ""
+
+msgid "different"
+msgstr ""
+
+msgid "nearby"
+msgstr ""
+
 msgid "more_answers_button"
 msgstr ""
 
