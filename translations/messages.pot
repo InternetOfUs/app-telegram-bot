@@ -357,5 +357,41 @@ msgstr ""
 msgid "badges"
 msgstr ""
 
+msgid "first_question_badge"
+msgstr ""
+
+msgid "curious_level_1_badge"
+msgstr ""
+
+msgid "curious_level_2_badge"
+msgstr ""
+
+msgid "first_answer_badge"
+msgstr ""
+
+msgid "helper_level_1_badge"
+msgstr ""
+
+msgid "helper_level_2_badge"
+msgstr ""
+
+msgid "first_good_answer_badge"
+msgstr ""
+
+msgid "good_answers_level_1_badge"
+msgstr ""
+
+msgid "good_answers_level_2_badge"
+msgstr ""
+
+msgid "first_long_answer_badge"
+msgstr ""
+
+msgid "explainer_level_1_badge"
+msgstr ""
+
+msgid "explainer_level_2_badge"
+msgstr ""
+
 msgid "survey_promo"
 msgstr ""

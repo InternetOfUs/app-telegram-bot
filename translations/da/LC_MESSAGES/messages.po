@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-11-16 13:25+0100\n"
+"PO-Revision-Date: 2021-11-18 17:06+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: da\n"
@@ -94,10 +94,10 @@ msgid "arts_and_crafts_button"
 msgstr ":art: Arts & crafts"
 
 msgid "life_ponders_button"
-msgstr ":thinking_face: Life ponders"
+msgstr ":thinking_face: Contemplation"
 
 msgid "varia_misc_button"
-msgstr ":space_invader: Miscellanous"
+msgstr ":space_invader: Miscellaneous"
 
 msgid "studying_career"
 msgstr "Studying / Career"
@@ -127,7 +127,7 @@ msgid "arts_and_crafts"
 msgstr "Arts & crafts"
 
 msgid "life_ponders"
-msgstr "Life ponders"
+msgstr "Contemplation"
 
 msgid "varia_misc"
 msgstr "Miscellaneous"
@@ -224,6 +224,12 @@ msgstr ""
 ":two: The community does not tolerate racist, sexist and other demeaning "
 "conduct.\n"
 ":three: You have the opportunity to report abusive behavior.\n"
+":four: if you are in difficulties you can get advice from the following "
+"links:\n"
+"- for AAU students: https://srg.dk/en/f%C3%A5-hj%C3%A6lp/individuelle-tilbud/"
+"online-terapi/\n"
+"- for LSE students: https://info.lse.ac.uk/current-students/student-"
+"wellbeing\n"
 "\n"
 "Ok? Let’s go! :point_down:"
 
@@ -447,10 +453,64 @@ msgstr ""
 "You can check out your badges here :point_right: {base_url}/wenetapp/user-"
 "app-details?id={app_id}&back=profile"
 
+msgid "first_question_badge"
+msgstr "Congratulations! You just earned the First Question badge! Way to go!"
+
+msgid "curious_level_1_badge"
+msgstr ""
+"Congratulations! You are Level 1 Curious! Stay hungry and keep asking "
+"questions!"
+
+msgid "curious_level_2_badge"
+msgstr ""
+"Congratulations! You are now Level 2 Curious! Amazing interest in the world, "
+"keep asking questions!"
+
+msgid "first_answer_badge"
+msgstr "Congratulations! You just earned the First Answer badge! Way to go!"
+
+msgid "helper_level_1_badge"
+msgstr ""
+"Congratulations! You are now Level 1 Helper! Keep sharing your knowledge!"
+
+msgid "helper_level_2_badge"
+msgstr "Congratulations! You are now Level 2 Helper! Keep sharing!"
+
+msgid "first_good_answer_badge"
+msgstr ""
+"Congratulations! You just earned your First Good Answer badge! Well done!"
+
+msgid "good_answers_level_1_badge"
+msgstr ""
+"Congratulations, your answers are appreciated! You just earned your Good "
+"Answers Level 1 badge!"
+
+msgid "good_answers_level_2_badge"
+msgstr ""
+"You keep giving great answers! You just got Good Answers Level 2! "
+"Congratulations!"
+
+msgid "first_long_answer_badge"
+msgstr ""
+"Congratulations! You just earned the First Long Answer badge! Way to go!"
+
+msgid "explainer_level_1_badge"
+msgstr ""
+"You just earned the Explainer Level 1 badge with your long and thoughtful "
+"answers! Keep up the blessed effort!"
+
+msgid "explainer_level_2_badge"
+msgstr ""
+"Well done! You have now become Explainer Level 2. Your dedication is "
+"acknowledged!"
+
 msgid "survey_promo"
 msgstr ""
 "Before you start asking questions from the community, please make sure you "
 "have filled the survey here :point_right: {survey_url}"
+
+#~ msgid "domain_asked_message"
+#~ msgstr "- domain: {domain}"
 
 #~ msgid "type_answer_1"
 #~ msgstr "Different than me"

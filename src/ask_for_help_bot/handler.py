@@ -567,6 +567,34 @@ class AskForHelpHandler(WenetEventHandler):
             .translate()
         return TextualResponse(message_string)
 
+    def get_incentive_badge_translation(self, message: IncentiveBadge, user_object: WeNetUserProfile) -> TextualResponse:
+        if message.badge_class == os.getenv("FIRST_QUESTION_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("first_question_badge").translate())
+        elif message.badge_class == os.getenv("CURIOUS_LEVEL_1_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("curious_level_1_badge").translate())
+        elif message.badge_class == os.getenv("CURIOUS_LEVEL_2_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("curious_level_2_badge").translate())
+        elif message.badge_class == os.getenv("FIRST_ANSWER_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("first_answer_badge").translate())
+        elif message.badge_class == os.getenv("HELPER_LEVEL_1_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("helper_level_1_badge").translate())
+        elif message.badge_class == os.getenv("HELPER_LEVEL_2_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("helper_level_2_badge").translate())
+        elif message.badge_class == os.getenv("FIRST_GOOD_ANSWER_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("first_good_answer_badge").translate())
+        elif message.badge_class == os.getenv("GOOD_ANSWERS_LEVEL_1_BADGE"):
+            return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("good_answers_level_1_badge").translate())
+        elif message.badge_class == os.getenv("GOOD_ANSWERS_LEVEL_2_BADGE"):
+            return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("good_answers_level_2_badge").translate())
+        elif message.badge_class == os.getenv("FIRST_LONG_ANSWER_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("first_long_answer_badge").translate())
+        elif message.badge_class == os.getenv("EXPLAINER_LEVEL_1_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("explainer_level_1_badge").translate())
+        elif message.badge_class == os.getenv("EXPLAINER_LEVEL_2_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("explainer_level_2_badge").translate())
+        else:
+            return TextualResponse(message.message)
+
     def handle_wenet_message(self, message: Message) -> NotificationEvent:
         # new question to answer, or a new answer to a question
         # incentive messages or badges
@@ -608,7 +636,7 @@ class AskForHelpHandler(WenetEventHandler):
                 return NotificationEvent(user_account.social_details, [answer], context)
             elif isinstance(message, IncentiveBadge):
                 # handle an incentive badge
-                answer = TextualResponse(message.message)
+                answer = self.get_incentive_badge_translation(message, user_object)
                 image = UrlImageResponse(message.image_url)
                 return NotificationEvent(user_account.social_details, [answer, image], context)
             else:

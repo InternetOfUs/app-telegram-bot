@@ -2,6 +2,9 @@
 
 # Versions
 
+## next
+- Updated translations and added support for translation of badges messages
+
 ## 2.0.3
 - Fixed non-ascii characters are not rendered correctly, json.dumps is applied to user texts and json.loads is applied to platform texts
 - Reversed the order of the buttons of the sensitive question
