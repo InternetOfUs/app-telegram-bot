@@ -2,6 +2,11 @@
 
 # Versions
 
+## next
+- Updated translations and added support for translation of badges messages
+- Integrated a different conduct message using helper url specific for a pilot if specified in the env vars
+- Modified rhe reminder to the user of the attributes he chose when accepting the question
+
 ## 2.0.3
 - Fixed non-ascii characters are not rendered correctly, json.dumps is applied to user texts and json.loads is applied to platform texts
 - Reversed the order of the buttons of the sensitive question

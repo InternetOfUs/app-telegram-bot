@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-11-16 13:23+0100\n"
+"PO-Revision-Date: 2021-11-19 13:53+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: it\n"
@@ -95,7 +95,7 @@ msgid "arts_and_crafts_button"
 msgstr ":art: Arti e mestieri"
 
 msgid "life_ponders_button"
-msgstr ":thinking_face: Riflessioni sulla vita"
+msgstr ":thinking_face: Contemplazione"
 
 msgid "varia_misc_button"
 msgstr ":space_invader: Varie"
@@ -128,7 +128,7 @@ msgid "arts_and_crafts"
 msgstr "Arti e mestieri"
 
 msgid "life_ponders"
-msgstr "Riflessioni sulla vita"
+msgstr "Contemplazione"
 
 msgid "varia_misc"
 msgstr "Varie"
@@ -228,6 +228,20 @@ msgstr ""
 ":two: La community non tollera razzismo, sessismo o altre condotte "
 "deplorevoli.\n"
 ":three: Hai la possibilità di segnalare un comportamento offensivo.\n"
+"\n"
+"Ok? Partiamo allora! :point_down:"
+
+msgid "question_0_with_helper_url"
+msgstr ""
+"Per cortesia tieni presente che anche se io sia soltanto un chatbot :"
+"robot_face:, ti metto in comunicazione con altri esseri umani.\n"
+"\n"
+":one: Sii rispettoso, e considera quanto le tue domande e le tue risposte "
+"possano essere d’impatto su altre persone.\n"
+":two: La community non tollera razzismo, sessismo o altre condotte "
+"deplorevoli.\n"
+":three: Hai la possibilità di segnalare un comportamento offensivo.\n"
+":four: Se sei in difficoltà puoi ricevere consigli da: {helper_url}\n"
 "\n"
 "Ok? Partiamo allora! :point_down:"
 
@@ -334,13 +348,13 @@ msgstr ""
 
 msgid "asked_message"
 msgstr ""
-"Per la tua domanda “*{question}*” con dominio {domain} hai chiesto risposte "
-"di persone:"
+"Per la tua domanda “*{question}*” con dominio ({domain}) hai chiesto "
+"risposte di persone:"
 
 msgid "asked_sensitive_message"
 msgstr ""
 "Per la tua domanda dal contenuto sensibile “*{question}*” con dominio "
-"{domain} hai chiesto risposte di persone:"
+"({domain}) hai chiesto risposte di persone:"
 
 msgid "domain_interest_asked_message"
 msgstr "- interesse nel dominio: {similarity}"
@@ -350,15 +364,6 @@ msgstr "- credenze e valori: {similarity}"
 
 msgid "social_closeness_asked_message"
 msgstr "- socialmente: {similarity}"
-
-msgid "similar"
-msgstr "simili"
-
-msgid "different"
-msgstr "differenti"
-
-msgid "nearby"
-msgstr "in prossimità"
 
 msgid "more_answers_button"
 msgstr ":game_die: Chiedi a più persone"
@@ -459,40 +464,66 @@ msgstr ""
 "Puoi controllare I tuoi badge qui :point_right: {base_url}/wenetapp/user-app-"
 "details?id={app_id}&back=profile"
 
+msgid "first_question_badge"
+msgstr ""
+"Congratulazioni! Hai appena ottenuto il badge per la tua prima domanda! Ben "
+"fatto!"
+
+msgid "curious_level_1_badge"
+msgstr ""
+"Congratulazioni! Sei un curioso di livello 1! Rimani affamato di conoscenza "
+"e continua a fare domande!"
+
+msgid "curious_level_2_badge"
+msgstr ""
+"Congratulazioni! Ora sei un curioso di livello 2! Hai un incredibile "
+"interesse per il mondo, continua a fare domande!"
+
+msgid "first_answer_badge"
+msgstr ""
+"Congratulazioni! Hai appena ottenuto il badge per la tua prima risposta! Ben "
+"fatto!"
+
+msgid "helper_level_1_badge"
+msgstr ""
+"Congratulazioni! Ora sei un aiutante di livello 1! Continua a condividere le "
+"tue conoscenze!"
+
+msgid "helper_level_2_badge"
+msgstr ""
+"Congratulazioni! Ora sei un aiutante di livello 2! Continua a condividere!"
+
+msgid "first_good_answer_badge"
+msgstr ""
+"Congratulazioni! Hai appena ottenuto il badge per la tua prima buona "
+"risposta! Molto bene!"
+
+msgid "good_answers_level_1_badge"
+msgstr ""
+"Congratulazioni, le tue risposte sono apprezzate! Hai appena ottenuto il "
+"badge buone risposte di livello 1!"
+
+msgid "good_answers_level_2_badge"
+msgstr ""
+"Continui a dare ottime risposte! Hai appena ricevuto il badge buone risposte "
+"di livello 2! Congratulazioni!"
+
+msgid "first_long_answer_badge"
+msgstr ""
+"Congratulazioni! Hai appena ottenuto il badge per la tua prima lunga "
+"risposta! Ben fatto!"
+
+msgid "explainer_level_1_badge"
+msgstr ""
+"Hai appena ottenuto il badge explainer di livello 1 con le tue risposte "
+"lunghe e ponderate! Continua lo sforzo!"
+
+msgid "explainer_level_2_badge"
+msgstr ""
+"Molto bene! Ora sei diventato un explainer di livello 2. La tua dedizione è "
+"riconosciuta!"
+
 msgid "survey_promo"
 msgstr ""
 "Prima di iniziare a porre domande alla community, assicurati di aver "
 "compilato il sondaggio qui :point_right: {survey_url}"
-
-#~ msgid "type_answer_1"
-#~ msgstr "Diversa da me"
-
-#~ msgid "type_answer_2"
-#~ msgstr "Simile a me"
-
-#~ msgid "type_answer_3"
-#~ msgstr "A chiunque"
-
-#~ msgid "question_2"
-#~ msgstr "A quale tipo di persona dovrei chiedere?"
-
-#~ msgid "specify_answerer"
-#~ msgstr "Puoi dirmi perchè hai scelto questo tipo di persona?"
-
-#~ msgid "answerer_details_are_not_text"
-#~ msgstr ""
-#~ "Per piacere specifica a parole a che tipo di persona dovrei proporre la "
-#~ "tua domanda"
-
-#~ msgid "question_5"
-#~ msgstr ""
-#~ "Bene, inoltrerò la tua domanda ad altri utenti. Appena avrò risposta ti "
-#~ "faro sapere"
-
-#~ msgid "location_answer_3"
-#~ msgstr "Ovunque"
-
-#~ msgid "question_4"
-#~ msgstr ""
-#~ "Bene, inoltrerò la tua domanda ad altri utenti. Appena avrò risposta ti "
-#~ "faro sapere"

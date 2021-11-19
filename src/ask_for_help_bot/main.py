@@ -45,6 +45,7 @@ if __name__ == "__main__":
     community_id = os.getenv("COMMUNITY_ID")
     max_users = int(os.getenv("MAX_USERS", 5))
     survey_url = os.getenv("SURVEY_URL")
+    helper_url = os.getenv("PILOT_HELPER_URL")
     wenet_authentication_url = os.getenv("WENET_AUTHENTICATION_URL")
     redirect_url = os.getenv("REDIRECT_URL")
     client_secret = os.getenv("CLIENT_SECRET")
@@ -74,6 +75,7 @@ if __name__ == "__main__":
         community_id,
         max_users,
         survey_url,
+        helper_url,
         alert_module,
         connector,
         None,
