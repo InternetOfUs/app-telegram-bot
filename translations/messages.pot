@@ -186,6 +186,9 @@ msgstr ""
 msgid "question_0"
 msgstr ""
 
+msgid "question_0_with_helper_url"
+msgstr ""
+
 msgid "error_task_creation"
 msgstr ""
 

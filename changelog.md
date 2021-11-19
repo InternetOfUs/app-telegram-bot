@@ -4,6 +4,7 @@
 
 ## next
 - Updated translations and added support for translation of badges messages
+- Integrated a different conduct message using helper url specific for a pilot if specified in the env vars
 
 ## 2.0.3
 - Fixed non-ascii characters are not rendered correctly, json.dumps is applied to user texts and json.loads is applied to platform texts

@@ -133,6 +133,7 @@ Both the chatbots use the following environment variables
 * `COMMUNITY_ID`: the community ID
 * `MAX_USERS`: the maximum number of users that should receive the question in the ask4help bot (default is 5)
 * `SURVEY_URL`: the url of the survey
+* `PILOT_HELPER_URL`: (Optional) the url of the helper page specific for a pilot
 * `CLIENT_SECRET`: the secret key of the WeNet application
 * `WENET_AUTHENTICATION_MANAGEMENT_URL`: the URL that manages OAuth in WeNet
 * `REDIRECT_URL`: the redirection URL associated with the WeNet application
