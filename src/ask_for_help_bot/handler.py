@@ -588,9 +588,9 @@ class AskForHelpHandler(WenetEventHandler):
             return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("helper_level_2_badge").translate())
         elif message.badge_class == os.getenv("FIRST_GOOD_ANSWER_BADGE_ID"):
             return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("first_good_answer_badge").translate())
-        elif message.badge_class == os.getenv("GOOD_ANSWERS_LEVEL_1_BADGE"):
+        elif message.badge_class == os.getenv("GOOD_ANSWERS_LEVEL_1_BADGE_ID"):
             return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("good_answers_level_1_badge").translate())
-        elif message.badge_class == os.getenv("GOOD_ANSWERS_LEVEL_2_BADGE"):
+        elif message.badge_class == os.getenv("GOOD_ANSWERS_LEVEL_2_BADGE_ID"):
             return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("good_answers_level_2_badge").translate())
         elif message.badge_class == os.getenv("FIRST_LONG_ANSWER_BADGE_ID"):
             return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("first_long_answer_badge").translate())
