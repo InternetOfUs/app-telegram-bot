@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2021-11-19 10:59+0100\n"
+"PO-Revision-Date: 2021-11-19 13:53+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -355,15 +355,6 @@ msgstr "- beliefs and values: {similarity}"
 
 msgid "social_closeness_asked_message"
 msgstr "- socially: {similarity}"
-
-msgid "similar"
-msgstr "similar"
-
-msgid "different"
-msgstr "different"
-
-msgid "nearby"
-msgstr "in proximity"
 
 msgid "more_answers_button"
 msgstr ":game_die: Ask more people"

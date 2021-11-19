@@ -1358,23 +1358,39 @@ class AskForHelpHandler(WenetEventHandler):
                     .with_substitution("question", question) \
                     .with_substitution("domain", self._translator.get_translation_instance(user_locale).with_text(domain).translate()) \
                     .translate()
-            if domain_interest != self.INTENT_INDIFFERENT_DOMAIN:
+
+            if domain_interest == self.INTENT_SIMILAR_DOMAIN:
                 message = message + "\n" + self._translator.get_translation_instance(user_locale) \
                     .with_text("domain_interest_asked_message") \
-                    .with_substitution("similarity", self._translator.get_translation_instance(user_locale).with_text(domain_interest).translate()) \
+                    .with_substitution("similarity", self._translator.get_translation_instance(user_locale).with_text("answer_similar_domain").translate().lower()) \
                     .translate()
-            if belief_values_similarity != self.INTENT_INDIFFERENT_BELIEF_VALUES:
+            if domain_interest == self.INTENT_DIFFERENT_DOMAIN:
+                message = message + "\n" + self._translator.get_translation_instance(user_locale) \
+                    .with_text("domain_interest_asked_message") \
+                    .with_substitution("similarity", self._translator.get_translation_instance(user_locale).with_text("answer_different_domain").translate().lower()) \
+                    .translate()
+            if belief_values_similarity == self.INTENT_SIMILAR_BELIEF_VALUES:
                 message = message + "\n" + self._translator.get_translation_instance(user_locale) \
                     .with_text("beliefs_values_asked_message") \
-                    .with_substitution("similarity", self._translator.get_translation_instance(user_locale).with_text(belief_values_similarity).translate()) \
+                    .with_substitution("similarity", self._translator.get_translation_instance(user_locale).with_text("answer_similar_belief_values").translate().lower()) \
                     .translate()
-            if social_closeness != self.INTENT_INDIFFERENT_SOCIALLY:
+            if belief_values_similarity == self.INTENT_DIFFERENT_BELIEF_VALUES:
+                message = message + "\n" + self._translator.get_translation_instance(user_locale) \
+                    .with_text("beliefs_values_asked_message") \
+                    .with_substitution("similarity", self._translator.get_translation_instance(user_locale).with_text("answer_different_belief_values").translate().lower()) \
+                    .translate()
+            if social_closeness == self.INTENT_SIMILAR_SOCIALLY:
                 message = message + "\n" + self._translator.get_translation_instance(user_locale) \
                     .with_text("social_closeness_asked_message") \
-                    .with_substitution("similarity", self._translator.get_translation_instance(user_locale).with_text(social_closeness).translate()) \
+                    .with_substitution("similarity", self._translator.get_translation_instance(user_locale).with_text("answer_socially_close").translate().lower()) \
                     .translate()
-            if position_of_answerer != self.INTENT_ASK_TO_ANYWHERE:
-                message = message + "\n" + f"- {self._translator.get_translation_instance(user_locale).with_text(position_of_answerer).translate()}"
+            if social_closeness == self.INTENT_DIFFERENT_SOCIALLY:
+                message = message + "\n" + self._translator.get_translation_instance(user_locale) \
+                    .with_text("social_closeness_asked_message") \
+                    .with_substitution("similarity", self._translator.get_translation_instance(user_locale).with_text("answer_socially_distant").translate().lower()) \
+                    .translate()
+            if position_of_answerer == self.INTENT_ASK_TO_NEARBY:
+                message = message + "\n" + f"- {self._translator.get_translation_instance(user_locale).with_text('location_answer_1').translate().lower()}"
             message = message + "\n\n"
 
         message = message + self._translator.get_translation_instance(user_locale).with_text("best_answer_0").translate()

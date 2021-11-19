@@ -273,15 +273,6 @@ msgstr ""
 msgid "social_closeness_asked_message"
 msgstr ""
 
-msgid "similar"
-msgstr ""
-
-msgid "different"
-msgstr ""
-
-msgid "nearby"
-msgstr ""
-
 msgid "more_answers_button"
 msgstr ""
 
