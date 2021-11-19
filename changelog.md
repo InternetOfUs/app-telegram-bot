@@ -2,7 +2,7 @@
 
 # Versions
 
-## next
+## 2.1.0
 - Updated translations and added support for translation of badges messages
 - Integrated a different conduct message using helper url specific for a pilot if specified in the env vars
 - Modified rhe reminder to the user of the attributes he chose when accepting the question
