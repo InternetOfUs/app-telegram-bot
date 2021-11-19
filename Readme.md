@@ -133,6 +133,7 @@ Both the chatbots use the following environment variables
 * `COMMUNITY_ID`: the community ID
 * `MAX_USERS`: the maximum number of users that should receive the question in the ask4help bot (default is 5)
 * `SURVEY_URL`: the url of the survey
+* `PILOT_HELPER_URL`: (Optional) the url of the helper page specific for a pilot
 * `CLIENT_SECRET`: the secret key of the WeNet application
 * `WENET_AUTHENTICATION_MANAGEMENT_URL`: the URL that manages OAuth in WeNet
 * `REDIRECT_URL`: the redirection URL associated with the WeNet application
@@ -142,6 +143,19 @@ Both the chatbots use the following environment variables
 * `SENTRY_RELEASE`: (Optional) If set, sentry will associate the events to the given release
 * `SENTRY_ENVIRONMENT`: (Optional) If set, sentry will associate the events to the given environment (ex. `production`, `staging`)
 
+For the translations of the badges messages the following environment variables are needed:
+* `FIRST_QUESTION_BADGE_ID`: the id of the first question badge
+* `CURIOUS_LEVEL_1_BADGE_ID`: the id of the curious level 1 badge
+* `CURIOUS_LEVEL_2_BADGE_ID`: the id of the curious level 2 badge
+* `FIRST_ANSWER_BADGE_ID`: the id of the first answer badge
+* `HELPER_LEVEL_1_BADGE_ID`: the id of the helper level 1 badge
+* `HELPER_LEVEL_2_BADGE_ID`: the id of the helper level 2 badge
+* `FIRST_GOOD_ANSWER_BADGE_ID`: the id of the first good answer badge
+* `GOOD_ANSWERS_LEVEL_1_BADGE_ID`: the id of the good answerer level 1 badge
+* `GOOD_ANSWERS_LEVEL_2_BADGE_ID`: the id of the good answerer level 2 badge
+* `FIRST_LONG_ANSWER_BADGE_ID`: the id of the first long answer badge
+* `EXPLAINER_LEVEL_1_BADGE_ID`: the id of the explainer level 1 badge
+* `EXPLAINER_LEVEL_2_BADGE_ID`: the id of the explainer level 2 badge
 
 Optional variables (to setup Redis):
 - `REDIS_HOST` (default is `localhost`)

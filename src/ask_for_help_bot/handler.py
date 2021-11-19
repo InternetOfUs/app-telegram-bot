@@ -142,8 +142,8 @@ class AskForHelpHandler(WenetEventHandler):
     def __init__(self, instance_namespace: str, bot_id: str, handler_id: str, telegram_id: str, wenet_instance_url: str,
                  wenet_hub_url: str, app_id: str, client_secret: str, redirect_url: str, wenet_authentication_url: str,
                  wenet_authentication_management_url: str, task_type_id: str, community_id: str, max_users: int,
-                 survey_url: str, alert_module: AlertModule, connector: SocialConnector, nlp_handler: Optional[NLPHandler],
-                 translator: Optional[Translator], delay_between_messages_sec: Optional[int] = None,
+                 survey_url: str, helper_url: Optional[str], alert_module: AlertModule, connector: SocialConnector,
+                 nlp_handler: Optional[NLPHandler], translator: Optional[Translator], delay_between_messages_sec: Optional[int] = None,
                  delay_between_text_sec: Optional[float] = None, logger_connectors: Optional[List[LoggerConnector]] = None):
         super().__init__(instance_namespace, bot_id, handler_id, telegram_id, wenet_instance_url, wenet_hub_url, app_id,
                          client_secret, redirect_url, wenet_authentication_url, wenet_authentication_management_url,
@@ -152,6 +152,7 @@ class AskForHelpHandler(WenetEventHandler):
 
         self.max_users = max_users
         self.survey_url = survey_url
+        self.helper_url = helper_url
 
         JobManager.instance().add_job(PendingMessagesJob("wenet_ask_for_help_pending_messages_job", self._instance_namespace, self._connector, logger_connectors))
         self.intent_manager.with_fulfiller(
@@ -394,17 +395,22 @@ class AskForHelpHandler(WenetEventHandler):
             .with_substitution("app_id", self.app_id)\
             .translate()
         info_message = self._get_help_and_info_message(user_locale)
-        final_message = self._translator.get_translation_instance(user_locale).with_text("question_0").translate()
+        if self.helper_url:
+            conduct_message = self._translator.get_translation_instance(user_locale).with_text("question_0_with_helper_url") \
+                .with_substitution("helper_url", self.helper_url) \
+                .translate()
+        else:
+            conduct_message = self._translator.get_translation_instance(user_locale).with_text("question_0").translate()
         button_text = self._translator.get_translation_instance(user_locale).with_text("start_button").translate()
-        final_message_with_button = TelegramRapidAnswerResponse(TextualResponse(final_message))
-        final_message_with_button.with_textual_option(button_text, self.INTENT_FIRST_QUESTION)
+        conduct_message_with_button = TelegramRapidAnswerResponse(TextualResponse(conduct_message))
+        conduct_message_with_button.with_textual_option(button_text, self.INTENT_FIRST_QUESTION)
         return [
             TextualResponse(message_1),
             TextualResponse(message_2),
             TextualResponse(survey_message),
             TextualResponse(badges_message),
             TextualResponse(info_message),
-            final_message_with_button
+            conduct_message_with_button
         ]
 
     def action_start(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
@@ -567,6 +573,34 @@ class AskForHelpHandler(WenetEventHandler):
             .translate()
         return TextualResponse(message_string)
 
+    def get_incentive_badge_translation(self, message: IncentiveBadge, user_object: WeNetUserProfile) -> TextualResponse:
+        if message.badge_class == os.getenv("FIRST_QUESTION_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("first_question_badge").translate())
+        elif message.badge_class == os.getenv("CURIOUS_LEVEL_1_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("curious_level_1_badge").translate())
+        elif message.badge_class == os.getenv("CURIOUS_LEVEL_2_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("curious_level_2_badge").translate())
+        elif message.badge_class == os.getenv("FIRST_ANSWER_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("first_answer_badge").translate())
+        elif message.badge_class == os.getenv("HELPER_LEVEL_1_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("helper_level_1_badge").translate())
+        elif message.badge_class == os.getenv("HELPER_LEVEL_2_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("helper_level_2_badge").translate())
+        elif message.badge_class == os.getenv("FIRST_GOOD_ANSWER_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("first_good_answer_badge").translate())
+        elif message.badge_class == os.getenv("GOOD_ANSWERS_LEVEL_1_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("good_answers_level_1_badge").translate())
+        elif message.badge_class == os.getenv("GOOD_ANSWERS_LEVEL_2_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("good_answers_level_2_badge").translate())
+        elif message.badge_class == os.getenv("FIRST_LONG_ANSWER_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("first_long_answer_badge").translate())
+        elif message.badge_class == os.getenv("EXPLAINER_LEVEL_1_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("explainer_level_1_badge").translate())
+        elif message.badge_class == os.getenv("EXPLAINER_LEVEL_2_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("explainer_level_2_badge").translate())
+        else:
+            return TextualResponse(message.message)
+
     def handle_wenet_message(self, message: Message) -> NotificationEvent:
         # new question to answer, or a new answer to a question
         # incentive messages or badges
@@ -608,7 +642,7 @@ class AskForHelpHandler(WenetEventHandler):
                 return NotificationEvent(user_account.social_details, [answer], context)
             elif isinstance(message, IncentiveBadge):
                 # handle an incentive badge
-                answer = TextualResponse(message.message)
+                answer = self.get_incentive_badge_translation(message, user_object)
                 image = UrlImageResponse(message.image_url)
                 return NotificationEvent(user_account.social_details, [answer, image], context)
             else:
@@ -974,7 +1008,13 @@ class AskForHelpHandler(WenetEventHandler):
         response.with_context(context)
         response.with_message(TextualResponse(message))
         if show_conduct_message:
-            response.with_message(TextualResponse(self._translator.get_translation_instance(user_locale).with_text("question_0").translate()))
+            if self.helper_url:
+                conduct_message = self._translator.get_translation_instance(user_locale).with_text("question_0_with_helper_url") \
+                    .with_substitution("helper_url", self.helper_url) \
+                    .translate()
+            else:
+                conduct_message = self._translator.get_translation_instance(user_locale).with_text("question_0").translate()
+            response.with_message(TextualResponse(conduct_message))
         return response
 
     def action_answer_picked_question(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
@@ -1009,7 +1049,13 @@ class AskForHelpHandler(WenetEventHandler):
         response.with_message(TelegramTextualResponse(message))
         is_first_time = self.is_first_answer(user_id)
         if is_first_time:
-            response.with_message(TextualResponse(self._translator.get_translation_instance(user_locale).with_text("question_0").translate()))
+            if self.helper_url:
+                conduct_message = self._translator.get_translation_instance(user_locale).with_text("question_0_with_helper_url") \
+                    .with_substitution("helper_url", self.helper_url) \
+                    .translate()
+            else:
+                conduct_message = self._translator.get_translation_instance(user_locale).with_text("question_0").translate()
+            response.with_message(TextualResponse(conduct_message))
         return response
 
     def action_answer_sensitive_question(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
@@ -1304,31 +1350,47 @@ class AskForHelpHandler(WenetEventHandler):
                 message = self._translator.get_translation_instance(user_locale) \
                     .with_text("asked_sensitive_message") \
                     .with_substitution("question", question) \
-                    .with_substitution("domain", self._translator.get_translation_instance(user_locale).with_text(domain).translate().lower()) \
+                    .with_substitution("domain", self._translator.get_translation_instance(user_locale).with_text(domain).translate()) \
                     .translate()
             else:
                 message = self._translator.get_translation_instance(user_locale) \
                     .with_text("asked_message") \
                     .with_substitution("question", question) \
-                    .with_substitution("domain", self._translator.get_translation_instance(user_locale).with_text(domain).translate().lower()) \
+                    .with_substitution("domain", self._translator.get_translation_instance(user_locale).with_text(domain).translate()) \
                     .translate()
-            if domain_interest != self.INTENT_INDIFFERENT_DOMAIN:
+
+            if domain_interest == self.INTENT_SIMILAR_DOMAIN:
                 message = message + "\n" + self._translator.get_translation_instance(user_locale) \
                     .with_text("domain_interest_asked_message") \
-                    .with_substitution("similarity", self._translator.get_translation_instance(user_locale).with_text(domain_interest).translate().lower()) \
+                    .with_substitution("similarity", self._translator.get_translation_instance(user_locale).with_text("answer_similar_domain").translate().lower()) \
                     .translate()
-            if belief_values_similarity != self.INTENT_INDIFFERENT_BELIEF_VALUES:
+            if domain_interest == self.INTENT_DIFFERENT_DOMAIN:
+                message = message + "\n" + self._translator.get_translation_instance(user_locale) \
+                    .with_text("domain_interest_asked_message") \
+                    .with_substitution("similarity", self._translator.get_translation_instance(user_locale).with_text("answer_different_domain").translate().lower()) \
+                    .translate()
+            if belief_values_similarity == self.INTENT_SIMILAR_BELIEF_VALUES:
                 message = message + "\n" + self._translator.get_translation_instance(user_locale) \
                     .with_text("beliefs_values_asked_message") \
-                    .with_substitution("similarity", self._translator.get_translation_instance(user_locale).with_text(belief_values_similarity).translate().lower()) \
+                    .with_substitution("similarity", self._translator.get_translation_instance(user_locale).with_text("answer_similar_belief_values").translate().lower()) \
                     .translate()
-            if social_closeness != self.INTENT_INDIFFERENT_SOCIALLY:
+            if belief_values_similarity == self.INTENT_DIFFERENT_BELIEF_VALUES:
+                message = message + "\n" + self._translator.get_translation_instance(user_locale) \
+                    .with_text("beliefs_values_asked_message") \
+                    .with_substitution("similarity", self._translator.get_translation_instance(user_locale).with_text("answer_different_belief_values").translate().lower()) \
+                    .translate()
+            if social_closeness == self.INTENT_SIMILAR_SOCIALLY:
                 message = message + "\n" + self._translator.get_translation_instance(user_locale) \
                     .with_text("social_closeness_asked_message") \
-                    .with_substitution("similarity", self._translator.get_translation_instance(user_locale).with_text(social_closeness).translate().lower()) \
+                    .with_substitution("similarity", self._translator.get_translation_instance(user_locale).with_text("answer_socially_close").translate().lower()) \
                     .translate()
-            if position_of_answerer != self.INTENT_ASK_TO_ANYWHERE:
-                message = message + "\n" + f"- {self._translator.get_translation_instance(user_locale).with_text('nearby').translate()}"
+            if social_closeness == self.INTENT_DIFFERENT_SOCIALLY:
+                message = message + "\n" + self._translator.get_translation_instance(user_locale) \
+                    .with_text("social_closeness_asked_message") \
+                    .with_substitution("similarity", self._translator.get_translation_instance(user_locale).with_text("answer_socially_distant").translate().lower()) \
+                    .translate()
+            if position_of_answerer == self.INTENT_ASK_TO_NEARBY:
+                message = message + "\n" + f"- {self._translator.get_translation_instance(user_locale).with_text('location_answer_1').translate().lower()}"
             message = message + "\n\n"
 
         message = message + self._translator.get_translation_instance(user_locale).with_text("best_answer_0").translate()
