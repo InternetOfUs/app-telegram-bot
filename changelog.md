@@ -1,7 +1,5 @@
 # Wenet bots - Changelog
 
-# Versions
-
 ## 2.1.1
 - Updated translations
 - Updated to Project template version `4.6.1`
