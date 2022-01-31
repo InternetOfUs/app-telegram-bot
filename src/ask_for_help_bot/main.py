@@ -38,7 +38,6 @@ if __name__ == "__main__":
     bot_token = os.getenv("TELEGRAM_KEY")
     connector = TelegramSocialConnector(bot_token)
     alert_module = AlertModule("wenet-ask-for-help-chatbot")
-    alert_module.with_slack(["@nicolo.pomini"])
     wenet_backend_url = os.getenv("WENET_BACKEND_URL")
     wenet_hub_url = os.getenv("WENET_HUB_URL")
     app_id = os.getenv("WENET_APP_ID")
@@ -55,6 +54,7 @@ if __name__ == "__main__":
     # translator.with_language("da", is_default=False)
     translator.with_language("mn", is_default=False)
     translator.with_language("es", is_default=False, aliases=["es_ES", "es_PY", "es_AR", "es_MX"])
+    translator.with_language("fa", is_default=False)
 
     handler = AskForHelpHandler(
         instance_namespace,

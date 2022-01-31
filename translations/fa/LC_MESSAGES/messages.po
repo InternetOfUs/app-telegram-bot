@@ -1,0 +1,181 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2019-08-22 14:46+0200\n"
+"PO-Revision-Date: 2022-01-31 12:42+0100\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: fa\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Generated-By: pygettext.py 1.5\n"
+"X-Generator: Poedit 3.0.1\n"
+
+msgid "info_text"
+msgstr ""
+"/question با این گزینه میتوانید شما سوال خود را بپرسید /answer با این گزینه تمام سوال ها اشکار میشوندوقتی "
+"میخواستید چیزی را دوباره حذ ف کنید این را بنویسید /cancel وقتی مشکلی به وجود میآید پس به این آدرس "
+"support@internetofus.eu یک ایمیل بفرستید"
+
+msgid "start_text_1"
+msgstr ""
+"تشکر به خاطر اشتراک تان در اینجا :wave:این برنامه ”درخواست کمک” نامیده میشودبا کمک این برنامه سوال های شما به "
+"اشخاصی فرستاده میشود که آنها میتوانند سوال شما را پاسخ بدهند"
+
+msgid "start_text_2"
+msgstr "این برنامه طوری ساخته شده است که شما بهترین شانس ها را به دست می آورید"
+
+msgid "start_button"
+msgstr "یک سوال بپرس! :thinking_face:"
+
+msgid "error_text"
+msgstr "متاسفم، این را نفهمیدم:pensive:برای اینکه بفهمم، چگونه می توانم کمکت کنم /info را بنویسید"
+
+msgid "cancel_text"
+msgstr "مشکلی نیست، عملیات با موفقیت لغوشد!"
+
+msgid "question_1"
+msgstr "میخواهی چه چیزی را در گروه از دیگران بپرسی؟:point_down:"
+
+msgid "question_2"
+msgstr "دقیقا از چه کسی می خواهی سوال بپرسی؟"
+
+msgid "type_answer_1"
+msgstr "کسی، که با من فرق دارد"
+
+msgid "type_answer_2"
+msgstr "کسی، که مثل من است"
+
+msgid "type_answer_3"
+msgstr "فرقی نمی کند"
+
+msgid "question_is_not_text"
+msgstr "لطفا سوالت را اینجا بنویس :point_down:"
+
+msgid "specify_answerer"
+msgstr ":face_with_monocle: مایلم بدانم: چراتو این گروه را انتخاب کردی؟"
+
+msgid "question_4"
+msgstr ""
+"بسیارخوب، من از دیگران در گروه تو تقاضا می کنم که سوال تو را پاسخ دهند!اگر من یک پاسخ دریافت کردم، به تو اطلاع "
+"خواهم داد."
+
+msgid "answerer_details_are_not_text"
+msgstr "لطفا به من بگو، چه کسی این سوال ها را باید پاسخ دهد."
+
+msgid "question_0"
+msgstr ""
+":robot_face:با وجود اینکه من یک کامپیوترهستم، تو را با آدمهای واقعی مرتبط خواهم کرد. \n"
+"\n"
+":one:به دیگران در گروهت احترام بذار و در نظر بگیر که چگونه سوال هاو پاسخ های تو ممکن است بر دیگران تأثیر بگذارد.:"
+"two:ما هیج توهین یا رفتار بدی را قبول نخواهیم کرد.:three:تو می توانی رفتار بد را به ما اطلاع بدهی.\n"
+"\n"
+"بسیارخوب؟ بیا جلو برویم!"
+
+msgid "error_task_creation"
+msgstr "متأسفم، اما این کار انجام نشد.:pensive:  لطفا کمی بعد دوباره تلاش کن."
+
+msgid "answer_message_0"
+msgstr ""
+"اینجا یک سوال وجود دارد که تو احتمالا به بهترین وجهی می توانی به آن جواب بدهی.\n"
+"\n"
+"*{question}* - {user}\n"
+"\n"
+"می توانی این سوال را جواب بدهی؟"
+
+msgid "answer_question_button"
+msgstr ":raised_hand: جواب دهید"
+
+msgid "answer_remind_later_button"
+msgstr ":clock2: بعدتر جواب دهید"
+
+msgid "answer_not_button"
+msgstr ":x:نه متأسفانه"
+
+msgid "answer_report_button"
+msgstr "این پیام را گزارش دهید"
+
+msgid "answerer_is_not_text"
+msgstr "جواب تو باید به عنوان یک متن نوشته شده باشد، بدون پیوست، بدون تصویر و بدون نظرسنجی."
+
+msgid "answered_message"
+msgstr "سپاس فراوان! من پاسخ تو را خواهم فرستاد."
+
+msgid "not_answer_response"
+msgstr "همه چی مفهوم است!"
+
+msgid "answer_remind_later_message"
+msgstr "بسیارخوب، من بعدا به تو یادآوری می کنم:zzz:"
+
+msgid "why_reporting_message"
+msgstr "چرا می خواهی این پیام را گزارش کنی؟"
+
+msgid "button_why_reporting_1_text"
+msgstr "این پیام توهین آمیز است."
+
+msgid "button_why_reporting_2_text"
+msgstr "این پیام نامربوط است."
+
+msgid "button_why_reporting_3_text"
+msgstr ":x:نه، نظرم تغییر کرد."
+
+msgid "report_comment_text"
+msgstr "یک نظر اضافه کنید."
+
+msgid "report_final_message"
+msgstr "سپاس فراوان، ما به آن نگاه خواهیم کرد."
+
+msgid "new_answer_message"
+msgstr ""
+"تو این را پرسیده ای”*{question}*”\n"
+":\n"
+"من اینجا یک پاسخ برای تو دارم: \n"
+"\n"
+"{answer} - {username}"
+
+msgid "more_answers_button"
+msgstr ":game_die:باز هم پرسش از اشخاص بیشتر"
+
+msgid "ask_more_answers_text"
+msgstr ":ok_hand:من باز هم از افراد بیشتری در گروه می پرسم!"
+
+msgid "answers_no_tasks"
+msgstr "اکنون هیچ سوال بی پاسخی وجود ندارد  :astonished:، بعدتر دوباره امتحان کن!"
+
+msgid "answers_tasks_intro"
+msgstr "اینجا همه ی سوالات پاسخ داده نشده وجود دارند:"
+
+msgid "answers_tasks_choose"
+msgstr "یک سوال انتخاب کن، همانی که تو می خواهی به آن جواب بدهی:point_down:"
+
+msgid "best_answer_final_message"
+msgstr "چقدر خوب، که من توانستم به تو کمک کنم! اگر دوباره یک سوال داری، آن را بنویس:wink: /question"
+
+msgid "expired_button_message"
+msgstr "متأسفم، اما این سوال قبلا جواب داده شده است."
+
+msgid "best_answers_button"
+msgstr ":white_check_mark:من این جواب را می پذیرم!"
+
+msgid "not_implemented"
+msgstr "متأسفم، ولی این عملکرد وجود ندارد:grimacing:"
+
+msgid "you_are_answering_to"
+msgstr "تو به پرسش زیر پاسخ می دهی:"
+
+msgid "picked_best_answer"
+msgstr "پاسخ تو به این پرسش _{question}_ به عنوان بهترین جواب انتخاب شد. به همین طور ادامه بده :muscle:"
+
+msgid "message_from_wenet"
+msgstr "یک پیام جدید از WeNet   وجود دارد. من باید عملیات فعلی را لغو کنم."
+
+msgid "badges_promo"
+msgstr ""
+"آیا میدانستی که با این چت بوت می توانی نشان های جالبی دریافت کنی؟ دراینجا می توانی همه نشان های ممکن را پیدا کنی "
+"{base_url}/wenetapp/user-app-details?id={app_id}&back=profile :point_right:"

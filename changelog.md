@@ -2,6 +2,9 @@
 
 # Versions
 
+## 1.0.13
+- Added support for Dari/Farsi/Persian language
+
 ## 1.0.12
 - Added sentry integration
 
