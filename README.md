@@ -192,10 +192,3 @@ Details about the contrinution guidelines can be found in [CONTRIBUTING.md](CONT
 ## Instances
 
 The production instance of the ask4help chatbot is available here [https://t.me/wenet_ask_for_help_bot](https://t.me/wenet_ask_for_help_bot).
-
-## Maintainers
-
-The maintainers of the chatbot repository are:
-- Carlo Caprini (carlo.caprini@u-hopper.com)
-- Stefano Tavonatti (stefano.tavonatti@u-hopper.com)
-- Samuel Bortolin (samuel.bortolin@u-hopper.com)

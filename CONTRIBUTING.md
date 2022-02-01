@@ -1,21 +1,44 @@
-# Contribute to the _Ask For Help_ chatbot
+# Contribute
 
-## Contribute by adding support for a new language
+## Language support
 
-In order to add the support for a new language you should:
+### Adding support for a new language
 
-1. look at the [translations](translations) folder in which there are sub-folders named with the code of the languages supported.
-2. make a copy of the `en` folder and renaming it with the code of the language you want to add.
-3. edit the `messages.po` file by adding your translations, for example by using a program like [Poedit](https://poedit.net/).
-4. compile the `messages.po` file in order to generate the `messages.mo` file that will be used in the translations. This can be done for example by using a program like [Poedit](https://poedit.net/).
-5. add in the `ask_for_help_bot.main` file a line under the exiting translations specifying your language code. For example, if the code of the language you are adding is `fa` you should add:
-```
+In order to add the support for a new language, the following steps should be completed.
+
+1. Browse in the [translations](translations) folder.
+2. Duplicate the `en` folder and name it with the code of the new language that should be added.
+3. Edit the `messages.po` file by replacing the english texts with the new languages translations. 
+    * Only texts associated to the `msgstr` should be changed,
+    * Labels associated to `msgid` should not be changed.
+    * [Poedit](https://poedit.net/) can help in handling the translations.
+4. Once the changes are completed, compile the `messages.po` file. This will generate a `messages.mo` file.
+    * [Poedit](https://poedit.net/) can help in building the `.mo` file.
+5. Update the in the `ask_for_help_bot.main.py` adding the new line to the translator.
+
+```python
+from chatbot_core.translator.translator import Translator
+
+translator = Translator("wenet-ask-for-help", alert_module, translation_folder_path, fallback=False)
 translator.with_language("fa", is_default=False)
 ```
-You can also add aliases in case the code of the language depends also on the countries where the language is spoken. For example, you can take inspiration from:
-```
+
+Please note how it is also possible to add aliases of a specific language. 
+Here's what happens, for example, with the italian language:
+
+```python
 translator.with_language("it", is_default=False, aliases=["it_IT", "it_CH"])
 ```
-6. test that the translations work as expected on your local machine.
-7. update the [CHANGELOG](CHANGELOG.md) by specifying what changes you have done.
-8. create a pull request with your proposed changes.
+
+6. Create a new pull request with your proposed changes. Please, make sure to deail your changes in the description.
+
+### Edit translations for an already supported language
+
+In order to propose changes to the translasion of an existing language, the following steps should be completed.
+
+1. Browse in the [translations](translations) folder and into the folder of the language you would like to propose changes for.
+2. Open the `messages.po` (we suggest using [Poedit](https://poedit.net/) or a similar application).
+3. Identify the text you would like to change the translation for and apply your changes.
+4. Compile the changes into an updated `messages.mo` file.
+5. Create a new pull request with your proposed changes. Please, make sure to deail your changes in the description.
+
