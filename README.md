@@ -185,7 +185,9 @@ The _ask for help_ bot has the following optional environment variable:
 
 ## Contributing
 
-It is possible to contribute to the project by adding support for new languages following the instructions reported in the [CONTRIBUTING](CONTRIBUTING.md) file.
+Contributions to this project are more than welcome.
+Contributions regarding to the supported languages is particular appreciated.
+Details about the contrinution guidelines can be found in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Instances
 
