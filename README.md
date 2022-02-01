@@ -116,7 +116,7 @@ python -m messages.main
 ```
 
 ### Chatbot env variables
-Both the chatbots use the following environment variables
+Both the chatbots use the following environment variables:
 
 * `TELEGRAM_KEY`: secret key provided by Telegram to use the bot API
 * `MQTT_HOST`: MQTT host
@@ -131,10 +131,8 @@ Both the chatbots use the following environment variables
 * `WENET_HUB_URL`: url of the WeNet hub
 * `TASK_TYPE_ID`: the type ID of the tasks
 * `COMMUNITY_ID`: the community ID
-* `MAX_USERS`: the maximum number of users that should receive the question in the ask4help bot (default is 5)
-* `SURVEY_URL`: the url of the survey
-* `PILOT_HELPER_URL`: (Optional) the url of the helper page specific for a pilot
 * `CLIENT_SECRET`: the secret key of the WeNet application
+* `WENET_AUTHENTICATION_URL`: the URL that manages authentication in WeNet
 * `WENET_AUTHENTICATION_MANAGEMENT_URL`: the URL that manages OAuth in WeNet
 * `REDIRECT_URL`: the redirection URL associated with the WeNet application
 * `PROJECT_NAME` (optional): a string that will be used as name of the log file (with the format `<PROJECT_NAME>.log`). The default value is `wenet-ask-for-help-chatbot`
@@ -142,6 +140,11 @@ Both the chatbots use the following environment variables
 * `SENTRY_DSN`: (Optional) The data source name for sentry, if not set the project will not create any event
 * `SENTRY_RELEASE`: (Optional) If set, sentry will associate the events to the given release
 * `SENTRY_ENVIRONMENT`: (Optional) If set, sentry will associate the events to the given environment (ex. `production`, `staging`)
+
+The ask4help bot also needs the following environment variables:
+* `MAX_USERS`: the maximum number of users that should receive the question in the ask4help bot (default is 5)
+* `SURVEY_URL`: the url of the survey
+* `PILOT_HELPER_URL`: (Optional) the url of the helper page specific for a pilot
 
 For the translations of the badges messages the following environment variables are needed:
 * `FIRST_QUESTION_BADGE_ID`: the id of the first question badge
@@ -180,13 +183,12 @@ The _ask for help_ bot has the following optional environment variable:
 * `BOT_ID`: the bot ID associated with the EventHandler used by the bot itself.
 * `PROJECT_NAME` (optional): a string that will be used as name of the log file (with the format `<PROJECT_NAME>-messages.log`). The default value is `wenet-ask-for-help-chatbot`.
 
+## Contributing
+
+Contributions to this project are more than welcome.
+Contributions regarding to the supported languages is particular appreciated.
+Details about the contrinution guidelines can be found in [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Instances
 
-The development instance of this chatbot is available here [https://t.me/wenet_test_bot](https://t.me/wenet_test_bot)
-The production instance is available here [https://t.me/wenet_eat_together_bot](https://t.me/wenet_eat_together_bot)
-
-## Maintainers
-
-- Nicolò Pomini (nicolo.pomini@u-hopper.com)
-- Carlo Caprini (carlo.caprini@u-hopper.com)
-- Stefano Tavonatti (stefano.tavonatti@u-hopper.com)
+The production instance of the ask4help chatbot is available here [https://t.me/wenet_ask_for_help_bot](https://t.me/wenet_ask_for_help_bot).
