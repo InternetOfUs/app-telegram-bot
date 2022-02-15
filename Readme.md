@@ -1,4 +1,4 @@
-# _Let's eat together_ chatbot
+# _WeNet Telegram Chatbots_
 
 ## Introduction
 These chatbots are created in the context of `WeNet: the Internet of us`.
