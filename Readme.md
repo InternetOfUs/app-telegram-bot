@@ -156,8 +156,8 @@ For the translations of the badges messages the following environment variables 
 * `HELPER_LEVEL_1_BADGE_ID`: the id of the helper level 1 badge
 * `HELPER_LEVEL_2_BADGE_ID`: the id of the helper level 2 badge
 * `FIRST_GOOD_ANSWER_BADGE_ID`: the id of the first good answer badge
-* `GOOD_ANSWERS_LEVEL_1_BADGE`: the id of the good answerer level 1 badge
-* `GOOD_ANSWERS_LEVEL_2_BADGE`: the id of the good answerer level 2 badge
+* `GOOD_ANSWERS_LEVEL_1_BADGE_ID`: the id of the good answerer level 1 badge
+* `GOOD_ANSWERS_LEVEL_2_BADGE_ID`: the id of the good answerer level 2 badge
 
 Optional variables (to setup Redis):
 - `REDIS_HOST` (default is `localhost`)
