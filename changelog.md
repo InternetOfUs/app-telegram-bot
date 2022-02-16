@@ -4,6 +4,7 @@
 
 ### 1.0.15
 - Fixed non-ascii characters are not rendered correctly, json.dumps is applied to user texts and json.loads is applied to platform texts
+- Added support for translation of badges messages
 
 ### 1.0.14
 - Updated wenet common models to version `1.0.3`
