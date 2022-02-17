@@ -6,6 +6,8 @@ import uuid
 from datetime import datetime
 from typing import Optional, List
 
+from emoji import emojize, demojize
+
 from ask_for_help_bot.pending_conversations import PendingQuestionToAnswer
 from ask_for_help_bot.pending_messages_job import PendingMessagesJob
 from chatbot_core.model.context import ConversationContext
@@ -151,6 +153,27 @@ class AskForHelpHandler(WenetEventHandler):
                 regex=self.INTENT_BUTTON_WITH_PAYLOAD.format("[A-Za-z0-9-]+"))
         )
 
+    @staticmethod
+    def _prepare_string_to_wenet(text: str):
+        """
+        demojize is used handle and encode emojies and them using emojize it is possible to reconstruct them
+        json.dumps is used to handle and encode non-ascii characters and then using json.loads it is possible to reconstruct them
+        """
+        return json.dumps(demojize(text))
+
+    @staticmethod
+    def _prepare_string_to_telegram(raw_text: str) -> str:
+        """
+        json.loads is used to reconstruct non-ascii characters previously encoded using json.dumps
+        emojize it used to reconstruct emojies previously encoded using demojize
+        """
+        try:
+            decoded_text = json.loads(raw_text)
+        except json.JSONDecodeError:
+            decoded_text = raw_text
+
+        return emojize(decoded_text, use_aliases=True)
+
     def _get_user_locale_from_wenet_id(self, wenet_user_id: str, context: Optional[ConversationContext] = None) -> str:
         if not context:
             user_accounts = self.get_user_accounts(wenet_user_id)
@@ -280,6 +303,28 @@ class AskForHelpHandler(WenetEventHandler):
         response = TelegramTextualResponse(f"{title}_{self.parse_text_with_markdown(message.text)}_")
         return NotificationEvent(user_account.social_details, [response], user_account.context)
 
+    def get_incentive_badge_translation(self, message: IncentiveBadge, locale: str) -> TextualResponse:
+        if message.badge_class == os.getenv("FIRST_QUESTION_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(locale).with_text("first_question_badge").translate())
+        elif message.badge_class == os.getenv("CURIOUS_LEVEL_1_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(locale).with_text("curious_level_1_badge").translate())
+        elif message.badge_class == os.getenv("CURIOUS_LEVEL_2_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(locale).with_text("curious_level_2_badge").translate())
+        elif message.badge_class == os.getenv("FIRST_ANSWER_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(locale).with_text("first_answer_badge").translate())
+        elif message.badge_class == os.getenv("HELPER_LEVEL_1_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(locale).with_text("helper_level_1_badge").translate())
+        elif message.badge_class == os.getenv("HELPER_LEVEL_2_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(locale).with_text("helper_level_2_badge").translate())
+        elif message.badge_class == os.getenv("FIRST_GOOD_ANSWER_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(locale).with_text("first_good_answer_badge").translate())
+        elif message.badge_class == os.getenv("GOOD_ANSWERS_LEVEL_1_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(locale).with_text("good_answers_level_1_badge").translate())
+        elif message.badge_class == os.getenv("GOOD_ANSWERS_LEVEL_2_BADGE_ID"):
+            return TextualResponse(self._translator.get_translation_instance(locale).with_text("good_answers_level_2_badge").translate())
+        else:
+            return TextualResponse(message.message)
+
     def handle_wenet_message(self, message: Message) -> NotificationEvent:
         # new question to answer, or a new answer to a question
         # incentive messages or badges
@@ -300,14 +345,14 @@ class AskForHelpHandler(WenetEventHandler):
                 questioning_user = service_api.get_user_profile(str(message.user_id))
                 message_string = self._translator.get_translation_instance(user_object.locale)\
                     .with_text("answer_message_0")\
-                    .with_substitution("question", self.parse_text_with_markdown(message.question))\
+                    .with_substitution("question", self.parse_text_with_markdown(self._prepare_string_to_telegram(message.question)))\
                     .with_substitution("user", questioning_user.name.first if questioning_user.name.first else "Anonymous")\
                     .translate()
                 # we create ids of all buttons, to know which buttons invalidate when one of them is clicked
                 button_ids = [str(uuid.uuid4()) for _ in range(4)]
                 button_data = {
                     "task_id": message.task_id,
-                    "question": message.question,
+                    "question": self._prepare_string_to_telegram(message.question),
                     "username": questioning_user.name.first if questioning_user.name.first else "Anonymous",
                     "related_buttons": button_ids,
                 }
@@ -328,11 +373,11 @@ class AskForHelpHandler(WenetEventHandler):
                 answerer_user = service_api.get_user_profile(str(answerer_id))
                 try:
                     question_task = service_api.get_task(message.task_id)
-                    question_text = self.parse_text_with_markdown(question_task.goal.name)
+                    question_text = self.parse_text_with_markdown(self._prepare_string_to_telegram(question_task.goal.name))
                     message_string = self._translator.get_translation_instance(user_object.locale) \
                         .with_text("new_answer_message") \
                         .with_substitution("question", question_text) \
-                        .with_substitution("answer", self.parse_text_with_markdown(answer_text)) \
+                        .with_substitution("answer", self.parse_text_with_markdown(self._prepare_string_to_telegram(answer_text))) \
                         .with_substitution("username", answerer_user.name.first if answerer_user.name.first else "Anonymous") \
                         .translate()
                     answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1])
@@ -365,7 +410,7 @@ class AskForHelpHandler(WenetEventHandler):
                 answer = TextualResponse(message.content)
                 return NotificationEvent(user_account.social_details, [answer], context)
             elif isinstance(message, IncentiveBadge):
-                answer = TextualResponse(message.message)
+                answer = self.get_incentive_badge_translation(message, user_object.locale)
                 image = UrlImageResponse(message.image_url)
                 return NotificationEvent(user_account.social_details, [answer, image], context)
             elif isinstance(message, AnsweredPickedMessage):
@@ -373,7 +418,7 @@ class AskForHelpHandler(WenetEventHandler):
                     question_task = service_api.get_task(message.task_id)
                     message_string = self._translator.get_translation_instance(user_object.locale) \
                         .with_text("picked_best_answer") \
-                        .with_substitution("question", self.parse_text_with_markdown(question_task.goal.name)) \
+                        .with_substitution("question", self.parse_text_with_markdown(self._prepare_string_to_telegram(question_task.goal.name))) \
                         .translate()
                     return NotificationEvent(user_account.social_details, [TextualResponse(message_string)], context)
                 except TaskNotFound as e:
@@ -476,7 +521,7 @@ class AskForHelpHandler(WenetEventHandler):
         response = OutgoingEvent(social_details=incoming_event.social_details)
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         if isinstance(incoming_event.incoming_message, IncomingTextMessage):
-            question = incoming_event.incoming_message.text
+            question = self._prepare_string_to_wenet(incoming_event.incoming_message.text)
             context = incoming_event.context
             context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_2)
             context.with_static_state(self.CONTEXT_ASKED_QUESTION, question)
@@ -523,7 +568,7 @@ class AskForHelpHandler(WenetEventHandler):
             context = incoming_event.context
             if not context.has_static_state(self.CONTEXT_ASKED_QUESTION) or not context.has_static_state(self.CONTEXT_DESIRED_ANSWERER):
                 raise Exception(f"Expected {self.CONTEXT_ASKED_QUESTION} and {self.CONTEXT_DESIRED_ANSWERER} in the context")
-            answerer_details = incoming_event.incoming_message.text
+            answerer_details = self._prepare_string_to_wenet(incoming_event.incoming_message.text)
             wenet_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
             question = context.get_static_state(self.CONTEXT_ASKED_QUESTION)
             desired_answerer = context.get_static_state(self.CONTEXT_DESIRED_ANSWERER)
@@ -617,7 +662,7 @@ class AskForHelpHandler(WenetEventHandler):
         task = service_api.get_task(button_payload.payload["task_id"])
         is_first_time = self.is_first_answer(user_id)
         message = self._translator.get_translation_instance(user_locale).with_text("you_are_answering_to").translate()\
-            + f"\n_{self.parse_text_with_markdown(task.goal.name)}_"
+            + f"\n_{self.parse_text_with_markdown(self._prepare_string_to_telegram(task.goal.name))}_"
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_context(context)
         response.with_message(TelegramTextualResponse(message))
@@ -644,7 +689,7 @@ class AskForHelpHandler(WenetEventHandler):
         response = OutgoingEvent(social_details=incoming_event.social_details)
         if isinstance(incoming_event.incoming_message, IncomingTextMessage):
             question_id = context.get_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
-            answer = incoming_event.incoming_message.text
+            answer = self._prepare_string_to_wenet(incoming_event.incoming_message.text)
             actioneer_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
             try:
                 transaction = TaskTransaction(None, question_id, self.LABEL_ANSWER_TRANSACTION,
@@ -874,7 +919,7 @@ class AskForHelpHandler(WenetEventHandler):
             for task in tasks:
                 questioning_user = service_api.get_user_profile(str(task.requester_id))
                 if questioning_user:
-                    tasks_texts.append(f"#{1 + len(proposed_tasks)}: *{self.parse_text_with_markdown(task.goal.name)}* - {questioning_user.name.first if questioning_user.name.first else 'Anonymous'}")
+                    tasks_texts.append(f"#{1 + len(proposed_tasks)}: *{self.parse_text_with_markdown(self._prepare_string_to_telegram(task.goal.name))}* - {questioning_user.name.first if questioning_user.name.first else 'Anonymous'}")
                     proposed_tasks.append(task.task_id)
             context.with_static_state(self.CONTEXT_PROPOSED_TASKS, proposed_tasks)
             message_text = '\n'.join([text] + tasks_texts + [self._translator.get_translation_instance(user_locale).with_text("answers_tasks_choose").translate()])
