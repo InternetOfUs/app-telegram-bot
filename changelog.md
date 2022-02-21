@@ -2,6 +2,9 @@
 
 ## Versions
 
+### 1.0.16
+- Added translation of badges messages in Dari
+
 ### 1.0.15
 - Fixed non-ascii characters are not rendered correctly, json.dumps is applied to user texts and json.loads is applied to platform texts
 - Added support for translation of badges messages
