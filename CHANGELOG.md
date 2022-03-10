@@ -2,6 +2,9 @@
 
 ## Version 2.*
 
+### 2.2.0-AAU
+- Removed social closeness and physical proximity questions from the /ask flow snd their related consequences in the answer and best answer flows
+
 ### 2.1.1
 - Updated translations
 - Updated to Project template version `4.6.1`
