@@ -1,18 +1,23 @@
-# _Let's eat together_ chatbot
+# _WeNet Telegram Chatbots_
+
+:warning: **Not the 100% of the application is open source. In fact, some of the required libraries are private of U-Hopper. These chatbot applications should be intended only for example on how to build an application using the WeNet platform.**
 
 ## Introduction
+
 These chatbots are created in the context of `WeNet: the Internet of us`.
 
-These Telegram chatbots are the first wenet application, allowing users to communicate with each other to organize shared meals with potential unknown people, or to ask questions and generic help, in a strong privacy-oriented manner.
+These Telegram chatbots are the first WeNet applications, allowing users to communicate with each other to organize shared meals with potential unknown people, or to ask questions and generic help, in a strong privacy-oriented manner.
 
 The _eat-together_ bot allows users to create a new _task_, representing a shared meal. The WeNet platform will select some users potentially interested in the newly created task, and the bot will ask them to candidate to participate to it. Subsequently, the task creator will be notified of a candidature, being asked whether to accept or reject it. Candidates will acknowledge the owner's decision. Eventually, the task is closed by the owner using the chatbot, providing also an outcome, either successfully or failed.
 
-The _ask-for-help_ bot allows to create _tasks_ that are questions, to which other Wenet users will answer.
+The _ask-for-help_ bot allows to create _tasks_ that are questions, to which other WeNet users will answer.
 
 The bots expose an HTTP endpoint to receive messages and notifications from the WeNet platform.
 
 ## Documentation
+
 ### How the bots work? High-level overview
+
 The bots are _deterministic finite automatas_ (DFA), that are graphs where each node is a possible _state_ in which the conversation can be, and the edges are the _transactions_ between two states. For example:
 1. The bot is in its initial state `S0`, which means that the user has not used it yet.
 2. The user uses the `/start` command: this is a transaction, going from the initial state `S0` to the next state `S1`.
@@ -23,6 +28,7 @@ The bots are _deterministic finite automatas_ (DFA), that are graphs where each 
 So the next state `S_(i + 1)` depends from the current state `S_(i)` and from the input received by the bot.
 
 #### How the DFA is implemented?
+
 The `WenetEventHandler` is an abstract class containing the common things used by the two _real_ handlers of the two bots, including the management of the DFA. 
 
 The current state is saved in the user context, using as key the constant `self.CONTEXT_CURRENT_STATE`, while the value represents the state itself. Of course the value must be unique for each possible state of the bot, so it can be useful to define each possible state as constant in the handler class.
@@ -43,6 +49,7 @@ self.intent_manager.with_fulfiller(
 ```
 
 ### Messages from Wenet
+
 The bots can receive messages from the Wenet platform (notifications, textual messages, etc). Some methods are already available in the wenet handler to manage these situations:
 - `handle_wenet_textual_message()` is triggered every time a `TextualMessage` is sent to the bot;
 - `handle_wenet_authentication_result()` is triggered every time an user performs the authentication in the Wenet Hub;
@@ -78,6 +85,7 @@ where `response_list` is a list of `ResponseMessage` objects.
 ## Setup and configuration
 
 ### Installation
+
 The chatbot required Python version 3.7 or higher.
 
 All required Python packages can be installed using the command:
@@ -100,24 +108,24 @@ will:
 
 ## Usage
 
-In order to run the _eat-together_ chatbot, do the following:
+In order to run the _eat-together_ chatbot, run the following command:
 ```bash
 python -m eat_together_bot.main
 ```
 
-In order to run the _ask-for-help_ chatbot, do the following:
+In order to run the _ask-for-help_ chatbot, run the following command:
 ```bash
 python -m ask_for_help_bot.main
 ```
 
-To run the endpoint:
+In order to run the endpoint, run the following command:
 ```bash
 python -m messages.main
 ```
 
 ### Chatbot env variables
-Both the chatbots use the following environment variables:
 
+Both the chatbots use the following environment variables:
 * `TELEGRAM_KEY`: secret key provided by Telegram to use the bot API
 * `MQTT_HOST`: MQTT host
 * `MQTT_SUBSCRIBER_ID`: MQTT subscriber id for the client
@@ -170,6 +178,7 @@ The _ask for help_ bot has the following optional environment variable:
 
 ### Endpoint env variables
 
+The endpoint uses the following environment variables:
 * `MESSAGES_HOST`: host running the APIs (default to `0.0.0.0`)
 * `MESSAGES_PORT`: port of the host (default to `12345`)
 * `MQTT_HOST`: MQTT host
