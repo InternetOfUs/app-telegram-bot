@@ -2,6 +2,10 @@
 
 ## Version 2.*
 
+### 2.3.0
+- Delayed platform messages so that the in-app message exchange does not get interrupted
+- Delayed remind me later messages so that the in-app message exchange does not get interrupted
+
 ### 2.1.1
 - Updated translations
 - Updated to Project template version `4.6.1`

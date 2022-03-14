@@ -11,7 +11,7 @@ from typing import Optional, List
 
 from emoji import emojize, demojize
 
-from ask_for_help_bot.pending_conversations import PendingQuestionToAnswer
+from ask_for_help_bot.pending_conversations import PendingQuestionToAnswer, PendingWenetMessage
 from ask_for_help_bot.pending_messages_job import PendingMessagesJob
 from chatbot_core.model.context import ConversationContext
 from chatbot_core.model.details import TelegramDetails
@@ -61,6 +61,7 @@ class AskForHelpHandler(WenetEventHandler):
     CONTEXT_ANSWER_TO_QUESTION = "answer_to_question"
     CONTEXT_QUESTION_TO_ANSWER = "question_to_answer"
     CONTEXT_PROPOSED_TASKS = "proposed_tasks"
+    CONTEXT_PENDING_WENET_MESSAGES = "pending_wenet_messages"
     CONTEXT_PENDING_ANSWERS = "pending_answers"
     CONTEXT_TASK_ID = "task_id"
     CONTEXT_TRANSACTION_ID = "transaction_id"
@@ -421,16 +422,6 @@ class AskForHelpHandler(WenetEventHandler):
         )
         return response
 
-    def _send_new_message_from_wenet_notification(self, user: UserConversationContext) -> None:
-        """
-        Clear the context and send a message to the user saying that a new message from WeNet has come,
-        and that the previous operation is lost
-        """
-        context = self._clear_context(user.context)
-        locale = self._get_user_locale_from_wenet_id(context.get_static_state(self.CONTEXT_WENET_USER_ID), context)
-        text = self._translator.get_translation_instance(locale).with_text("message_from_wenet").translate()
-        self.send_notification(NotificationEvent(user.social_details, [TextualResponse(text)], context))
-
     @staticmethod
     def _prepare_string_to_wenet(text: str):
         """
@@ -462,13 +453,21 @@ class AskForHelpHandler(WenetEventHandler):
             raise ValueError(f"No context associated with WeNet user {message.receiver_id}")
 
         user_account = user_accounts[0]
-        # in case the user was doing something else, the previous operation is cancelled
-        if self._is_doing_another_action(user_account.context):
-            self._send_new_message_from_wenet_notification(user_account)
+        context = user_account.context
 
         title = "" if message.title == "" else f"*{self.parse_text_with_markdown(message.title)}*\n"
         response = TelegramTextualResponse(f"{title}_{self.parse_text_with_markdown(message.text)}_")
-        return NotificationEvent(user_account.social_details, [response], user_account.context)
+
+        # in case the user was doing something else the received message is stored
+        if self._is_doing_another_action(context):
+            pending_wenet_messages = context.get_static_state(self.CONTEXT_PENDING_WENET_MESSAGES, dict())
+            pending_wenet_message_id = str(uuid.uuid4())
+            pending_wenet_message = PendingWenetMessage(pending_wenet_message_id, [response], user_account.social_details)
+            pending_wenet_messages[pending_wenet_message_id] = pending_wenet_message.to_repr()
+            context.with_static_state(self.CONTEXT_PENDING_WENET_MESSAGES, pending_wenet_messages)
+            return NotificationEvent(user_account.social_details, [], context)
+        else:
+            return NotificationEvent(user_account.social_details, [response], context)
 
     def handle_nearby_question(self, message: QuestionToAnswerMessage, user_object: WeNetUserProfile, questioning_user: WeNetUserProfile) -> TelegramRapidAnswerResponse:
         # Translate the message that someone near has a question and insert the details of the question, treat differently sensitive questions
@@ -611,9 +610,6 @@ class AskForHelpHandler(WenetEventHandler):
 
         user_account = user_accounts[0]
         context = user_account.context
-        # in case the user was doing something else, the previous operation is cancelled
-        if self._is_doing_another_action(context):
-            self._send_new_message_from_wenet_notification(user_account)
 
         service_api = self._get_service_api_interface_connector_from_context(context)
         try:
@@ -625,26 +621,26 @@ class AskForHelpHandler(WenetEventHandler):
                     response = self.handle_nearby_question(message, user_object, questioning_user)
                 else:
                     response = self.handle_question(message, user_object, questioning_user)
-                return NotificationEvent(user_account.social_details, [response], context)
+                responses = [response]
             elif isinstance(message, AnsweredQuestionMessage):
                 # handle an answer to a question
                 answerer_id = message.user_id
                 answerer_user = service_api.get_user_profile(str(answerer_id))
-                answer = self.handle_answered_question(message, user_object, answerer_user)
-                return NotificationEvent(user_account.social_details, [answer], context)
+                response = self.handle_answered_question(message, user_object, answerer_user)
+                responses = [response]
             elif isinstance(message, AnsweredPickedMessage):
                 # handle an answer picked for a question
                 response = self.handle_answered_picked(message, user_object)
-                return NotificationEvent(user_account.social_details, [response], context)
+                responses = [response]
             elif isinstance(message, IncentiveMessage):
                 # handle an incentive message
-                answer = TextualResponse(message.content)
-                return NotificationEvent(user_account.social_details, [answer], context)
+                response = TextualResponse(message.content)
+                responses = [response]
             elif isinstance(message, IncentiveBadge):
                 # handle an incentive badge
-                answer = self.get_incentive_badge_translation(message, user_object)
+                response = self.get_incentive_badge_translation(message, user_object)
                 image = UrlImageResponse(message.image_url)
-                return NotificationEvent(user_account.social_details, [answer, image], context)
+                responses = [response, image]
             else:
                 logger.warning(f"Received unrecognized message of type {type(message)}: {message.to_repr()}")
                 raise Exception(f"Received unrecognized message of type {type(message)}: {message.to_repr()}")
@@ -659,6 +655,17 @@ class AskForHelpHandler(WenetEventHandler):
                 )
             )
             return notification_event
+
+        # in case the user was doing something else the received message is stored
+        if self._is_doing_another_action(context):
+            pending_wenet_messages = context.get_static_state(self.CONTEXT_PENDING_WENET_MESSAGES, dict())
+            pending_wenet_message_id = str(uuid.uuid4())
+            pending_wenet_message = PendingWenetMessage(pending_wenet_message_id, responses, user_account.social_details)
+            pending_wenet_messages[pending_wenet_message_id] = pending_wenet_message.to_repr()
+            context.with_static_state(self.CONTEXT_PENDING_WENET_MESSAGES, pending_wenet_messages)
+            return NotificationEvent(user_account.social_details, [], context)
+        else:
+            return NotificationEvent(user_account.social_details, responses, context)
 
     def handle_button_with_payload(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         """
@@ -1197,7 +1204,7 @@ class AskForHelpHandler(WenetEventHandler):
         context = incoming_event.context
         message = self._translator.get_translation_instance(user_locale).with_text("answer_remind_later_message").translate()
         response.with_message(TextualResponse(message))
-        pending_answers = context.get_static_state(self.CONTEXT_PENDING_ANSWERS, {})
+        pending_answers = context.get_static_state(self.CONTEXT_PENDING_ANSWERS, dict())
         question_id = button_payload.payload["task_id"]
 
         # Recreating the message that someone in the community has a question and insert the details of the question, treat differently sensitive questions
