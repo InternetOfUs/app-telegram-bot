@@ -2,6 +2,9 @@
 
 ## Versions
 
+### 1.0.17
+- Fixed Dari translations
+
 ### 1.0.16
 - Added translation of badges messages in Dari
 
