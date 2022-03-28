@@ -14,10 +14,9 @@ from emoji import emojize, demojize
 from ask_for_help_bot.pending_conversations import PendingQuestionToAnswer, PendingWenetMessage
 from ask_for_help_bot.pending_messages_job import PendingMessagesJob
 from chatbot_core.model.context import ConversationContext
-from chatbot_core.model.details import TelegramDetails
+from chatbot_core.model.details import TelegramDetails, SocialDetails
 from chatbot_core.model.event import IncomingSocialEvent
 from chatbot_core.model.message import IncomingTextMessage
-from chatbot_core.model.user_context import UserConversationContext
 from chatbot_core.nlp.handler import NLPHandler
 from chatbot_core.translator.translator import Translator
 from chatbot_core.v3.connector.social_connector import SocialConnector
@@ -28,6 +27,8 @@ from chatbot_core.v3.logger.event_logger import LoggerConnector
 from chatbot_core.v3.model.messages import TextualResponse, TelegramRapidAnswerResponse, \
     UrlImageResponse, ResponseMessage, TelegramTextualResponse
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEvent
+
+from ask_for_help_bot.state_mixin import StateMixin
 from common.button_payload import ButtonPayload
 from common.wenet_event_handler import WenetEventHandler
 from uhopper.utils.alert.module import AlertModule
@@ -43,7 +44,7 @@ from wenet.model.user.profile import WeNetUserProfile
 logger = logging.getLogger("uhopper.chatbot.wenet.askforhelp.chatbot")
 
 
-class AskForHelpHandler(WenetEventHandler):
+class AskForHelpHandler(WenetEventHandler, StateMixin):
     """
     The class that manages the Ask For Help WeNet chatbot.
 
@@ -61,8 +62,6 @@ class AskForHelpHandler(WenetEventHandler):
     CONTEXT_ANSWER_TO_QUESTION = "answer_to_question"
     CONTEXT_QUESTION_TO_ANSWER = "question_to_answer"
     CONTEXT_PROPOSED_TASKS = "proposed_tasks"
-    CONTEXT_PENDING_WENET_MESSAGES = "pending_wenet_messages"
-    CONTEXT_PENDING_ANSWERS = "pending_answers"
     CONTEXT_TASK_ID = "task_id"
     CONTEXT_TRANSACTION_ID = "transaction_id"
     CONTEXT_CHOSEN_ANSWER_REASON = "chosen_answer_reason"
@@ -115,20 +114,6 @@ class AskForHelpHandler(WenetEventHandler):
     INTENT_EXTREMELY_HELPFUL = "extremelyHelpful"
     INTENT_BADGES = "/badges"
     # INTENT_PROFILE = "/profile"
-    # available states
-    STATE_QUESTION_0 = "question_0"
-    STATE_QUESTION_1 = "question_1"
-    STATE_QUESTION_2 = "question_2"
-    STATE_QUESTION_3 = "question_3"
-    STATE_QUESTION_4 = "question_4"
-    STATE_QUESTION_4_1 = "question_4_1"
-    STATE_QUESTION_5 = "question_5"
-    STATE_QUESTION_6 = "question_6"
-    STATE_ANSWERING = "answer_2"
-    STATE_ANSWERING_SENSITIVE = "answer_sensitive"
-    STATE_ANSWERING_ANONYMOUSLY = "answer_anonymously"
-    STATE_BEST_ANSWER_0 = "best_answer_0"
-    STATE_BEST_ANSWER_1 = "best_answer_1"
     # transaction labels
     LABEL_ANSWER_TRANSACTION = "answerTransaction"
     LABEL_NOT_ANSWER_TRANSACTION = "notAnswerTransaction"
@@ -356,19 +341,6 @@ class AskForHelpHandler(WenetEventHandler):
             context.delete_static_state(context_key)
         return context
 
-    def _is_doing_another_action(self, context: ConversationContext) -> bool:
-        """
-        Returns True if the user is in another action (e.g. inside the /ask flow), False otherwise
-        """
-        statuses = [
-            self.STATE_ANSWERING, self.STATE_ANSWERING_SENSITIVE, self.STATE_ANSWERING_ANONYMOUSLY,
-            self.STATE_QUESTION_0, self.STATE_QUESTION_1, self.STATE_QUESTION_2, self.STATE_QUESTION_3,
-            self.STATE_QUESTION_4, self.STATE_QUESTION_4_1, self.STATE_QUESTION_5, self.STATE_QUESTION_6,
-            self.STATE_BEST_ANSWER_0, self.STATE_BEST_ANSWER_1
-        ]
-        current_status = context.get_static_state(self.CONTEXT_CURRENT_STATE, "")
-        return current_status in statuses
-
     def cancel_action(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
         context = incoming_event.context
         self._clear_context(context)
@@ -443,6 +415,17 @@ class AskForHelpHandler(WenetEventHandler):
 
         return emojize(decoded_text, use_aliases=True)
 
+    def _get_notification_event_based_on_what_user_is_doing(self, context: ConversationContext, social_details: SocialDetails, responses: List[ResponseMessage]):
+        if self._is_doing_another_action(context):
+            pending_wenet_messages = context.get_static_state(self.CONTEXT_PENDING_WENET_MESSAGES, dict())
+            pending_wenet_message_id = str(uuid.uuid4())
+            pending_wenet_message = PendingWenetMessage(pending_wenet_message_id, responses, social_details)
+            pending_wenet_messages[pending_wenet_message_id] = pending_wenet_message.to_repr()
+            context.with_static_state(self.CONTEXT_PENDING_WENET_MESSAGES, pending_wenet_messages)
+            return NotificationEvent(social_details, [], context)
+        else:
+            return NotificationEvent(social_details, responses, context)
+
     def handle_wenet_textual_message(self, message: TextualMessage) -> NotificationEvent:
         """
         Handle all the incoming textual messages
@@ -459,15 +442,7 @@ class AskForHelpHandler(WenetEventHandler):
         response = TelegramTextualResponse(f"{title}_{self.parse_text_with_markdown(message.text)}_")
 
         # in case the user was doing something else the received message is stored
-        if self._is_doing_another_action(context):
-            pending_wenet_messages = context.get_static_state(self.CONTEXT_PENDING_WENET_MESSAGES, dict())
-            pending_wenet_message_id = str(uuid.uuid4())
-            pending_wenet_message = PendingWenetMessage(pending_wenet_message_id, [response], user_account.social_details)
-            pending_wenet_messages[pending_wenet_message_id] = pending_wenet_message.to_repr()
-            context.with_static_state(self.CONTEXT_PENDING_WENET_MESSAGES, pending_wenet_messages)
-            return NotificationEvent(user_account.social_details, [], context)
-        else:
-            return NotificationEvent(user_account.social_details, [response], context)
+        return self._get_notification_event_based_on_what_user_is_doing(context, user_account.social_details, [response])
 
     def handle_nearby_question(self, message: QuestionToAnswerMessage, user_object: WeNetUserProfile, questioning_user: WeNetUserProfile) -> TelegramRapidAnswerResponse:
         # Translate the message that someone near has a question and insert the details of the question, treat differently sensitive questions
@@ -657,15 +632,7 @@ class AskForHelpHandler(WenetEventHandler):
             return notification_event
 
         # in case the user was doing something else the received message is stored
-        if self._is_doing_another_action(context):
-            pending_wenet_messages = context.get_static_state(self.CONTEXT_PENDING_WENET_MESSAGES, dict())
-            pending_wenet_message_id = str(uuid.uuid4())
-            pending_wenet_message = PendingWenetMessage(pending_wenet_message_id, responses, user_account.social_details)
-            pending_wenet_messages[pending_wenet_message_id] = pending_wenet_message.to_repr()
-            context.with_static_state(self.CONTEXT_PENDING_WENET_MESSAGES, pending_wenet_messages)
-            return NotificationEvent(user_account.social_details, [], context)
-        else:
-            return NotificationEvent(user_account.social_details, responses, context)
+        return self._get_notification_event_based_on_what_user_is_doing(context, user_account.social_details, responses)
 
     def handle_button_with_payload(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         """

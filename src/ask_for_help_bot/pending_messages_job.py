@@ -13,33 +13,18 @@ from chatbot_core.v3.job.job import SocialJob
 from chatbot_core.v3.logger.event_logger import LoggerConnector
 from chatbot_core.v3.model.outgoing_event import NotificationEvent
 
+from ask_for_help_bot.state_mixin import StateMixin
 
 logger = logging.getLogger("uhopper.chatbot.wenet.askforhelp.pending_messages_job")
 
 
-class PendingMessagesJob(SocialJob):
+class PendingMessagesJob(SocialJob, StateMixin):
     """
     This job passes all the contexts, checking whether they contain pending questions or wenet messages dictionaries.
     In case they do and the user is not in any state, and for the question ones also the right amount of time since
     the question was added is passed, the stored messages are sent to the user,
     and the pending questions or wenet messages are removed from the dictionaries.
     """
-    CONTEXT_CURRENT_STATE = "current_state"
-    STATE_QUESTION_0 = "question_0"
-    STATE_QUESTION_1 = "question_1"
-    STATE_QUESTION_2 = "question_2"
-    STATE_QUESTION_3 = "question_3"
-    STATE_QUESTION_4 = "question_4"
-    STATE_QUESTION_4_1 = "question_4_1"
-    STATE_QUESTION_5 = "question_5"
-    STATE_QUESTION_6 = "question_6"
-    STATE_ANSWERING = "answer_2"
-    STATE_ANSWERING_SENSITIVE = "answer_sensitive"
-    STATE_ANSWERING_ANONYMOUSLY = "answer_anonymously"
-    STATE_BEST_ANSWER_0 = "best_answer_0"
-    STATE_BEST_ANSWER_1 = "best_answer_1"
-    CONTEXT_PENDING_WENET_MESSAGES = "pending_wenet_messages"
-    CONTEXT_PENDING_ANSWERS = "pending_answers"
     REMINDER_MINUTES = 60
 
     def __init__(self, job_id, instance_namespace: str, connector: SocialConnector,
@@ -48,19 +33,6 @@ class PendingMessagesJob(SocialJob):
 
     def _should_run(self) -> bool:
         return True
-
-    def _is_doing_another_action(self, context: ConversationContext) -> bool:
-        """
-        Returns True if the user is in another action (e.g. inside the /ask flow), False otherwise
-        """
-        statuses = [
-            self.STATE_ANSWERING, self.STATE_ANSWERING_SENSITIVE, self.STATE_ANSWERING_ANONYMOUSLY,
-            self.STATE_QUESTION_0, self.STATE_QUESTION_1, self.STATE_QUESTION_2, self.STATE_QUESTION_3,
-            self.STATE_QUESTION_4, self.STATE_QUESTION_4_1, self.STATE_QUESTION_5, self.STATE_QUESTION_6,
-            self.STATE_BEST_ANSWER_0, self.STATE_BEST_ANSWER_1
-        ]
-        current_status = context.get_static_state(self.CONTEXT_CURRENT_STATE, "")
-        return current_status in statuses
 
     def execute(self, **kwargs) -> None:
         contexts = self._interface_connector.get_user_contexts(self._instance_namespace, None)
