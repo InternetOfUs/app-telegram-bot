@@ -389,3 +389,6 @@ msgstr ""
 
 msgid "survey_promo"
 msgstr ""
+
+msgid "publish_question"
+msgstr ""

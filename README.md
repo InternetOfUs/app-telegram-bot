@@ -153,6 +153,8 @@ The ask4help bot also needs the following environment variables:
 * `MAX_USERS`: the maximum number of users that should receive the question in the ask4help bot (default is 5)
 * `SURVEY_URL`: the url of the survey
 * `PILOT_HELPER_URL`: (Optional) the url of the helper page specific for a pilot
+* `CHANNEL_ID`: (Optional) the id of the channel where to publish questions and best answers
+* `PUBLICATION_LANGUAGE`: (Optional) the language in which to publish messages on the channel. The default is `en`
 
 For the translations of the badges messages the following environment variables are needed:
 * `FIRST_QUESTION_BADGE_ID`: the id of the first question badge

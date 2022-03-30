@@ -128,9 +128,11 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     def __init__(self, instance_namespace: str, bot_id: str, handler_id: str, telegram_id: str, wenet_instance_url: str,
                  wenet_hub_url: str, app_id: str, client_secret: str, redirect_url: str, wenet_authentication_url: str,
                  wenet_authentication_management_url: str, task_type_id: str, community_id: str, max_users: int,
-                 survey_url: str, helper_url: Optional[str], alert_module: AlertModule, connector: SocialConnector,
-                 nlp_handler: Optional[NLPHandler], translator: Optional[Translator], delay_between_messages_sec: Optional[int] = None,
-                 delay_between_text_sec: Optional[float] = None, logger_connectors: Optional[List[LoggerConnector]] = None):
+                 survey_url: str, helper_url: Optional[str], channel_id: Optional[str], publication_language: str,
+                 alert_module: AlertModule, connector: SocialConnector, nlp_handler: Optional[NLPHandler],
+                 translator: Optional[Translator], delay_between_messages_sec: Optional[int] = None,
+                 delay_between_text_sec: Optional[float] = None,
+                 logger_connectors: Optional[List[LoggerConnector]] = None) -> None:
         super().__init__(instance_namespace, bot_id, handler_id, telegram_id, wenet_instance_url, wenet_hub_url, app_id,
                          client_secret, redirect_url, wenet_authentication_url, wenet_authentication_management_url,
                          task_type_id, community_id, alert_module, connector, nlp_handler, translator,
@@ -139,6 +141,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         self.max_users = max_users
         self.survey_url = survey_url
         self.helper_url = helper_url
+        self.channel_id = channel_id
+        self.publication_language = publication_language
 
         JobManager.instance().add_job(PendingMessagesJob("wenet_ask_for_help_pending_messages_job", self._instance_namespace, self._connector, logger_connectors))
         self.intent_manager.with_fulfiller(
@@ -1310,13 +1314,33 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         context.with_static_state(self.CONTEXT_TASK_ID, button_payload.payload["task_id"])
         context.with_static_state(self.CONTEXT_TRANSACTION_ID, button_payload.payload["transaction_id"])
         task = service_api.get_task(button_payload.payload["task_id"])
+        questioning_user = service_api.get_user_profile(str(task.requester_id))
         question = self.parse_text_with_markdown(self._prepare_string_to_telegram(task.goal.name))
+        best_answer = ""
+        answerer_user = None
+        anonymous_answer = False
+        for transaction in task.transactions:
+            if transaction.id == button_payload.payload["transaction_id"]:
+                best_answer = self.parse_text_with_markdown(self._prepare_string_to_telegram(transaction.attributes.get("answer")))
+                answerer_user = service_api.get_user_profile(transaction.actioneer_id)
+                anonymous_answer = transaction.attributes.get("anonymous", False)
         domain = task.attributes["domain"]
         domain_interest = task.attributes["domainInterest"]
         belief_values_similarity = task.attributes["beliefsAndValues"]
         sensitive = task.attributes.get("sensitive", False)
-        social_closeness = task.attributes["socialCloseness"]
-        position_of_answerer = task.attributes["positionOfAnswerer"]
+        anonymous = task.attributes.get("anonymous", False)
+        social_closeness = ""  # task.attributes["socialCloseness"]
+        position_of_answerer = ""  # task.attributes["positionOfAnswerer"]
+
+        if best_answer and isinstance(incoming_event.social_details, TelegramDetails):
+            message = self._translator.get_translation_instance(self.publication_language).with_text('publish_question') \
+                .with_substitution("questioner", questioning_user.name.first if questioning_user.name.first and not anonymous else self._translator.get_translation_instance(self.publication_language).with_text("anonymous_user").translate()) \
+                .with_substitution("question", question) \
+                .with_substitution("best_answer", best_answer) \
+                .with_substitution("answerer", answerer_user.name.first if questioning_user and questioning_user.name.first and not anonymous_answer else self._translator.get_translation_instance(self.publication_language).with_text("anonymous_user").translate()) \
+                .translate()
+            notification = NotificationEvent(social_details=TelegramDetails(None, self.channel_id, incoming_event.social_details.telegram_bot_id), messages=[TextualResponse(message)])
+            self.send_notification(notification)
 
         message = ""
         if domain_interest != self.INTENT_INDIFFERENT_DOMAIN or belief_values_similarity != self.INTENT_INDIFFERENT_BELIEF_VALUES or social_closeness != self.INTENT_INDIFFERENT_SOCIALLY or position_of_answerer != self.INTENT_ASK_TO_ANYWHERE:
