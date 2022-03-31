@@ -1329,8 +1329,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         belief_values_similarity = task.attributes["beliefsAndValues"]
         sensitive = task.attributes.get("sensitive", False)
         anonymous = task.attributes.get("anonymous", False)
-        social_closeness = ""  # task.attributes["socialCloseness"]
-        position_of_answerer = ""  # task.attributes["positionOfAnswerer"]
+        social_closeness = task.attributes["socialCloseness"]
+        position_of_answerer = task.attributes["positionOfAnswerer"]
 
         if best_answer and isinstance(incoming_event.social_details, TelegramDetails):
             message = self._translator.get_translation_instance(self.publication_language).with_text('publish_question') \
