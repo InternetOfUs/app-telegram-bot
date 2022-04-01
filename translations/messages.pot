@@ -390,5 +390,14 @@ msgstr ""
 msgid "survey_promo"
 msgstr ""
 
+msgid "publish_question_to_channel"
+msgstr ""
+
+msgid "publish"
+msgstr ""
+
+msgid "not_publish"
+msgstr ""
+
 msgid "publish_question"
 msgstr ""
