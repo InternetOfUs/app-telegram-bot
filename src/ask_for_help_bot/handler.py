@@ -1348,10 +1348,10 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
         if self.channel_id:  # ask to publish only if there is the channel
             context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_PUBLISH)
-            context.with_static_state(self.CONTEXT_QUESTIONER_NAME, questioning_user.name.first if questioning_user.name.first and not anonymous else self._translator.get_translation_instance(self.publication_language).with_text("anonymous_user").translate())
+            context.with_static_state(self.CONTEXT_QUESTIONER_NAME, questioning_user.name.first if not anonymous and questioning_user and questioning_user.name.first else self._translator.get_translation_instance(self.publication_language).with_text("anonymous_user").translate())
             context.with_static_state(self.CONTEXT_QUESTION, question)
             context.with_static_state(self.CONTEXT_BEST_ANSWER, best_answer)
-            context.with_static_state(self.CONTEXT_ANSWERER_NAME, answerer_user.name.first if answerer_user and answerer_user.name.first and not anonymous_answer else self._translator.get_translation_instance(self.publication_language).with_text("anonymous_user").translate())
+            context.with_static_state(self.CONTEXT_ANSWERER_NAME, answerer_user.name.first if not anonymous_answer and answerer_user and answerer_user.name.first else self._translator.get_translation_instance(self.publication_language).with_text("anonymous_user").translate())
             message = self._translator.get_translation_instance(user_locale).with_text("publish_question_to_channel").translate()
             button_1_text = self._translator.get_translation_instance(user_locale).with_text("publish").translate()
             button_2_text = self._translator.get_translation_instance(user_locale).with_text("not_publish").translate()
