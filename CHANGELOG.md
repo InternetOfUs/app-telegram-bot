@@ -5,6 +5,8 @@
 ### 2.3.0
 - Delayed platform messages so that the in-app message exchange does not get interrupted
 - Delayed remind me later messages so that the in-app message exchange does not get interrupted
+- Added question in the flow for accepting the answer for publishing questions and best answers in a dedicated telegram channel
+- Updated Chatbot Core to version `1.5.3`
 
 ### 2.1.1
 - Updated translations
