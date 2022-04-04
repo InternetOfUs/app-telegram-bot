@@ -1451,7 +1451,10 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 .with_substitution("answerer", answerer_name) \
                 .translate()
             notification = NotificationEvent(social_details=TelegramDetails(None, self.channel_id, incoming_event.social_details.telegram_bot_id), messages=[TextualResponse(message)])
-            self.send_notification(notification)
+            try:
+                self.send_notification(notification)
+            except Exception as e:
+                logger.exception(f"An exception [{type(e)}] occurs sending the notification [{notification.to_repr()}]", exc_info=e)
             logger.info(f"Notification sent to the telegram channel {self.channel_id}")
 
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_0)
