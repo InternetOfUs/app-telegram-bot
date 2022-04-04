@@ -533,7 +533,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         return response
 
     def _handle_answered_question(self, message: AnsweredQuestionMessage, user_object: WeNetUserProfile, answerer_user: WeNetUserProfile) -> TelegramRapidAnswerResponse:
-        answer_text = self.parse_text_with_markdown(self._prepare_string_to_telegram(message.answer))
+        answer_text = self.parse_text_with_markdown(self._prepare_string_to_telegram(message.answer))  # TODO in the new task expiration message we should get all the answers to the question
         question_text = self.parse_text_with_markdown(self._prepare_string_to_telegram(message.attributes["question"]))
         # Translate the message that there is a new answer and insert the details of the question and answer
         message_string = self._translator.get_translation_instance(user_object.locale) \
@@ -543,7 +543,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             .with_substitution("username", answerer_user.name.first if answerer_user.name.first and not message.attributes.get("anonymous", False) else self._translator.get_translation_instance(user_object.locale).with_text("anonymous_user").translate()) \
             .translate()
 
-        answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1])
+        answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1])  # TODO in the new task expiration message we should provide a button for each of the answers to the question + maintaining the possibility of more_answers_button
         button_report_text = self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate()
         button_more_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("more_answers_button").translate()
         button_best_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("best_answers_button").translate()
@@ -619,7 +619,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 else:
                     response = self._handle_question(message, user_object, questioning_user)
                 responses = [response]
-            elif isinstance(message, AnsweredQuestionMessage):
+            elif isinstance(message, AnsweredQuestionMessage):  # TODO as for the other callbacks, we should handle the new QuestionExpirationMessage and probably AnsweredQuestionMessage will be no more used
                 # handle an answer to a question
                 answerer_id = message.user_id
                 answerer_user = service_api.get_user_profile(str(answerer_id))
@@ -925,7 +925,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         sensitive = context.get_static_state(self.CONTEXT_SENSITIVE_QUESTION)
         anonymous = context.get_static_state(self.CONTEXT_ANONYMOUS_QUESTION, self.INTENT_NOT_ANONYMOUS_QUESTION)
         social_closeness = context.get_static_state(self.CONTEXT_SOCIAL_CLOSENESS)
-        attributes = {
+        attributes = {  # TODO add expiration data as a property of the task (probably as env var) --> We should define a new app logic on the hub for that
             "domain": domain,
             "domainInterest": domain_interest,
             "beliefsAndValues": belief_values_similarity,

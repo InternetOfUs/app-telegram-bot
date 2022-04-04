@@ -1,5 +1,10 @@
 # Changelog
 
+## Version 3.*
+
+### 3.0.0
+- Added support for task expiration
+
 ## Version 2.*
 
 ### 2.3.0
