@@ -11,13 +11,12 @@ from typing import Optional, List
 
 from emoji import emojize, demojize
 
-from ask_for_help_bot.pending_conversations import PendingQuestionToAnswer
+from ask_for_help_bot.pending_conversations import PendingQuestionToAnswer, PendingWenetMessage
 from ask_for_help_bot.pending_messages_job import PendingMessagesJob
 from chatbot_core.model.context import ConversationContext
-from chatbot_core.model.details import TelegramDetails
+from chatbot_core.model.details import TelegramDetails, SocialDetails
 from chatbot_core.model.event import IncomingSocialEvent
 from chatbot_core.model.message import IncomingTextMessage
-from chatbot_core.model.user_context import UserConversationContext
 from chatbot_core.nlp.handler import NLPHandler
 from chatbot_core.translator.translator import Translator
 from chatbot_core.v3.connector.social_connector import SocialConnector
@@ -28,6 +27,8 @@ from chatbot_core.v3.logger.event_logger import LoggerConnector
 from chatbot_core.v3.model.messages import TextualResponse, TelegramRapidAnswerResponse, \
     UrlImageResponse, ResponseMessage, TelegramTextualResponse
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEvent
+
+from ask_for_help_bot.state_mixin import StateMixin
 from common.button_payload import ButtonPayload
 from common.wenet_event_handler import WenetEventHandler
 from uhopper.utils.alert.module import AlertModule
@@ -43,7 +44,7 @@ from wenet.model.user.profile import WeNetUserProfile
 logger = logging.getLogger("uhopper.chatbot.wenet.askforhelp.chatbot")
 
 
-class AskForHelpHandler(WenetEventHandler):
+class AskForHelpHandler(WenetEventHandler, StateMixin):
     """
     The class that manages the Ask For Help WeNet chatbot.
 
@@ -60,12 +61,14 @@ class AskForHelpHandler(WenetEventHandler):
     CONTEXT_SOCIAL_CLOSENESS = "social_closeness"
     CONTEXT_ANSWER_TO_QUESTION = "answer_to_question"
     CONTEXT_QUESTION_TO_ANSWER = "question_to_answer"
-    CONTEXT_PROPOSED_TASKS = "proposed_tasks"
-    CONTEXT_PENDING_ANSWERS = "pending_answers"
     CONTEXT_TASK_ID = "task_id"
     CONTEXT_TRANSACTION_ID = "transaction_id"
     CONTEXT_CHOSEN_ANSWER_REASON = "chosen_answer_reason"
-    # all the recognize intents
+    CONTEXT_QUESTIONER_NAME = "questioner_name"
+    CONTEXT_QUESTION = "question"
+    CONTEXT_BEST_ANSWER = "best_answer"
+    CONTEXT_ANSWERER_NAME = "answerer_name"
+    # all the recognized intents
     INTENT_ASK = "/ask"
     INTENT_FIRST_QUESTION = "first_question"
     INTENT_STUDYING_CAREER = "studying_career"
@@ -107,6 +110,8 @@ class AskForHelpHandler(WenetEventHandler):
     INTENT_QUESTIONS = "/questions"
     INTENT_ANSWER_PICKED_QUESTION = "picked_answer"
     INTENT_BEST_ANSWER = "best_answer"
+    INTENT_PUBLISH = "publish"
+    INTENT_NOT_PUBLISH = "not_publish"
     INTENT_NOT_AT_ALL_HELPFUL = "notAtAllHelpful"
     INTENT_SLIGHTLY_HELPFUL = "slightlyHelpful"
     INTENT_SOMEWHAT_HELPFUL = "somewhatHelpful"
@@ -114,20 +119,6 @@ class AskForHelpHandler(WenetEventHandler):
     INTENT_EXTREMELY_HELPFUL = "extremelyHelpful"
     INTENT_BADGES = "/badges"
     # INTENT_PROFILE = "/profile"
-    # available states
-    STATE_QUESTION_0 = "question_0"
-    STATE_QUESTION_1 = "question_1"
-    STATE_QUESTION_2 = "question_2"
-    STATE_QUESTION_3 = "question_3"
-    STATE_QUESTION_4 = "question_4"
-    STATE_QUESTION_4_1 = "question_4_1"
-    STATE_QUESTION_5 = "question_5"
-    STATE_QUESTION_6 = "question_6"
-    STATE_ANSWERING = "answer_2"
-    STATE_ANSWERING_SENSITIVE = "answer_sensitive"
-    STATE_ANSWERING_ANONYMOUSLY = "answer_anonymously"
-    STATE_BEST_ANSWER_0 = "best_answer_0"
-    STATE_BEST_ANSWER_1 = "best_answer_1"
     # transaction labels
     LABEL_ANSWER_TRANSACTION = "answerTransaction"
     LABEL_NOT_ANSWER_TRANSACTION = "notAnswerTransaction"
@@ -142,9 +133,11 @@ class AskForHelpHandler(WenetEventHandler):
     def __init__(self, instance_namespace: str, bot_id: str, handler_id: str, telegram_id: str, wenet_instance_url: str,
                  wenet_hub_url: str, app_id: str, client_secret: str, redirect_url: str, wenet_authentication_url: str,
                  wenet_authentication_management_url: str, task_type_id: str, community_id: str, max_users: int,
-                 survey_url: str, helper_url: Optional[str], alert_module: AlertModule, connector: SocialConnector,
-                 nlp_handler: Optional[NLPHandler], translator: Optional[Translator], delay_between_messages_sec: Optional[int] = None,
-                 delay_between_text_sec: Optional[float] = None, logger_connectors: Optional[List[LoggerConnector]] = None):
+                 survey_url: str, helper_url: Optional[str], channel_id: Optional[str], publication_language: str,
+                 alert_module: AlertModule, connector: SocialConnector, nlp_handler: Optional[NLPHandler],
+                 translator: Optional[Translator], delay_between_messages_sec: Optional[int] = None,
+                 delay_between_text_sec: Optional[float] = None,
+                 logger_connectors: Optional[List[LoggerConnector]] = None) -> None:
         super().__init__(instance_namespace, bot_id, handler_id, telegram_id, wenet_instance_url, wenet_hub_url, app_id,
                          client_secret, redirect_url, wenet_authentication_url, wenet_authentication_management_url,
                          task_type_id, community_id, alert_module, connector, nlp_handler, translator,
@@ -153,6 +146,8 @@ class AskForHelpHandler(WenetEventHandler):
         self.max_users = max_users
         self.survey_url = survey_url
         self.helper_url = helper_url
+        self.channel_id = channel_id
+        self.publication_language = publication_language
 
         JobManager.instance().add_job(PendingMessagesJob("wenet_ask_for_help_pending_messages_job", self._instance_namespace, self._connector, logger_connectors))
         self.intent_manager.with_fulfiller(
@@ -272,6 +267,18 @@ class AskForHelpHandler(WenetEventHandler):
             )
         )
         self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_NOT_PUBLISH, self.action_best_answer_publish).with_rule(
+                intent=self.INTENT_NOT_PUBLISH,
+                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_PUBLISH)
+            )
+        )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_PUBLISH, self.action_best_answer_publish).with_rule(
+                intent=self.INTENT_PUBLISH,
+                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_PUBLISH)
+            )
+        )
+        self.intent_manager.with_fulfiller(
             IntentFulfillerV3("", self.action_best_answer_1).with_rule(
                 static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_0)
             )
@@ -348,25 +355,13 @@ class AskForHelpHandler(WenetEventHandler):
             self.CONTEXT_CURRENT_STATE, self.CONTEXT_ASKED_QUESTION, self.CONTEXT_QUESTION_DOMAIN,
             self.CONTEXT_DOMAIN_INTEREST, self.CONTEXT_BELIEF_VALUES_SIMILARITY, self.CONTEXT_SENSITIVE_QUESTION,
             self.CONTEXT_ANONYMOUS_QUESTION, self.CONTEXT_SOCIAL_CLOSENESS, self.CONTEXT_ANSWER_TO_QUESTION,
-            self.CONTEXT_QUESTION_TO_ANSWER, self.CONTEXT_SENSITIVE_QUESTION, self.CONTEXT_TASK_ID,
-            self.CONTEXT_TRANSACTION_ID, self.CONTEXT_CHOSEN_ANSWER_REASON
+            self.CONTEXT_QUESTION_TO_ANSWER, self.CONTEXT_TASK_ID, self.CONTEXT_TRANSACTION_ID,
+            self.CONTEXT_CHOSEN_ANSWER_REASON, self.CONTEXT_QUESTIONER_NAME, self.CONTEXT_QUESTION,
+            self.CONTEXT_BEST_ANSWER, self.CONTEXT_ANSWERER_NAME
         ]
         for context_key in context_to_remove:
             context.delete_static_state(context_key)
         return context
-
-    def _is_doing_another_action(self, context: ConversationContext) -> bool:
-        """
-        Returns True if the user is in another action (e.g. inside the /ask flow), False otherwise
-        """
-        statuses = [
-            self.STATE_ANSWERING, self.STATE_ANSWERING_SENSITIVE, self.STATE_ANSWERING_ANONYMOUSLY,
-            self.STATE_QUESTION_0, self.STATE_QUESTION_1, self.STATE_QUESTION_2, self.STATE_QUESTION_3,
-            self.STATE_QUESTION_4, self.STATE_QUESTION_4_1, self.STATE_QUESTION_5, self.STATE_QUESTION_6,
-            self.STATE_BEST_ANSWER_0, self.STATE_BEST_ANSWER_1
-        ]
-        current_status = context.get_static_state(self.CONTEXT_CURRENT_STATE, "")
-        return current_status in statuses
 
     def cancel_action(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
         context = incoming_event.context
@@ -421,18 +416,8 @@ class AskForHelpHandler(WenetEventHandler):
         )
         return response
 
-    def _send_new_message_from_wenet_notification(self, user: UserConversationContext) -> None:
-        """
-        Clear the context and send a message to the user saying that a new message from WeNet has come,
-        and that the previous operation is lost
-        """
-        context = self._clear_context(user.context)
-        locale = self._get_user_locale_from_wenet_id(context.get_static_state(self.CONTEXT_WENET_USER_ID), context)
-        text = self._translator.get_translation_instance(locale).with_text("message_from_wenet").translate()
-        self.send_notification(NotificationEvent(user.social_details, [TextualResponse(text)], context))
-
     @staticmethod
-    def _prepare_string_to_wenet(text: str):
+    def _prepare_string_to_wenet(text: str) -> str:
         """
         demojize is used handle and encode emojies and them using emojize it is possible to reconstruct them
         json.dumps is used to handle and encode non-ascii characters and then using json.loads it is possible to reconstruct them
@@ -452,6 +437,17 @@ class AskForHelpHandler(WenetEventHandler):
 
         return emojize(decoded_text, use_aliases=True)
 
+    def _get_notification_event_based_on_what_user_is_doing(self, context: ConversationContext, social_details: SocialDetails, responses: List[ResponseMessage]) -> NotificationEvent:
+        if self._is_doing_another_action(context):
+            pending_wenet_messages = context.get_static_state(self.CONTEXT_PENDING_WENET_MESSAGES, dict())
+            pending_wenet_message_id = str(uuid.uuid4())
+            pending_wenet_message = PendingWenetMessage(pending_wenet_message_id, responses, social_details)
+            pending_wenet_messages[pending_wenet_message_id] = pending_wenet_message.to_repr()
+            context.with_static_state(self.CONTEXT_PENDING_WENET_MESSAGES, pending_wenet_messages)
+            return NotificationEvent(social_details, [], context)
+        else:
+            return NotificationEvent(social_details, responses, context)
+
     def handle_wenet_textual_message(self, message: TextualMessage) -> NotificationEvent:
         """
         Handle all the incoming textual messages
@@ -462,15 +458,15 @@ class AskForHelpHandler(WenetEventHandler):
             raise ValueError(f"No context associated with WeNet user {message.receiver_id}")
 
         user_account = user_accounts[0]
-        # in case the user was doing something else, the previous operation is cancelled
-        if self._is_doing_another_action(user_account.context):
-            self._send_new_message_from_wenet_notification(user_account)
+        context = user_account.context
 
         title = "" if message.title == "" else f"*{self.parse_text_with_markdown(message.title)}*\n"
         response = TelegramTextualResponse(f"{title}_{self.parse_text_with_markdown(message.text)}_")
-        return NotificationEvent(user_account.social_details, [response], user_account.context)
 
-    def handle_nearby_question(self, message: QuestionToAnswerMessage, user_object: WeNetUserProfile, questioning_user: WeNetUserProfile) -> TelegramRapidAnswerResponse:
+        # in case the user was doing something else the received message is stored
+        return self._get_notification_event_based_on_what_user_is_doing(context, user_account.social_details, [response])
+
+    def _handle_nearby_question(self, message: QuestionToAnswerMessage, user_object: WeNetUserProfile, questioning_user: WeNetUserProfile) -> TelegramRapidAnswerResponse:
         # Translate the message that someone near has a question and insert the details of the question, treat differently sensitive questions
         message_string = self._translator.get_translation_instance(user_object.locale)
         sensitive = message.attributes.get("sensitive", False)
@@ -502,7 +498,7 @@ class AskForHelpHandler(WenetEventHandler):
         response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
         return response
 
-    def handle_question(self, message: QuestionToAnswerMessage, user_object: WeNetUserProfile, questioning_user: WeNetUserProfile) -> TelegramRapidAnswerResponse:
+    def _handle_question(self, message: QuestionToAnswerMessage, user_object: WeNetUserProfile, questioning_user: WeNetUserProfile) -> TelegramRapidAnswerResponse:
         # Translate the message that someone in the community has a question and insert the details of the question, treat differently sensitive questions
         message_string = self._translator.get_translation_instance(user_object.locale)
         sensitive = message.attributes.get("sensitive", False)
@@ -536,7 +532,7 @@ class AskForHelpHandler(WenetEventHandler):
         response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[3]))
         return response
 
-    def handle_answered_question(self, message: AnsweredQuestionMessage, user_object: WeNetUserProfile, answerer_user: WeNetUserProfile) -> TelegramRapidAnswerResponse:
+    def _handle_answered_question(self, message: AnsweredQuestionMessage, user_object: WeNetUserProfile, answerer_user: WeNetUserProfile) -> TelegramRapidAnswerResponse:
         answer_text = self.parse_text_with_markdown(self._prepare_string_to_telegram(message.answer))
         question_text = self.parse_text_with_markdown(self._prepare_string_to_telegram(message.attributes["question"]))
         # Translate the message that there is a new answer and insert the details of the question and answer
@@ -565,7 +561,7 @@ class AskForHelpHandler(WenetEventHandler):
         answer.with_textual_option(button_report_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
         return answer
 
-    def handle_answered_picked(self, message: AnsweredPickedMessage, user_object: WeNetUserProfile) -> TextualResponse:
+    def _handle_answered_picked(self, message: AnsweredPickedMessage, user_object: WeNetUserProfile) -> TextualResponse:
         # Translate the message that the answer to a question was picked as the best and insert the details of the question
         message_string = self._translator.get_translation_instance(user_object.locale) \
             .with_text("picked_best_answer") \
@@ -573,7 +569,7 @@ class AskForHelpHandler(WenetEventHandler):
             .translate()
         return TextualResponse(message_string)
 
-    def get_incentive_badge_translation(self, message: IncentiveBadge, user_object: WeNetUserProfile) -> TextualResponse:
+    def _get_incentive_badge_translated_message(self, message: IncentiveBadge, user_object: WeNetUserProfile) -> TextualResponse:
         if message.badge_class == os.getenv("FIRST_QUESTION_BADGE_ID"):
             return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("first_question_badge").translate())
         elif message.badge_class == os.getenv("CURIOUS_LEVEL_1_BADGE_ID"):
@@ -611,9 +607,6 @@ class AskForHelpHandler(WenetEventHandler):
 
         user_account = user_accounts[0]
         context = user_account.context
-        # in case the user was doing something else, the previous operation is cancelled
-        if self._is_doing_another_action(context):
-            self._send_new_message_from_wenet_notification(user_account)
 
         service_api = self._get_service_api_interface_connector_from_context(context)
         try:
@@ -622,29 +615,29 @@ class AskForHelpHandler(WenetEventHandler):
                 # handle a new question to answer checking if the question is for nearby people
                 questioning_user = service_api.get_user_profile(str(message.user_id))
                 if message.attributes["positionOfAnswerer"] == self.INTENT_ASK_TO_NEARBY:
-                    response = self.handle_nearby_question(message, user_object, questioning_user)
+                    response = self._handle_nearby_question(message, user_object, questioning_user)
                 else:
-                    response = self.handle_question(message, user_object, questioning_user)
-                return NotificationEvent(user_account.social_details, [response], context)
+                    response = self._handle_question(message, user_object, questioning_user)
+                responses = [response]
             elif isinstance(message, AnsweredQuestionMessage):
                 # handle an answer to a question
                 answerer_id = message.user_id
                 answerer_user = service_api.get_user_profile(str(answerer_id))
-                answer = self.handle_answered_question(message, user_object, answerer_user)
-                return NotificationEvent(user_account.social_details, [answer], context)
+                response = self._handle_answered_question(message, user_object, answerer_user)
+                responses = [response]
             elif isinstance(message, AnsweredPickedMessage):
                 # handle an answer picked for a question
-                response = self.handle_answered_picked(message, user_object)
-                return NotificationEvent(user_account.social_details, [response], context)
+                response = self._handle_answered_picked(message, user_object)
+                responses = [response]
             elif isinstance(message, IncentiveMessage):
                 # handle an incentive message
-                answer = TextualResponse(message.content)
-                return NotificationEvent(user_account.social_details, [answer], context)
+                response = TextualResponse(message.content)
+                responses = [response]
             elif isinstance(message, IncentiveBadge):
                 # handle an incentive badge
-                answer = self.get_incentive_badge_translation(message, user_object)
+                response = self._get_incentive_badge_translated_message(message, user_object)
                 image = UrlImageResponse(message.image_url)
-                return NotificationEvent(user_account.social_details, [answer, image], context)
+                responses = [response, image]
             else:
                 logger.warning(f"Received unrecognized message of type {type(message)}: {message.to_repr()}")
                 raise Exception(f"Received unrecognized message of type {type(message)}: {message.to_repr()}")
@@ -659,6 +652,9 @@ class AskForHelpHandler(WenetEventHandler):
                 )
             )
             return notification_event
+
+        # in case the user was doing something else the received message is stored
+        return self._get_notification_event_based_on_what_user_is_doing(context, user_account.social_details, responses)
 
     def handle_button_with_payload(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         """
@@ -974,7 +970,7 @@ class AskForHelpHandler(WenetEventHandler):
             response.with_context(context)
         return response
 
-    def is_first_answer(self, wenet_user_id: str) -> bool:
+    def _is_first_answer(self, wenet_user_id: str) -> bool:
         """
         Use Redis to keep track of the fact that a WeNet user has already answered someone else's question.
         This piece of information is used to decide whether or not showing the conduct instructions
@@ -994,7 +990,7 @@ class AskForHelpHandler(WenetEventHandler):
         user_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
         show_conduct_message = True
         if user_id:
-            is_first_answer = self.is_first_answer(user_id)
+            is_first_answer = self._is_first_answer(user_id)
             show_conduct_message = is_first_answer or random.randint(1, 10) <= 2
         context.with_static_state(self.CONTEXT_QUESTION_TO_ANSWER, button_payload.payload["task_id"])
         if button_payload.payload.get("sensitive", False):
@@ -1029,7 +1025,6 @@ class AskForHelpHandler(WenetEventHandler):
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         context = incoming_event.context
         context.with_static_state(self.CONTEXT_QUESTION_TO_ANSWER, button_payload.payload["task_id"])
-        context.delete_static_state(self.CONTEXT_PROPOSED_TASKS)
         user_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
         task = service_api.get_task(button_payload.payload["task_id"])
 
@@ -1047,7 +1042,7 @@ class AskForHelpHandler(WenetEventHandler):
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_context(context)
         response.with_message(TelegramTextualResponse(message))
-        is_first_time = self.is_first_answer(user_id)
+        is_first_time = self._is_first_answer(user_id)
         if is_first_time:
             if self.helper_url:
                 conduct_message = self._translator.get_translation_instance(user_locale).with_text("question_0_with_helper_url") \
@@ -1197,7 +1192,7 @@ class AskForHelpHandler(WenetEventHandler):
         context = incoming_event.context
         message = self._translator.get_translation_instance(user_locale).with_text("answer_remind_later_message").translate()
         response.with_message(TextualResponse(message))
-        pending_answers = context.get_static_state(self.CONTEXT_PENDING_ANSWERS, {})
+        pending_answers = context.get_static_state(self.CONTEXT_PENDING_ANSWERS, dict())
         question_id = button_payload.payload["task_id"]
 
         # Recreating the message that someone in the community has a question and insert the details of the question, treat differently sensitive questions
@@ -1332,10 +1327,54 @@ class AskForHelpHandler(WenetEventHandler):
         else:
             raise Exception(f"Missing conversation context for event {incoming_event}")
 
-        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_0)
         context.with_static_state(self.CONTEXT_TASK_ID, button_payload.payload["task_id"])
         context.with_static_state(self.CONTEXT_TRANSACTION_ID, button_payload.payload["transaction_id"])
         task = service_api.get_task(button_payload.payload["task_id"])
+        question = self.parse_text_with_markdown(self._prepare_string_to_telegram(task.goal.name))
+        anonymous = task.attributes.get("anonymous", False)
+        questioning_user = None
+        if not anonymous:
+            questioning_user = service_api.get_user_profile(str(task.requester_id))
+        best_answer = ""
+        anonymous_answer = False
+        answerer_user = None
+        for transaction in task.transactions:
+            if transaction.id == button_payload.payload["transaction_id"]:
+                best_answer = self.parse_text_with_markdown(self._prepare_string_to_telegram(transaction.attributes.get("answer")))
+                anonymous_answer = transaction.attributes.get("anonymous", False)
+                if not answerer_user:
+                    answerer_user = service_api.get_user_profile(transaction.actioneer_id)
+                break
+
+        if self.channel_id:  # ask to publish only if there is the channel
+            context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_PUBLISH)
+            context.with_static_state(self.CONTEXT_QUESTIONER_NAME, questioning_user.name.first if not anonymous and questioning_user and questioning_user.name.first else self._translator.get_translation_instance(self.publication_language).with_text("anonymous_user").translate())
+            context.with_static_state(self.CONTEXT_QUESTION, question)
+            context.with_static_state(self.CONTEXT_BEST_ANSWER, best_answer)
+            context.with_static_state(self.CONTEXT_ANSWERER_NAME, answerer_user.name.first if not anonymous_answer and answerer_user and answerer_user.name.first else self._translator.get_translation_instance(self.publication_language).with_text("anonymous_user").translate())
+            message = self._translator.get_translation_instance(user_locale).with_text("publish_question_to_channel").translate()
+            button_1_text = self._translator.get_translation_instance(user_locale).with_text("publish").translate()
+            button_2_text = self._translator.get_translation_instance(user_locale).with_text("not_publish").translate()
+            message = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2])
+            message.with_textual_option(button_1_text, self.INTENT_PUBLISH)
+            message.with_textual_option(button_2_text, self.INTENT_NOT_PUBLISH)
+        else:
+            context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_0)
+            message = self._get_best_answer_reason_message(incoming_event, button_payload.payload["task_id"])
+
+        response.with_message(message)
+        response.with_context(context)
+        return response
+
+    def _get_best_answer_reason_message(self, incoming_event: IncomingSocialEvent, task_id: str) -> TextualResponse:
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+        context = incoming_event.context
+        if context is not None:
+            service_api = self._get_service_api_interface_connector_from_context(context)
+        else:
+            raise Exception(f"Missing conversation context for event {incoming_event}")
+
+        task = service_api.get_task(task_id)
         question = self.parse_text_with_markdown(self._prepare_string_to_telegram(task.goal.name))
         domain = task.attributes["domain"]
         domain_interest = task.attributes["domainInterest"]
@@ -1393,8 +1432,35 @@ class AskForHelpHandler(WenetEventHandler):
                 message = message + "\n" + f"- {self._translator.get_translation_instance(user_locale).with_text('location_answer_1').translate().lower()}"
             message = message + "\n\n"
 
-        message = message + self._translator.get_translation_instance(user_locale).with_text("best_answer_0").translate()
-        response.with_message(TextualResponse(message))
+        message = message + self._translator.get_translation_instance(user_locale).with_text("best_answer_0").translate()  # TODO this should became buttons and not open text
+        return TextualResponse(message)
+
+    def action_best_answer_publish(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        context = incoming_event.context
+        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_0)
+        questioner_name = context.get_static_state(self.CONTEXT_QUESTIONER_NAME)
+        question = context.get_static_state(self.CONTEXT_QUESTION)
+        best_answer = context.get_static_state(self.CONTEXT_BEST_ANSWER)
+        answerer_name = context.get_static_state(self.CONTEXT_ANSWERER_NAME)
+        if intent == self.INTENT_PUBLISH and isinstance(incoming_event.social_details, TelegramDetails):
+            message = self._translator.get_translation_instance(self.publication_language).with_text('publish_question') \
+                .with_substitution("questioner", questioner_name) \
+                .with_substitution("question", question) \
+                .with_substitution("best_answer", best_answer) \
+                .with_substitution("answerer", answerer_name) \
+                .translate()
+            notification = NotificationEvent(social_details=TelegramDetails(None, self.channel_id, incoming_event.social_details.telegram_bot_id), messages=[TextualResponse(message)])
+            try:
+                self.send_notification(notification)
+            except Exception as e:
+                logger.exception(f"An exception [{type(e)}] occurs sending the notification [{notification.to_repr()}]", exc_info=e)
+            logger.info(f"Notification sent to the telegram channel {self.channel_id}")
+
+        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_0)
+        task_id = context.get_static_state(self.CONTEXT_TASK_ID)
+        message = self._get_best_answer_reason_message(incoming_event, task_id)
+        response.with_message(message)
         response.with_context(context)
         return response
 
@@ -1466,6 +1532,10 @@ class AskForHelpHandler(WenetEventHandler):
             context.delete_static_state(self.CONTEXT_TASK_ID)
             context.delete_static_state(self.CONTEXT_TRANSACTION_ID)
             context.delete_static_state(self.CONTEXT_CHOSEN_ANSWER_REASON)
+            context.delete_static_state(self.CONTEXT_QUESTIONER_NAME)
+            context.delete_static_state(self.CONTEXT_QUESTION)
+            context.delete_static_state(self.CONTEXT_BEST_ANSWER)
+            context.delete_static_state(self.CONTEXT_ANSWERER_NAME)
             context.delete_static_state(self.CONTEXT_CURRENT_STATE)
             response.with_context(context)
         return response
@@ -1503,7 +1573,6 @@ class AskForHelpHandler(WenetEventHandler):
                         task_text = task_text + f" - {self._translator.get_translation_instance(user_locale).with_text('sensitive').translate()}"
                     tasks_texts.append(task_text)
                     proposed_tasks.append(task)
-            context.with_static_state(self.CONTEXT_PROPOSED_TASKS, [task.task_id for task in proposed_tasks])
             message_text = "\n".join([text] + tasks_texts + [self._translator.get_translation_instance(user_locale).with_text("answers_tasks_choose").translate()])
             rapid_answer = TelegramRapidAnswerResponse(TextualResponse(message_text))
             for i in range(len(proposed_tasks)):

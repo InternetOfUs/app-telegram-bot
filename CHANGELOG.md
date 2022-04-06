@@ -2,6 +2,16 @@
 
 ## Version 2.*
 
+### 2.2.0
+
+:rocket: New features
+- Delayed platform messages so that the in-app message exchange does not get interrupted
+- Delayed remind me later messages so that the in-app message exchange does not get interrupted
+- Added question in the flow for accepting the answer for publishing questions and best answers in a dedicated telegram channel
+
+:house: Internal
+- Updated Chatbot Core to version `1.5.3`
+
 ### 2.1.1
 - Updated translations
 - Updated to Project template version `4.6.1`

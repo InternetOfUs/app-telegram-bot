@@ -43,3 +43,5 @@ class MockAskForHelpHandler(AskForHelpHandler):
         self.max_users = 5
         self.survey_url = "survey_url"
         self.helper_url = "helper_url"
+        self.channel_id = "channel_id"
+        self.publication_language = "en"
