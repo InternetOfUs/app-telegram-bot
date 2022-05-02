@@ -25,10 +25,10 @@ from uhopper.utils.alert.module import AlertModule
 from wenet.interface.client import Oauth2Client
 from wenet.interface.exceptions import NotFound, RefreshTokenExpiredError, CreationError
 from wenet.interface.service_api import ServiceApiInterface
-from wenet.model.callback_message.builder import MessageBuilder
 from wenet.model.callback_message.event import WeNetAuthenticationEvent
 from wenet.model.callback_message.message import TextualMessage, Message
 from wenet.storage.cache import RedisCache
+from common.callback_messages import MessageBuilder
 
 logger = logging.getLogger("uhopper.chatbot.wenet")
 
