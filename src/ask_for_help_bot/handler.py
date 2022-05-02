@@ -5,7 +5,7 @@ import logging
 import os
 import random
 import uuid
-from datetime import datetime
+from datetime import datetime, timedelta
 from json import JSONDecodeError
 from typing import Optional, List
 
@@ -133,10 +133,10 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     def __init__(self, instance_namespace: str, bot_id: str, handler_id: str, telegram_id: str, wenet_instance_url: str,
                  wenet_hub_url: str, app_id: str, client_secret: str, redirect_url: str, wenet_authentication_url: str,
                  wenet_authentication_management_url: str, task_type_id: str, community_id: str, max_users: int,
-                 survey_url: str, helper_url: Optional[str], channel_id: Optional[str], publication_language: str,
-                 alert_module: AlertModule, connector: SocialConnector, nlp_handler: Optional[NLPHandler],
-                 translator: Optional[Translator], delay_between_messages_sec: Optional[int] = None,
-                 delay_between_text_sec: Optional[float] = None,
+                 max_answers: int, expiration_duration: int, survey_url: str, helper_url: Optional[str],
+                 channel_id: Optional[str], publication_language: str, alert_module: AlertModule,
+                 connector: SocialConnector, nlp_handler: Optional[NLPHandler], translator: Optional[Translator],
+                 delay_between_messages_sec: Optional[int] = None, delay_between_text_sec: Optional[float] = None,
                  logger_connectors: Optional[List[LoggerConnector]] = None) -> None:
         super().__init__(instance_namespace, bot_id, handler_id, telegram_id, wenet_instance_url, wenet_hub_url, app_id,
                          client_secret, redirect_url, wenet_authentication_url, wenet_authentication_management_url,
@@ -144,6 +144,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                          delay_between_messages_sec, delay_between_text_sec, logger_connectors)
 
         self.max_users = max_users
+        self.max_answers = max_answers
+        self.expiration_duration = expiration_duration
         self.survey_url = survey_url
         self.helper_url = helper_url
         self.channel_id = channel_id
@@ -619,7 +621,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 else:
                     response = self._handle_question(message, user_object, questioning_user)
                 responses = [response]
-            elif isinstance(message, AnsweredQuestionMessage):  # TODO as for the other callbacks, we should handle the new QuestionExpirationMessage and probably AnsweredQuestionMessage will be no more used
+            elif isinstance(message, AnsweredQuestionMessage):  # TODO as for the other callbacks, we should handle the new QuestionExpirationMessage
                 # handle an answer to a question
                 answerer_id = message.user_id
                 answerer_user = service_api.get_user_profile(str(answerer_id))
@@ -925,7 +927,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         sensitive = context.get_static_state(self.CONTEXT_SENSITIVE_QUESTION)
         anonymous = context.get_static_state(self.CONTEXT_ANONYMOUS_QUESTION, self.INTENT_NOT_ANONYMOUS_QUESTION)
         social_closeness = context.get_static_state(self.CONTEXT_SOCIAL_CLOSENESS)
-        attributes = {  # TODO add expiration data as a property of the task (probably as env var) --> We should define a new app logic on the hub for that
+        expiration_date = datetime.now() + timedelta(seconds=self.expiration_duration)
+        attributes = {  # TODO We should define a new app logic on the hub for that including callbacks and norms
             "domain": domain,
             "domainInterest": domain_interest,
             "beliefsAndValues": belief_values_similarity,
@@ -933,7 +936,9 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             "anonymous": True if anonymous == self.INTENT_ANONYMOUS_QUESTION else False,
             "socialCloseness": social_closeness,
             "positionOfAnswerer": intent,
-            "maxUsers": self.max_users
+            "maxUsers": self.max_users,
+            "maxAnswers": self.max_answers,
+            "expirationDate": int(expiration_date.timestamp())
         }
         question_task = Task(
             None,
