@@ -36,6 +36,7 @@ from wenet.interface.exceptions import CreationError, RefreshTokenExpiredError
 from wenet.model.callback_message.event import WeNetAuthenticationEvent
 from wenet.model.callback_message.message import TextualMessage, Message, QuestionToAnswerMessage, \
     AnsweredQuestionMessage, IncentiveMessage, IncentiveBadge, AnsweredPickedMessage
+from common.callback_messages import QuestionExpirationMessage
 from wenet.model.task.task import Task, TaskGoal
 from wenet.model.task.transaction import TaskTransaction
 from wenet.model.user.profile import WeNetUserProfile
@@ -571,6 +572,11 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             .translate()
         return TextualResponse(message_string)
 
+    def _handle_question_expiration(self, message: QuestionExpirationMessage, user_object: WeNetUserProfile) -> TextualResponse:
+        # TODO This should handle the question expiration message
+        message_string = "hmm"
+        return TextualResponse(message_string)
+
     def _get_incentive_badge_translated_message(self, message: IncentiveBadge, user_object: WeNetUserProfile) -> TextualResponse:
         if message.badge_class == os.getenv("FIRST_QUESTION_BADGE_ID"):
             return TextualResponse(self._translator.get_translation_instance(user_object.locale).with_text("first_question_badge").translate())
@@ -621,11 +627,14 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 else:
                     response = self._handle_question(message, user_object, questioning_user)
                 responses = [response]
-            elif isinstance(message, AnsweredQuestionMessage):  # TODO as for the other callbacks, we should handle the new QuestionExpirationMessage
+            elif isinstance(message, AnsweredQuestionMessage):
                 # handle an answer to a question
                 answerer_id = message.user_id
                 answerer_user = service_api.get_user_profile(str(answerer_id))
                 response = self._handle_answered_question(message, user_object, answerer_user)
+                responses = [response]
+            elif isinstance(message, QuestionExpirationMessage):# TODO as for the other callbacks, we should handle the new QuestionExpirationMessage
+                response = self._handle_question_expiration(message, user_object)
                 responses = [response]
             elif isinstance(message, AnsweredPickedMessage):
                 # handle an answer picked for a question
