@@ -10,6 +10,7 @@ from json import JSONDecodeError
 from typing import Optional, List
 
 from emoji import emojize, demojize
+from wenet.interface.service_api import ServiceApiInterface
 
 from ask_for_help_bot.pending_conversations import PendingQuestionToAnswer, PendingWenetMessage
 from ask_for_help_bot.pending_messages_job import PendingMessagesJob
@@ -572,9 +573,20 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             .translate()
         return TextualResponse(message_string)
 
-    def _handle_question_expiration(self, message: QuestionExpirationMessage, user_object: WeNetUserProfile) -> TextualResponse:
-        # TODO This should handle the question expiration message
-        message_string = "hmm"
+    def _handle_question_expiration(self, message: QuestionExpirationMessage, service_api: ServiceApiInterface) -> TextualResponse:
+        transaction_ids = []
+        for transaction_id in message.attributes["listOfTransactionIds"]:
+            transaction_ids.append(transaction_id)
+        question_text = self.parse_text_with_markdown(self._prepare_string_to_telegram(message.attributes["question"]))
+        # ids = ','.join(transaction_ids)
+        # message_string = f"Here are the related transaction ids {ids} with the question {question_text}"
+        message_answers = []
+        task = service_api.get_task(message.attributes["taskId"])
+        for transaction in task.transactions:
+            if transaction.label == self.LABEL_ANSWER_TRANSACTION:
+                message_answers.append(transaction.attributes["answer"])
+        messages = ', '.join(message_answers)
+        message_string = f"Here are the related answers {messages} to the question {question_text}"
         return TextualResponse(message_string)
 
     def _get_incentive_badge_translated_message(self, message: IncentiveBadge, user_object: WeNetUserProfile) -> TextualResponse:
@@ -634,7 +646,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 response = self._handle_answered_question(message, user_object, answerer_user)
                 responses = [response]
             elif isinstance(message, QuestionExpirationMessage):# TODO as for the other callbacks, we should handle the new QuestionExpirationMessage
-                response = self._handle_question_expiration(message, user_object)
+                response = self._handle_question_expiration(message, service_api)
                 responses = [response]
             elif isinstance(message, AnsweredPickedMessage):
                 # handle an answer picked for a question
