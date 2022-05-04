@@ -2,6 +2,9 @@
 
 ## Versions
 
+### 1.0.18
+- Fixed Dari translations
+
 ### 1.0.17
 - Fixed Dari translations
 
