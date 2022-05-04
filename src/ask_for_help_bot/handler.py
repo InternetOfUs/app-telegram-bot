@@ -573,21 +573,38 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             .translate()
         return TextualResponse(message_string)
 
-    def _handle_question_expiration(self, message: QuestionExpirationMessage, service_api: ServiceApiInterface) -> TextualResponse:
+    def _handle_question_expiration(self, message: QuestionExpirationMessage, service_api: ServiceApiInterface) -> TelegramRapidAnswerResponse:
         transaction_ids = []
         for transaction_id in message.attributes["listOfTransactionIds"]:
             transaction_ids.append(transaction_id)
         question_text = self.parse_text_with_markdown(self._prepare_string_to_telegram(message.attributes["question"]))
-        # ids = ','.join(transaction_ids)
-        # message_string = f"Here are the related transaction ids {ids} with the question {question_text}"
         message_answers = []
         task = service_api.get_task(message.attributes["taskId"])
         for transaction in task.transactions:
             if transaction.label == self.LABEL_ANSWER_TRANSACTION:
-                message_answers.append(transaction.attributes["answer"])
-        messages = ', '.join(message_answers)
-        message_string = f"Here are the related answers {messages} to the question {question_text}"
-        return TextualResponse(message_string)
+                message_answers.append(self.parse_text_with_markdown(self._prepare_string_to_telegram(transaction.attributes["answer"])))
+        answers = ', '.join(message_answers)
+        message_string = f"Here are the related answers {answers} to the question {question_text}"
+
+        # rapid_answer = TelegramRapidAnswerResponse(TextualResponse(message_text))
+        # for i in range(len(proposed_tasks)):
+        #     button_id = self.cache.cache(ButtonPayload({"task_id": proposed_tasks[i].task_id, "sensitive": proposed_tasks[i].attributes.get("sensitive")}, self.INTENT_ANSWER_PICKED_QUESTION).to_repr())
+        #     rapid_answer.with_textual_option(f"#{1 + i}", self.INTENT_BUTTON_WITH_PAYLOAD.format(button_id))
+        # response.with_message(rapid_answer)
+
+        answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1])
+        button_id = str(uuid.uuid4())
+        button_data = {
+            "transaction_id": "1",
+            "task_id": message.attributes["taskId"],
+            "related_buttons": button_id,
+        }
+        # TODO add ASK_MORE_PEOPLE intent
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_PICKED_QUESTION).to_repr(), key=button_id)
+        answer.with_textual_option("Ask more people", self.INTENT_BUTTON_WITH_PAYLOAD.format(button_id))
+
+        # return TextualResponse(message_string)
+        return answer
 
     def _get_incentive_badge_translated_message(self, message: IncentiveBadge, user_object: WeNetUserProfile) -> TextualResponse:
         if message.badge_class == os.getenv("FIRST_QUESTION_BADGE_ID"):
@@ -949,7 +966,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         anonymous = context.get_static_state(self.CONTEXT_ANONYMOUS_QUESTION, self.INTENT_NOT_ANONYMOUS_QUESTION)
         social_closeness = context.get_static_state(self.CONTEXT_SOCIAL_CLOSENESS)
         expiration_date = datetime.now() + timedelta(seconds=self.expiration_duration)
-        attributes = {  # TODO We should define a new app logic on the hub for that including callbacks and norms
+        attributes = {  # TODO We should define a new app logic on the hub for that including callbacks and norms (done?)
             "domain": domain,
             "domainInterest": domain_interest,
             "beliefsAndValues": belief_values_similarity,
