@@ -2,6 +2,11 @@
 
 ## Version 2.*
 
+### 2.3.0
+
+:rocket: New features
+- Added support for follow-up between requester and responder
+
 ### 2.2.0
 
 :rocket: New features

@@ -68,6 +68,10 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     CONTEXT_QUESTION = "question"
     CONTEXT_BEST_ANSWER = "best_answer"
     CONTEXT_ANSWERER_NAME = "answerer_name"
+    CONTEXT_ANSWERER_USER_ID = "answerer_user_id"
+    CONTEXT_ANSWER_RECEIVED = "amswer_received"
+    CONTEXT_QUESTIONER_USER_ID = "questioner_user_id"
+    CONTEXT_QUESTION_ANSWERED = "question_answered"
     # all the recognized intents
     INTENT_ASK = "/ask"
     INTENT_FIRST_QUESTION = "first_question"
@@ -110,6 +114,9 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     INTENT_QUESTIONS = "/questions"
     INTENT_ANSWER_PICKED_QUESTION = "picked_answer"
     INTENT_BEST_ANSWER = "best_answer"
+    INTENT_FOLLOW_UP = "follow_up"
+    INTENT_SHARE_DETAILS = "share_details"
+    INTENT_NOT_SHARE_DETAILS = "not_share_details"
     INTENT_PUBLISH = "publish"
     INTENT_NOT_PUBLISH = "not_publish"
     INTENT_NOT_AT_ALL_HELPFUL = "notAtAllHelpful"
@@ -357,7 +364,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             self.CONTEXT_ANONYMOUS_QUESTION, self.CONTEXT_SOCIAL_CLOSENESS, self.CONTEXT_ANSWER_TO_QUESTION,
             self.CONTEXT_QUESTION_TO_ANSWER, self.CONTEXT_TASK_ID, self.CONTEXT_TRANSACTION_ID,
             self.CONTEXT_CHOSEN_ANSWER_REASON, self.CONTEXT_QUESTIONER_NAME, self.CONTEXT_QUESTION,
-            self.CONTEXT_BEST_ANSWER, self.CONTEXT_ANSWERER_NAME
+            self.CONTEXT_BEST_ANSWER, self.CONTEXT_ANSWERER_NAME, self.CONTEXT_ANSWERER_USER_ID,
+            self.CONTEXT_ANSWER_RECEIVED, self.CONTEXT_QUESTIONER_USER_ID, self.CONTEXT_QUESTION_ANSWERED
         ]
         for context_key in context_to_remove:
             context.delete_static_state(context_key)
@@ -534,31 +542,40 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
     def _handle_answered_question(self, message: AnsweredQuestionMessage, user_object: WeNetUserProfile, answerer_user: WeNetUserProfile) -> TelegramRapidAnswerResponse:
         answer_text = self.parse_text_with_markdown(self._prepare_string_to_telegram(message.answer))
+        answerer_name = answerer_user.name.first if answerer_user.name.first and not message.attributes.get("anonymous", False) else self._translator.get_translation_instance(user_object.locale).with_text("anonymous_user").translate()
         question_text = self.parse_text_with_markdown(self._prepare_string_to_telegram(message.attributes["question"]))
         # Translate the message that there is a new answer and insert the details of the question and answer
         message_string = self._translator.get_translation_instance(user_object.locale) \
             .with_text("new_answer_message") \
             .with_substitution("question", question_text) \
             .with_substitution("answer", answer_text) \
-            .with_substitution("username", answerer_user.name.first if answerer_user.name.first and not message.attributes.get("anonymous", False) else self._translator.get_translation_instance(user_object.locale).with_text("anonymous_user").translate()) \
+            .with_substitution("username", answerer_name) \
             .translate()
 
-        answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1])
+        answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 2])
         button_report_text = self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate()
         button_more_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("more_answers_button").translate()
+        button_follow_up_text = self._translator.get_translation_instance(user_object.locale).with_text("follow_up_button").with_substitution("answerer", answerer_name).translate()
         button_best_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("best_answers_button").translate()
-        button_ids = [str(uuid.uuid4()) for _ in range(3)]
+        button_ids = [str(uuid.uuid4()) for _ in range(4)]
         button_data = {
+            "answerer_user_id": answerer_user.profile_id,
+            "answerer_name": answerer_name,
+            "answer": answer_text,
             "transaction_id": message.transaction_id,
             "task_id": message.attributes["taskId"],
-            "related_buttons": button_ids,
+            "question": question_text,
+            "questioner_user_id": answerer_user.profile_id,
+            "related_buttons": button_ids  # TODO then check if we want to allow only one click for this set of buttons, considering that a like will substitute the best answer one
         }
         self.cache.cache(ButtonPayload(button_data, self.INTENT_BEST_ANSWER).to_repr(), key=button_ids[0])
         answer.with_textual_option(button_best_answers_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
-        self.cache.cache(ButtonPayload(button_data, self.INTENT_ASK_MORE_ANSWERS).to_repr(), key=button_ids[1])
-        answer.with_textual_option(button_more_answers_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[1]))
-        self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_REPORT).to_repr(), key=button_ids[2])
-        answer.with_textual_option(button_report_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_FOLLOW_UP).to_repr(), key=button_ids[1])
+        answer.with_textual_option(button_follow_up_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[1]))
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_ASK_MORE_ANSWERS).to_repr(), key=button_ids[2])
+        answer.with_textual_option(button_more_answers_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_REPORT).to_repr(), key=button_ids[3])
+        answer.with_textual_option(button_report_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[3]))
         return answer
 
     def _handle_answered_picked(self, message: AnsweredPickedMessage, user_object: WeNetUserProfile) -> TextualResponse:
@@ -683,6 +700,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             return self.action_report_message(incoming_event, button_payload)
         elif button_payload.intent == self.INTENT_REPORT_ABUSIVE or button_payload.intent == self.INTENT_REPORT_SPAM:
             return self.action_report_message_1(incoming_event, button_payload)
+        elif button_payload.intent == self.INTENT_FOLLOW_UP:
+            return self.action_follow_up_0(incoming_event, button_payload)
         elif button_payload.intent == self.INTENT_BEST_ANSWER:
             return self.action_best_answer_0(incoming_event, button_payload)
         elif button_payload.intent == self.INTENT_ANSWER_NOT:
@@ -1317,6 +1336,41 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             context.delete_static_state(self.CONTEXT_CURRENT_STATE)
             response.with_context(context)
         return response
+
+    def action_follow_up_0(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:  # TODO send as notification the message to the one that answered if the questioner wants the follow up
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+
+        context = incoming_event.context
+        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_FOLLOW_UP_0)  # TODO add fulfiller for this state + intents for sharing details
+        context.with_static_state(self.CONTEXT_ANSWERER_USER_ID, button_payload.payload["answerer_user_id"])
+        context.with_static_state(self.CONTEXT_ANSWERER_NAME, button_payload.payload["answerer_name"])
+        context.with_static_state(self.CONTEXT_ANSWER_RECEIVED, button_payload.payload["answer"])
+        context.with_static_state(self.CONTEXT_TRANSACTION_ID, button_payload.payload["transaction_id"])
+        context.with_static_state(self.CONTEXT_TASK_ID, button_payload.payload["task_id"])
+        context.with_static_state(self.CONTEXT_QUESTIONER_USER_ID, button_payload.payload["questioner_user_id"])
+        context.with_static_state(self.CONTEXT_QUESTION_ANSWERED, button_payload.payload["question"])
+
+        message = self._translator.get_translation_instance(user_locale).with_text("share_details_for_follow_up").with_substitution("answerer", button_payload.payload["answerer_name"]).translate()
+        button_1_text = self._translator.get_translation_instance(user_locale).with_text("share_details").translate()
+        button_2_text = self._translator.get_translation_instance(user_locale).with_text("not_share_details").translate()
+        message = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2])
+        message.with_textual_option(button_1_text, self.INTENT_SHARE_DETAILS)
+        message.with_textual_option(button_2_text, self.INTENT_NOT_SHARE_DETAILS)
+
+        response.with_message(message)
+        response.with_context(context)
+        return response  # TODO handle the 2 intents, then clear the context when the process is over
+
+    # TODO use self.get_user_accounts per getting the social details from wenet id:
+    #         user_accounts = self.get_user_accounts(message.receiver_id)
+    #         if len(user_accounts) != 1:
+    #             logger.error(f"No context associated with WeNet user {message.receiver_id}")
+    #             raise ValueError(f"No context associated with WeNet user {message.receiver_id}")
+    #         user_account = user_accounts[0]
+    #         context = user_account.context
+
+    # TODO: discuss how to handle block requests, maybe store on redis or in the context of the user that he does not want messages from that user
 
     def action_best_answer_0(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
