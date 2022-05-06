@@ -226,22 +226,27 @@ class TestAskForHelpHandler(TestCase):
             "receiver_id",
             "answer",
             "transaction_id",
-            "user_id",
+            "questioning_user",
             {
                 "taskId": "task_id",
-                "userId": "questioning_user",
+                "userId": "answerer_user",
                 "question": "question",
                 "transactionId": "transaction_id",
                 "answer": "answer",
                 "anonymous": True
             }), user_object=WeNetUserProfile.empty("questioning_user"), answerer_user=answerer_user)
         self.assertIsInstance(response, TelegramRapidAnswerResponse)
-        self.assertEqual(3, len(response.options))
-        self.assertEqual(3, len(handler.cache._cache))
+        self.assertEqual(4, len(response.options))
+        self.assertEqual(4, len(handler.cache._cache))
         for key in handler.cache._cache:
             cached_item = handler.cache.get(key)
             self.assertEqual("transaction_id", cached_item["payload"]["transaction_id"])
             self.assertEqual("task_id", cached_item["payload"]["task_id"])
+            self.assertEqual("answerer_user", cached_item["payload"]["answerer_user_id"])
+            self.assertEqual("", cached_item["payload"]["answerer_name"])
+            self.assertEqual("answer", cached_item["payload"]["answer"])
+            self.assertEqual("question", cached_item["payload"]["question"])
+            self.assertEqual("questioning_user", cached_item["payload"]["questioner_user_id"])
 
     def test_handle_answered_question(self):
         handler = MockAskForHelpHandler()
@@ -257,22 +262,27 @@ class TestAskForHelpHandler(TestCase):
             "receiver_id",
             "answer",
             "transaction_id",
-            "user_id",
+            "questioning_user",
             {
                 "taskId": "task_id",
-                "userId": "questioning_user",
+                "userId": "answerer_user",
                 "question": "question",
                 "transactionId": "transaction_id",
                 "answer": "answer",
                 "anonymous": False
             }), user_object=WeNetUserProfile.empty("questioning_user"), answerer_user=answerer_user)
         self.assertIsInstance(response, TelegramRapidAnswerResponse)
-        self.assertEqual(3, len(response.options))
-        self.assertEqual(3, len(handler.cache._cache))
+        self.assertEqual(4, len(response.options))
+        self.assertEqual(4, len(handler.cache._cache))
         for key in handler.cache._cache:
             cached_item = handler.cache.get(key)
             self.assertEqual("transaction_id", cached_item["payload"]["transaction_id"])
             self.assertEqual("task_id", cached_item["payload"]["task_id"])
+            self.assertEqual("answerer_user", cached_item["payload"]["answerer_user_id"])
+            self.assertEqual("name", cached_item["payload"]["answerer_name"])
+            self.assertEqual("answer", cached_item["payload"]["answer"])
+            self.assertEqual("question", cached_item["payload"]["question"])
+            self.assertEqual("questioning_user", cached_item["payload"]["questioner_user_id"])
 
     def test_handle_answered_picked(self):
         handler = MockAskForHelpHandler()
