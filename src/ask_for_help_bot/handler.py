@@ -69,7 +69,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     CONTEXT_BEST_ANSWER = "best_answer"
     CONTEXT_ANSWERER_NAME = "answerer_name"
     CONTEXT_ANSWERER_USER_ID = "answerer_user_id"
-    CONTEXT_ANSWER_RECEIVED = "amswer_received"
+    CONTEXT_ANSWER_RECEIVED = "answer_received"
     CONTEXT_QUESTIONER_USER_ID = "questioner_user_id"
     CONTEXT_QUESTION_ANSWERED = "question_answered"
     # all the recognized intents
@@ -117,6 +117,9 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     INTENT_FOLLOW_UP = "follow_up"
     INTENT_SHARE_DETAILS = "share_details"
     INTENT_NOT_SHARE_DETAILS = "not_share_details"
+    INTENT_NOT_NOW_SHARE_DETAILS = "not_now_share_details"
+    INTENT_BLOCK_SHARE_DETAILS = "block_share_details"
+    INTENT_SHARE_DETAILS_TO_QUESTIONER = "share_details_to_questioner"
     INTENT_PUBLISH = "publish"
     INTENT_NOT_PUBLISH = "not_publish"
     INTENT_NOT_AT_ALL_HELPFUL = "notAtAllHelpful"
@@ -274,6 +277,18 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             )
         )
         self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_NOT_SHARE_DETAILS, self.action_follow_up_1).with_rule(
+                intent=self.INTENT_NOT_SHARE_DETAILS,
+                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_FOLLOW_UP_0)
+            )
+        )
+        self.intent_manager.with_fulfiller(
+            IntentFulfillerV3(self.INTENT_SHARE_DETAILS, self.action_follow_up_1).with_rule(
+                intent=self.INTENT_SHARE_DETAILS,
+                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_FOLLOW_UP_0)
+            )
+        )
+        self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_NOT_PUBLISH, self.action_best_answer_publish).with_rule(
                 intent=self.INTENT_NOT_PUBLISH,
                 static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_PUBLISH)
@@ -339,7 +354,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         if not wenet_user_id:
             logger.info(f"Impossible to get user locale from incoming event. The Wenet user ID is not in the context")
             return "en"
-        return self._get_user_locale_from_wenet_id(wenet_user_id, incoming_event.context)
+        return self._get_user_locale_from_wenet_id(wenet_user_id, context=incoming_event.context)
 
     def _get_help_and_info_message(self, locale: str) -> str:
         return self._translator.get_translation_instance(locale).with_text("info_text").translate()
@@ -565,7 +580,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             "transaction_id": message.transaction_id,
             "task_id": message.attributes["taskId"],
             "question": question_text,
-            "questioner_user_id": answerer_user.profile_id,
+            "questioner_user_id": user_object.profile_id,
             "related_buttons": button_ids  # TODO then check if we want to allow only one click for this set of buttons, considering that a like will substitute the best answer one
         }
         self.cache.cache(ButtonPayload(button_data, self.INTENT_BEST_ANSWER).to_repr(), key=button_ids[0])
@@ -724,8 +739,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         social_details = TelegramDetails(int(message.external_id), int(message.external_id), self._connector.get_telegram_bot_id())
         try:
             self._save_wenet_and_telegram_user_id_to_context(message, social_details)
-            context = self._interface_connector.get_user_context(social_details)
-            messages = self._get_start_messages(self._get_user_locale_from_wenet_id(context.context.get_static_state(self.CONTEXT_WENET_USER_ID), context.context))
+            user_context = self._interface_connector.get_user_context(social_details)
+            messages = self._get_start_messages(self._get_user_locale_from_wenet_id(user_context.context.get_static_state(self.CONTEXT_WENET_USER_ID), context=user_context.context))
             return NotificationEvent(social_details=social_details, messages=messages)
         except Exception as e:
             logger.exception("Unable to complete the WeNet login", exc_info=e)
@@ -1060,7 +1075,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
         response = OutgoingEvent(social_details=incoming_event.social_details)
         response.with_context(context)
-        response.with_message(TelegramTextualResponse(message))
+        response.with_message(TextualResponse(message))
         is_first_time = self._is_first_answer(user_id)
         if is_first_time:
             if self.helper_url:
@@ -1337,16 +1352,17 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             response.with_context(context)
         return response
 
-    def action_follow_up_0(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:  # TODO send as notification the message to the one that answered if the questioner wants the follow up
+    # TODO then complete all translations for the other languages
+
+    def action_follow_up_0(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
 
         context = incoming_event.context
-        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_FOLLOW_UP_0)  # TODO add fulfiller for this state + intents for sharing details
+        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_FOLLOW_UP_0)
         context.with_static_state(self.CONTEXT_ANSWERER_USER_ID, button_payload.payload["answerer_user_id"])
         context.with_static_state(self.CONTEXT_ANSWERER_NAME, button_payload.payload["answerer_name"])
         context.with_static_state(self.CONTEXT_ANSWER_RECEIVED, button_payload.payload["answer"])
-        context.with_static_state(self.CONTEXT_TRANSACTION_ID, button_payload.payload["transaction_id"])
         context.with_static_state(self.CONTEXT_TASK_ID, button_payload.payload["task_id"])
         context.with_static_state(self.CONTEXT_QUESTIONER_USER_ID, button_payload.payload["questioner_user_id"])
         context.with_static_state(self.CONTEXT_QUESTION_ANSWERED, button_payload.payload["question"])
@@ -1360,17 +1376,83 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
         response.with_message(message)
         response.with_context(context)
-        return response  # TODO handle the 2 intents, then clear the context when the process is over
+        return response
 
-    # TODO use self.get_user_accounts per getting the social details from wenet id:
-    #         user_accounts = self.get_user_accounts(message.receiver_id)
-    #         if len(user_accounts) != 1:
-    #             logger.error(f"No context associated with WeNet user {message.receiver_id}")
-    #             raise ValueError(f"No context associated with WeNet user {message.receiver_id}")
-    #         user_account = user_accounts[0]
-    #         context = user_account.context
+    def action_follow_up_1(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
 
-    # TODO: discuss how to handle block requests, maybe store on redis or in the context of the user that he does not want messages from that user
+        context = incoming_event.context
+        answerer_user_id = context.get_static_state(self.CONTEXT_ANSWERER_USER_ID)
+        answerer_name = context.get_static_state(self.CONTEXT_ANSWERER_NAME)
+        answer = context.get_static_state(self.CONTEXT_ANSWER_RECEIVED)
+        task_id = context.get_static_state(self.CONTEXT_TASK_ID)
+        questioner_user_id = context.get_static_state(self.CONTEXT_QUESTIONER_USER_ID)
+        question = context.get_static_state(self.CONTEXT_QUESTION_ANSWERED)
+        context.delete_static_state(self.CONTEXT_ANSWERER_USER_ID)
+        context.delete_static_state(self.CONTEXT_ANSWERER_NAME)
+        context.delete_static_state(self.CONTEXT_ANSWER_RECEIVED)
+        context.delete_static_state(self.CONTEXT_TASK_ID)
+        context.delete_static_state(self.CONTEXT_QUESTIONER_USER_ID)
+        context.delete_static_state(self.CONTEXT_QUESTION_ANSWERED)
+        context.delete_static_state(self.CONTEXT_CURRENT_STATE)
+
+        if intent == self.INTENT_SHARE_DETAILS:
+            message = self._translator.get_translation_instance(user_locale).with_text("sharing_details_message").with_substitution("answerer", answerer_name).translate()
+            message = TextualResponse(message)
+
+            user_accounts = self.get_user_accounts(answerer_user_id)
+            if len(user_accounts) != 1:
+                logger.error(f"No context associated with WeNet user {answerer_user_id}")
+                raise ValueError(f"No context associated with WeNet user {answerer_user_id}")
+            answerer_account = user_accounts[0]
+            answerer_locale = self._get_user_locale_from_wenet_id(answerer_user_id, context=answerer_account.context)
+
+            service_api = self._get_service_api_interface_connector_from_context(context)
+            questioner = service_api.get_user_profile(questioner_user_id)
+            task = service_api.get_task(task_id)
+            questioner_name = questioner.name.first if questioner.name.first and not task.attributes.get("anonymous", False) else self._translator.get_translation_instance(answerer_locale).with_text("anonymous_user").translate()
+
+            notification_message = self._translator.get_translation_instance(answerer_locale).with_text('share_details_to_questioner') \
+                .with_substitution("questioner", questioner_name) \
+                .with_substitution("question", question) \
+                .with_substitution("answer", answer) \
+                .translate()
+            notification_message = TelegramRapidAnswerResponse(TextualResponse(notification_message), row_displacement=[2, 1])
+            button_share_details = self._translator.get_translation_instance(answerer_locale).with_text("share_details").translate()
+            button_not_share_details = self._translator.get_translation_instance(answerer_locale).with_text("not_now_share_details").translate()
+            button_block_share_details = self._translator.get_translation_instance(answerer_locale).with_text("block_share_details").translate()
+            button_ids = [str(uuid.uuid4()) for _ in range(3)]
+            button_data = {
+                "answerer_user_id": answerer_user_id,
+                "answerer_name": answerer_name,
+                "questioner_user_id": questioner_user_id,
+                "questioner_name": questioner_name,
+                "related_buttons": button_ids
+            }
+            self.cache.cache(ButtonPayload(button_data, self.INTENT_SHARE_DETAILS_TO_QUESTIONER).to_repr(), key=button_ids[0])
+            notification_message.with_textual_option(button_share_details, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
+            self.cache.cache(ButtonPayload(button_data, self.INTENT_NOT_NOW_SHARE_DETAILS).to_repr(), key=button_ids[1])
+            notification_message.with_textual_option(button_not_share_details, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
+            self.cache.cache(ButtonPayload(button_data, self.INTENT_BLOCK_SHARE_DETAILS).to_repr(), key=button_ids[2])
+            notification_message.with_textual_option(button_block_share_details, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[1]))
+
+            # TODO Handle the 3 button with payload with intents for following up
+            # TODO: discuss how to handle block requests, maybe store on redis or in the context of the user that he does not want messages from that user
+
+            notification = self._get_notification_event_based_on_what_user_is_doing(answerer_account.context, answerer_account.social_details, [notification_message])
+            try:
+                self.send_notification(notification)
+            except Exception as e:
+                logger.exception(f"An exception [{type(e)}] occurs sending the notification [{notification.to_repr()}]", exc_info=e)
+
+        else:
+            message = self._translator.get_translation_instance(user_locale).with_text("not_sharing_details_message").with_substitution("answerer", answerer_name).translate()
+            message = TextualResponse(message)
+
+        response.with_message(message)
+        response.with_context(context)
+        return response
 
     def action_best_answer_0(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
@@ -1507,9 +1589,9 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             notification = NotificationEvent(social_details=TelegramDetails(None, self.channel_id, incoming_event.social_details.telegram_bot_id), messages=[TextualResponse(message)])
             try:
                 self.send_notification(notification)
+                logger.info(f"Notification sent to the telegram channel {self.channel_id}")
             except Exception as e:
                 logger.exception(f"An exception [{type(e)}] occurs sending the notification [{notification.to_repr()}]", exc_info=e)
-            logger.info(f"Notification sent to the telegram channel {self.channel_id}")
 
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_0)
         task_id = context.get_static_state(self.CONTEXT_TASK_ID)

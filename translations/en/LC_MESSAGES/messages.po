@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-05-05 17:45+0200\n"
+"PO-Revision-Date: 2022-05-06 16:09+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -525,7 +525,7 @@ msgstr ""
 "{best_answer} - {answerer}"
 
 msgid "follow_up_button"
-msgstr "Request {answerer}’s contact for follow-up"
+msgstr ":speaking_head: Request {answerer}’s contact for follow-up"
 
 msgid "share_details_for_follow_up"
 msgstr ""
@@ -536,3 +536,23 @@ msgstr ":white_check_mark: Share my contact details!"
 
 msgid "not_share_details"
 msgstr ":x: Rather not"
+
+msgid "sharing_details_message"
+msgstr "Ok, I will ask {answerer}. I will also share your contact details."
+
+msgid "not_sharing_details_message"
+msgstr "Ok, I won’t ask {answerer}."
+
+msgid "share_details_to_questioner"
+msgstr ""
+"{questioner} asked: “_{question}_”\n"
+"\n"
+"You answered: *{answer}*\n"
+"\n"
+"{questioner} requested your contact details for follow-up."
+
+msgid "not_now_share_details"
+msgstr ":x: Not now"
+
+msgid "block_share_details"
+msgstr ":exclamation: Block these requests from this questioner"

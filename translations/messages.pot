@@ -413,3 +413,18 @@ msgstr ""
 
 msgid "not_share_details"
 msgstr ""
+
+msgid "sharing_details_message"
+msgstr ""
+
+msgid "not_sharing_details_message"
+msgstr ""
+
+msgid "share_details_to_questioner"
+msgstr ""
+
+msgid "not_now_share_details"
+msgstr ""
+
+msgid "block_share_details"
+msgstr ""

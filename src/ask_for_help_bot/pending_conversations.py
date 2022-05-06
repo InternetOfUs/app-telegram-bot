@@ -32,7 +32,7 @@ class PendingWenetMessage:
         return PendingWenetMessage(
             raw["pending_wenet_message_id"],
             [ResponseMessage.from_repr(response) for response in raw["responses"]],
-            SocialDetails.from_repr(raw["social_details"]),
+            SocialDetails.from_repr(raw["social_details"])
         )
 
     def __eq__(self, o: object) -> bool:
@@ -72,7 +72,7 @@ class PendingQuestionToAnswer:
             raw["question_id"],
             ResponseMessage.from_repr(raw["response"]),
             SocialDetails.from_repr(raw["social_details"]),
-            datetime.fromisoformat(raw["sent"]) if raw["sent"] else None
+            sent=datetime.fromisoformat(raw["sent"]) if raw.get("sent") else None
         )
 
     def __eq__(self, o: object) -> bool:
