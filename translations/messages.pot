@@ -401,3 +401,9 @@ msgstr ""
 
 msgid "publish_question"
 msgstr ""
+
+msgid "collected_answers"
+msgstr ""
+
+msgid "from_multiple_response"
+msgstr ""
