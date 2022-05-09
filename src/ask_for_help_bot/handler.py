@@ -641,8 +641,11 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                     .translate()
             if position_of_answerer == self.INTENT_ASK_TO_NEARBY:
                 message_attributes = message_attributes + "\n" + f"- {self._translator.get_translation_instance(locale).with_text('location_answer_1').translate().lower()}"
-            message_attributes = message_attributes + "\n\n"
-        message_string = f"You asked: {question_text} \n\n You sought answers from people that are {message_attributes} \n\n I collected the following answers: \n\n"
+            message_attributes = message_attributes
+        if message_attributes == "":
+            message_attributes = f"You asked {question_text}"
+            # message_attributes = self._translator.get_translation_instance(locale).with_text("asked_message").with_substitution("question", question_text)
+        message_string = f"{message_attributes} \n\n I collected the following answers: \n\n"
 
         for i in range(len(message_answers)):
             message_string += f"{i + 1}. {message_answers[i]} - {message_users[i]} \n"
