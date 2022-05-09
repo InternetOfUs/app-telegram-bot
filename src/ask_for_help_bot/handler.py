@@ -569,42 +569,41 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         # Translate the message that the answer to a question was picked as the best and insert the details of the question
         message_string = self._translator.get_translation_instance(user_object.locale) \
             .with_text("picked_best_answer") \
-            .with_substitution("question", self.parse_text_with_markdown(self._prepare_string_to_telegram(message.attributes["question"]))) \
+            .with_substitution("question", self.parse_text_with_markdown(self._prepare_string_to_telegram(message.question))) \
             .translate()
         return TextualResponse(message_string)
 
-    def _handle_question_expiration(self, message: QuestionExpirationMessage, service_api: ServiceApiInterface) -> TelegramRapidAnswerResponse:
+    def _handle_question_expiration(self, message: QuestionExpirationMessage, service_api: ServiceApiInterface) -> List[TelegramRapidAnswerResponse]:
+        locale = "en"
         transaction_ids = []
-        for transaction_id in message.attributes["listOfTransactionIds"]:
-            transaction_ids.append(transaction_id)
-        question_text = self.parse_text_with_markdown(self._prepare_string_to_telegram(message.attributes["question"]))
+        question_text = self.parse_text_with_markdown(self._prepare_string_to_telegram(message.question))
         message_answers = []
-        task = service_api.get_task(message.attributes["taskId"])
+        message_users = []
+        task = service_api.get_task(message.task_id)
         for transaction in task.transactions:
             if transaction.label == self.LABEL_ANSWER_TRANSACTION:
                 message_answers.append(self.parse_text_with_markdown(self._prepare_string_to_telegram(transaction.attributes["answer"])))
-        answers = ', '.join(message_answers)
+                answerer_user = service_api.get_user_profile(transaction.actioneer_id)
+                message_users.append(answerer_user.name.first if answerer_user.name.first and not message.attributes.get("anonymous", False) else self._translator.get_translation_instance(locale).with_text("anonymous_user").translate())
+                transaction_ids.append(transaction.id)
+        answers = '\n'.join(message_answers)  # TODO specify the user that answered the question as in the Miro message
         message_string = f"Here are the related answers {answers} to the question {question_text}"
 
-        # rapid_answer = TelegramRapidAnswerResponse(TextualResponse(message_text))
-        # for i in range(len(proposed_tasks)):
-        #     button_id = self.cache.cache(ButtonPayload({"task_id": proposed_tasks[i].task_id, "sensitive": proposed_tasks[i].attributes.get("sensitive")}, self.INTENT_ANSWER_PICKED_QUESTION).to_repr())
-        #     rapid_answer.with_textual_option(f"#{1 + i}", self.INTENT_BUTTON_WITH_PAYLOAD.format(button_id))
-        # response.with_message(rapid_answer)
+        answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[len(message.list_of_transaction_ids) + 1])
+        button_ids = [str(uuid.uuid4()) for _ in range(len(transaction_ids) + 1)]
+        for i in range(len(transaction_ids)):
+            self.cache.cache(ButtonPayload({"task_id": message.task_id, "transaction_id": transaction_ids[i], "related_buttons": button_ids}, self.INTENT_BEST_ANSWER).to_repr())
+            answer.with_textual_option(f"#{1 + i}", self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[i]))
 
-        answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1])
-        button_id = str(uuid.uuid4())
         button_data = {
-            "transaction_id": "1",
             "task_id": message.attributes["taskId"],
-            "related_buttons": button_id,
+            "related_buttons": button_ids
         }
-        # TODO add ASK_MORE_PEOPLE intent
-        self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_PICKED_QUESTION).to_repr(), key=button_id)
-        answer.with_textual_option("Ask more people", self.INTENT_BUTTON_WITH_PAYLOAD.format(button_id))
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_ASK_MORE_ANSWERS).to_repr(), key=button_ids[len(transaction_ids)])
+        answer.with_textual_option("Ask more people", self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[len(transaction_ids)]))
 
         # return TextualResponse(message_string)
-        return answer
+        return [answer]
 
     def _get_incentive_badge_translated_message(self, message: IncentiveBadge, user_object: WeNetUserProfile) -> TextualResponse:
         if message.badge_class == os.getenv("FIRST_QUESTION_BADGE_ID"):
@@ -662,9 +661,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 answerer_user = service_api.get_user_profile(str(answerer_id))
                 response = self._handle_answered_question(message, user_object, answerer_user)
                 responses = [response]
-            elif isinstance(message, QuestionExpirationMessage):# TODO as for the other callbacks, we should handle the new QuestionExpirationMessage
-                response = self._handle_question_expiration(message, service_api)
-                responses = [response]
+            elif isinstance(message, QuestionExpirationMessage):  # TODO as for the other callbacks, we should handle the new QuestionExpirationMessage
+                responses = self._handle_question_expiration(message, service_api)
             elif isinstance(message, AnsweredPickedMessage):
                 # handle an answer picked for a question
                 response = self._handle_answered_picked(message, user_object)
