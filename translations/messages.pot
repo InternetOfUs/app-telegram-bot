@@ -407,3 +407,6 @@ msgstr ""
 
 msgid "from_multiple_response"
 msgstr ""
+
+msgid "asked_message_without_attributes"
+msgstr ""
