@@ -666,7 +666,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             "related_buttons": button_ids
         }
         self.cache.cache(ButtonPayload(button_data, self.INTENT_ASK_MORE_ANSWERS).to_repr(), key=button_ids[len(transaction_ids)])
-        answer.with_textual_option("Ask more people", self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[len(transaction_ids)]))
+        button_ask_more_text = self._translator.get_translation_instance(locale).with_text("ask_more_users_button").translate()
+        answer.with_textual_option(button_ask_more_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[len(transaction_ids)]))
 
         return [answer]
 

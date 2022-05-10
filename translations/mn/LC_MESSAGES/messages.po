@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-05-10 13:08+0200\n"
+"PO-Revision-Date: 2022-05-10 17:09+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: mn\n"
@@ -537,3 +537,8 @@ msgstr "Аль хариулт танд илүү таалагдсан бэ? Өө�
 
 msgid "asked_message_without_attributes"
 msgstr "Таны доорх “*{question}*” асуултанд"
+
+#, fuzzy
+#| msgid "more_answers_button"
+msgid "ask_more_users_button"
+msgstr ":game_die: Илүү олон хүнээс асуух"
