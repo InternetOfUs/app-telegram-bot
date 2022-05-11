@@ -9,6 +9,7 @@ from datetime import datetime
 from json import JSONDecodeError
 from typing import Optional, List
 
+import requests
 from emoji import emojize, demojize
 
 from ask_for_help_bot.pending_conversations import PendingQuestionToAnswer, PendingWenetMessage
@@ -72,6 +73,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     CONTEXT_ANSWER_RECEIVED = "answer_received"
     CONTEXT_QUESTIONER_USER_ID = "questioner_user_id"
     CONTEXT_QUESTION_ANSWERED = "question_answered"
+    CONTEXT_BLOCKED_USERS_FOR_CONTACT_REQUEST = "blocked_user_for_contact_request"
     # all the recognized intents
     INTENT_ASK = "/ask"
     INTENT_FIRST_QUESTION = "first_question"
@@ -717,6 +719,12 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             return self.action_report_message_1(incoming_event, button_payload)
         elif button_payload.intent == self.INTENT_FOLLOW_UP:
             return self.action_follow_up_0(incoming_event, button_payload)
+        elif button_payload.intent == self.INTENT_SHARE_DETAILS_TO_QUESTIONER:
+            return self.action_follow_up_2(incoming_event, button_payload)
+        elif button_payload.intent == self.INTENT_NOT_NOW_SHARE_DETAILS:
+            return self.action_not_follow_up(incoming_event, button_payload)
+        elif button_payload.intent == self.INTENT_BLOCK_SHARE_DETAILS:
+            return self.action_block_follow_up(incoming_event, button_payload)
         elif button_payload.intent == self.INTENT_BEST_ANSWER:
             return self.action_best_answer_0(incoming_event, button_payload)
         elif button_payload.intent == self.INTENT_ANSWER_NOT:
@@ -1406,49 +1414,127 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 logger.error(f"No context associated with WeNet user {answerer_user_id}")
                 raise ValueError(f"No context associated with WeNet user {answerer_user_id}")
             answerer_account = user_accounts[0]
-            answerer_locale = self._get_user_locale_from_wenet_id(answerer_user_id, context=answerer_account.context)
+            blocked_users_for_contact_request = answerer_account.context.get_static_state(self.CONTEXT_BLOCKED_USERS_FOR_CONTACT_REQUEST, [])
+            if questioner_user_id not in blocked_users_for_contact_request:
+                answerer_locale = self._get_user_locale_from_wenet_id(answerer_user_id, context=answerer_account.context)
+                service_api = self._get_service_api_interface_connector_from_context(context)
+                questioner = service_api.get_user_profile(questioner_user_id)
+                task = service_api.get_task(task_id)
+                questioner_name = questioner.name.first if questioner.name.first and not task.attributes.get("anonymous", False) else self._translator.get_translation_instance(answerer_locale).with_text("anonymous_user").translate()
 
-            service_api = self._get_service_api_interface_connector_from_context(context)
-            questioner = service_api.get_user_profile(questioner_user_id)
-            task = service_api.get_task(task_id)
-            questioner_name = questioner.name.first if questioner.name.first and not task.attributes.get("anonymous", False) else self._translator.get_translation_instance(answerer_locale).with_text("anonymous_user").translate()
+                notification_message = self._translator.get_translation_instance(answerer_locale).with_text("share_details_to_questioner") \
+                    .with_substitution("questioner", questioner_name) \
+                    .with_substitution("question", question) \
+                    .with_substitution("answer", answer) \
+                    .translate()
+                notification_message = TelegramRapidAnswerResponse(TextualResponse(notification_message), row_displacement=[2, 1])
+                button_share_details = self._translator.get_translation_instance(answerer_locale).with_text("share_details").translate()
+                button_not_share_details = self._translator.get_translation_instance(answerer_locale).with_text("not_now_share_details").translate()
+                button_block_share_details = self._translator.get_translation_instance(answerer_locale).with_text("block_share_details").translate()
+                button_ids = [str(uuid.uuid4()) for _ in range(3)]
+                button_data = {
+                    "answerer_name": answerer_name,
+                    "questioner_user_id": questioner_user_id,
+                    "questioner_name": questioner_name,
+                    "related_buttons": button_ids
+                }
+                self.cache.cache(ButtonPayload(button_data, self.INTENT_SHARE_DETAILS_TO_QUESTIONER).to_repr(), key=button_ids[0])
+                notification_message.with_textual_option(button_share_details, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
+                self.cache.cache(ButtonPayload(button_data, self.INTENT_NOT_NOW_SHARE_DETAILS).to_repr(), key=button_ids[1])
+                notification_message.with_textual_option(button_not_share_details, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
+                self.cache.cache(ButtonPayload(button_data, self.INTENT_BLOCK_SHARE_DETAILS).to_repr(), key=button_ids[2])
+                notification_message.with_textual_option(button_block_share_details, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[1]))
 
-            notification_message = self._translator.get_translation_instance(answerer_locale).with_text('share_details_to_questioner') \
-                .with_substitution("questioner", questioner_name) \
-                .with_substitution("question", question) \
-                .with_substitution("answer", answer) \
-                .translate()
-            notification_message = TelegramRapidAnswerResponse(TextualResponse(notification_message), row_displacement=[2, 1])
-            button_share_details = self._translator.get_translation_instance(answerer_locale).with_text("share_details").translate()
-            button_not_share_details = self._translator.get_translation_instance(answerer_locale).with_text("not_now_share_details").translate()
-            button_block_share_details = self._translator.get_translation_instance(answerer_locale).with_text("block_share_details").translate()
-            button_ids = [str(uuid.uuid4()) for _ in range(3)]
-            button_data = {
-                "answerer_user_id": answerer_user_id,
-                "answerer_name": answerer_name,
-                "questioner_user_id": questioner_user_id,
-                "questioner_name": questioner_name,
-                "related_buttons": button_ids
-            }
-            self.cache.cache(ButtonPayload(button_data, self.INTENT_SHARE_DETAILS_TO_QUESTIONER).to_repr(), key=button_ids[0])
-            notification_message.with_textual_option(button_share_details, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
-            self.cache.cache(ButtonPayload(button_data, self.INTENT_NOT_NOW_SHARE_DETAILS).to_repr(), key=button_ids[1])
-            notification_message.with_textual_option(button_not_share_details, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
-            self.cache.cache(ButtonPayload(button_data, self.INTENT_BLOCK_SHARE_DETAILS).to_repr(), key=button_ids[2])
-            notification_message.with_textual_option(button_block_share_details, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[1]))
-
-            # TODO Handle the 3 button with payload with intents for following up
-            # TODO: discuss how to handle block requests, maybe store on redis or in the context of the user that he does not want messages from that user
-
-            notification = self._get_notification_event_based_on_what_user_is_doing(answerer_account.context, answerer_account.social_details, [notification_message])
-            try:
-                self.send_notification(notification)
-            except Exception as e:
-                logger.exception(f"An exception [{type(e)}] occurs sending the notification [{notification.to_repr()}]", exc_info=e)
+                notification = self._get_notification_event_based_on_what_user_is_doing(answerer_account.context, answerer_account.social_details, [notification_message])
+                try:
+                    self.send_notification(notification)
+                except Exception as e:
+                    logger.exception(f"An exception [{type(e)}] occurs sending the notification [{notification.to_repr()}]", exc_info=e)
 
         else:
             message = self._translator.get_translation_instance(user_locale).with_text("not_sharing_details_message").with_substitution("answerer", answerer_name).translate()
             message = TextualResponse(message)
+
+        response.with_message(message)
+        response.with_context(context)
+        return response
+
+    def _get_telegram_user(self, context: ConversationContext) -> str:
+        if not isinstance(self._connector, TelegramSocialConnector):
+            logger.error(f"Expected telegram social connector, got [{type(self._connector)}]")
+            raise Exception(f"Expected telegram social connector, got [{type(self._connector)}]")
+
+        response = requests.get(f"{getattr(self._connector, '_telegram_url')}/getChat?chat_id={context.get_static_state(self.CONTEXT_TELEGRAM_USER_ID)}")
+        username = f"@{response.json()['result']['username']}"
+        return username.replace("_", "\\_").replace("*", "\\*").replace("`", "\\`")  # TODO handle cases in which username is not available (since is not available), in case say that it is not possible or ask user to provide/add a username
+
+    def action_follow_up_2(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+
+        context = incoming_event.context
+        answerer_contact = self._get_telegram_user(context)
+        answerer_name = button_payload.payload["answerer_name"]
+        questioner_user_id = button_payload.payload["questioner_user_id"]
+        questioner_name = button_payload.payload["questioner_name"]
+
+        user_accounts = self.get_user_accounts(questioner_user_id)
+        if len(user_accounts) != 1:
+            logger.error(f"No context associated with WeNet user {questioner_user_id}")
+            raise ValueError(f"No context associated with WeNet user {questioner_user_id}")
+        questioner_account = user_accounts[0]
+        questioner_locale = self._get_user_locale_from_wenet_id(questioner_user_id, context=questioner_account.context)
+        questioner_contact = self._get_telegram_user(questioner_account.context)
+
+        # message = self._translator.get_translation_instance(user_locale).with_text("shared_questioner_contact") \
+        #     .with_substitution("questioner_name", questioner_name) \
+        #     .with_substitution("questioner_contact", questioner_contact) \
+        #     .translate()
+        message = questioner_contact
+        message = TextualResponse("test **" + message + "**")
+
+        # notification_message = self._translator.get_translation_instance(questioner_locale).with_text("share_details_to_questioner") \
+        #     .with_substitution("answerer_name", answerer_name) \
+        #     .with_substitution("answerer_contact", answerer_contact) \
+        #     .translate()
+        notification_message = answerer_contact
+        notification_message = TextualResponse("test **" + notification_message + "**")
+
+        notification = self._get_notification_event_based_on_what_user_is_doing(questioner_account.context, questioner_account.social_details, [notification_message])
+        try:
+            self.send_notification(notification)
+        except Exception as e:
+            logger.exception(f"An exception [{type(e)}] occurs sending the notification [{notification.to_repr()}]", exc_info=e)
+
+        response.with_message(message)
+        response.with_context(context)
+        return response
+
+    def action_not_follow_up(self, incoming_event: IncomingSocialEvent, _: ButtonPayload) -> OutgoingEvent:
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+
+        context = incoming_event.context
+        message = self._translator.get_translation_instance(user_locale).with_text("not_follow_up").translate()
+        message = TextualResponse(message)
+
+        response.with_message(message)
+        response.with_context(context)
+        return response
+
+    def action_block_follow_up(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+
+        context = incoming_event.context
+        message = self._translator.get_translation_instance(user_locale).with_text("block_follow_up").translate()
+        message = TextualResponse(message)
+
+        # TODO store in the context of the user that he does not want messages from that user
+        questioner_user_id = button_payload.payload["questioner_user_id"]
+        blocked_users_for_contact_request = context.get_static_state(self.CONTEXT_BLOCKED_USERS_FOR_CONTACT_REQUEST, [])
+        blocked_users_for_contact_request.append(questioner_user_id)
+        context.with_static_state(self.CONTEXT_BLOCKED_USERS_FOR_CONTACT_REQUEST, blocked_users_for_contact_request)
 
         response.with_message(message)
         response.with_context(context)
