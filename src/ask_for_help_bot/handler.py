@@ -1427,7 +1427,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                     .with_substitution("question", question) \
                     .with_substitution("answer", answer) \
                     .translate()
-                notification_message = TelegramRapidAnswerResponse(TextualResponse(notification_message), row_displacement=[2, 1])
+                notification_message = TelegramRapidAnswerResponse(TextualResponse(notification_message), row_displacement=[1, 1, 1])
                 button_share_details = self._translator.get_translation_instance(answerer_locale).with_text("share_details").translate()
                 button_not_share_details = self._translator.get_translation_instance(answerer_locale).with_text("not_now_share_details").translate()
                 button_block_share_details = self._translator.get_translation_instance(answerer_locale).with_text("block_share_details").translate()
