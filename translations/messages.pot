@@ -411,5 +411,23 @@ msgstr ""
 msgid "asked_message_without_attributes"
 msgstr ""
 
-msgid "ask_more_users_button"
+msgid "answer_reason_funny"
+msgstr ""
+
+msgid "answer_reason_thoughtful"
+msgstr ""
+
+msgid "answer_reason_informative"
+msgstr ""
+
+msgid "answer_reason_creative"
+msgstr ""
+
+msgid "answer_reason_honest"
+msgstr ""
+
+msgid "answer_reason_kind"
+msgstr ""
+
+msgid "answer_reason_personal"
 msgstr ""

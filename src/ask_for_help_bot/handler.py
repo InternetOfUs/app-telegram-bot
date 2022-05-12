@@ -119,6 +119,13 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     INTENT_SOMEWHAT_HELPFUL = "somewhatHelpful"
     INTENT_VERY_HELPFUL = "veryHelpful"
     INTENT_EXTREMELY_HELPFUL = "extremelyHelpful"
+    INTENT_CHOSEN_ANSWER_FUNNY = "funny"
+    INTENT_CHOSEN_ANSWER_THOUGHTFUL = "thoughtful"
+    INTENT_CHOSEN_ANSWER_INFORMATIVE = "informative"
+    INTENT_CHOSEN_ANSWER_CREATIVE = "creative"
+    INTENT_CHOSEN_ANSWER_HONEST = "honest"
+    INTENT_CHOSEN_ANSWER_KIND = "kind"
+    INTENT_CHOSEN_ANSWER_PERSONAL = "personal"
     INTENT_BADGES = "/badges"
     # INTENT_PROFILE = "/profile"
     # transaction labels
@@ -282,11 +289,16 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_PUBLISH)
             )
         )
-        self.intent_manager.with_fulfiller(
-            IntentFulfillerV3("", self.action_best_answer_1).with_rule(
-                static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_0)
+        why_choose_answer_intents = [self.INTENT_CHOSEN_ANSWER_FUNNY, self.INTENT_CHOSEN_ANSWER_THOUGHTFUL, self.INTENT_CHOSEN_ANSWER_INFORMATIVE,
+                                     self.INTENT_CHOSEN_ANSWER_KIND, self.INTENT_CHOSEN_ANSWER_CREATIVE, self.INTENT_CHOSEN_ANSWER_HONEST,
+                                     self.INTENT_CHOSEN_ANSWER_PERSONAL]
+        for why_choose_answer_intent in why_choose_answer_intents:
+            self.intent_manager.with_fulfiller(
+                IntentFulfillerV3(why_choose_answer_intent, self.action_best_answer_1).with_rule(
+                    intent=why_choose_answer_intent,
+                    static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_0)
+                )
             )
-        )
         answer_rating_intents = [self.INTENT_NOT_AT_ALL_HELPFUL, self.INTENT_SLIGHTLY_HELPFUL,
                                  self.INTENT_SOMEWHAT_HELPFUL, self.INTENT_VERY_HELPFUL, self.INTENT_EXTREMELY_HELPFUL]
         for answer_rating_intent in answer_rating_intents:
@@ -537,7 +549,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         return response
 
     def _handle_answered_question(self, message: AnsweredQuestionMessage, user_object: WeNetUserProfile, answerer_user: WeNetUserProfile) -> TelegramRapidAnswerResponse:
-        answer_text = self.parse_text_with_markdown(self._prepare_string_to_telegram(message.answer))  # TODO in the new task expiration message we should get all the answers to the question
+        answer_text = self.parse_text_with_markdown(self._prepare_string_to_telegram(message.answer))
         question_text = self.parse_text_with_markdown(self._prepare_string_to_telegram(message.attributes["question"]))
         # Translate the message that there is a new answer and insert the details of the question and answer
         message_string = self._translator.get_translation_instance(user_object.locale) \
@@ -547,7 +559,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             .with_substitution("username", answerer_user.name.first if answerer_user.name.first and not message.attributes.get("anonymous", False) else self._translator.get_translation_instance(user_object.locale).with_text("anonymous_user").translate()) \
             .translate()
 
-        answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1])  # TODO in the new task expiration message we should provide a button for each of the answers to the question + maintaining the possibility of more_answers_button
+        answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1])
         button_report_text = self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate()
         button_more_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("more_answers_button").translate()
         button_best_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("best_answers_button").translate()
@@ -575,6 +587,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
     def _handle_question_expiration(self, message: QuestionExpirationMessage, service_api: ServiceApiInterface) -> List[TelegramRapidAnswerResponse]:
         locale = "en"
+        # TODO get user locale from service api incoming event
+        # user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         transaction_ids = []
         question_text = self.parse_text_with_markdown(self._prepare_string_to_telegram(message.question))
         message_answers = []
@@ -653,7 +667,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
         for i in range(len(message_answers)):
             message_string += f"{i + 1}. {message_answers[i]} - {message_users[i]} \n"
-        message_string += f"\n\n{self._translator.get_translation_instance(locale).with_text('from_multiple_response').translate()}"
+        message_string += f"\n{self._translator.get_translation_instance(locale).with_text('from_multiple_response').translate()}"
 
         answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[len(transaction_ids) + 1])
         button_ids = [str(uuid.uuid4()) for _ in range(len(transaction_ids) + 1)]
@@ -666,7 +680,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             "related_buttons": button_ids
         }
         self.cache.cache(ButtonPayload(button_data, self.INTENT_ASK_MORE_ANSWERS).to_repr(), key=button_ids[len(transaction_ids)])
-        button_ask_more_text = self._translator.get_translation_instance(locale).with_text("ask_more_users_button").translate()
+        button_ask_more_text = self._translator.get_translation_instance(locale).with_text("more_answers_button").translate()
         answer.with_textual_option(button_ask_more_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[len(transaction_ids)]))
 
         return [answer]
@@ -727,7 +741,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 answerer_user = service_api.get_user_profile(str(answerer_id))
                 response = self._handle_answered_question(message, user_object, answerer_user)
                 responses = [response]
-            elif isinstance(message, QuestionExpirationMessage):  # TODO as for the other callbacks, we should handle the new QuestionExpirationMessage
+            elif isinstance(message, QuestionExpirationMessage):
                 responses = self._handle_question_expiration(message, service_api)
             elif isinstance(message, AnsweredPickedMessage):
                 # handle an answer picked for a question
@@ -1030,7 +1044,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         anonymous = context.get_static_state(self.CONTEXT_ANONYMOUS_QUESTION, self.INTENT_NOT_ANONYMOUS_QUESTION)
         social_closeness = context.get_static_state(self.CONTEXT_SOCIAL_CLOSENESS)
         expiration_date = datetime.now() + timedelta(seconds=self.expiration_duration)
-        attributes = {  # TODO We should define a new app logic on the hub for that including callbacks and norms (done?)
+        attributes = {  # TODO We should define a new app logic on the hub for that including norms
             "domain": domain,
             "domainInterest": domain_interest,
             "beliefsAndValues": belief_values_similarity,
@@ -1473,10 +1487,27 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         response.with_context(context)
         return response
 
-    def _get_best_answer_reason_message(self, incoming_event: IncomingSocialEvent, task_id: str) -> TextualResponse:
-        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
-        message = self._translator.get_translation_instance(user_locale).with_text("best_answer_0").translate()  # TODO this should became buttons and not open text
-        return TextualResponse(message)
+    def _get_best_answer_reason_message(self, incoming_event: IncomingSocialEvent, task_id: str) -> TelegramRapidAnswerResponse:
+        # TODO enable user locale from incoming event
+        # user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+        user_locale = "en"
+        message = self._translator.get_translation_instance(user_locale).with_text("best_answer_0").translate()
+        button_1_text = self._translator.get_translation_instance(user_locale).with_text("answer_reason_funny").translate()
+        button_2_text = self._translator.get_translation_instance(user_locale).with_text("answer_reason_thoughtful").translate()
+        button_3_text = self._translator.get_translation_instance(user_locale).with_text("answer_reason_informative").translate()
+        button_4_text = self._translator.get_translation_instance(user_locale).with_text("answer_reason_creative").translate()
+        button_5_text = self._translator.get_translation_instance(user_locale).with_text("answer_reason_honest").translate()
+        button_6_text = self._translator.get_translation_instance(user_locale).with_text("answer_reason_kind").translate()
+        button_7_text = self._translator.get_translation_instance(user_locale).with_text("answer_reason_personal").translate()
+        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 2, 2, 1])
+        response_with_buttons.with_textual_option(button_1_text, self.INTENT_CHOSEN_ANSWER_FUNNY)
+        response_with_buttons.with_textual_option(button_2_text, self.INTENT_CHOSEN_ANSWER_THOUGHTFUL)
+        response_with_buttons.with_textual_option(button_3_text, self.INTENT_CHOSEN_ANSWER_INFORMATIVE)
+        response_with_buttons.with_textual_option(button_4_text, self.INTENT_CHOSEN_ANSWER_CREATIVE)
+        response_with_buttons.with_textual_option(button_5_text, self.INTENT_CHOSEN_ANSWER_HONEST)
+        response_with_buttons.with_textual_option(button_6_text, self.INTENT_CHOSEN_ANSWER_KIND)
+        response_with_buttons.with_textual_option(button_7_text, self.INTENT_CHOSEN_ANSWER_PERSONAL)
+        return response_with_buttons
 
     def action_best_answer_publish(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
@@ -1507,31 +1538,26 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         response.with_context(context)
         return response
 
-    def action_best_answer_1(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+    def action_best_answer_1(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         response = OutgoingEvent(social_details=incoming_event.social_details)
-        if isinstance(incoming_event.incoming_message, IncomingTextMessage):
-            reason = self._prepare_string_to_wenet(incoming_event.incoming_message.text)
-            context = incoming_event.context
-            context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_1)
-            context.with_static_state(self.CONTEXT_CHOSEN_ANSWER_REASON, reason)
-            message = self._translator.get_translation_instance(user_locale).with_text("best_answer_helpful").translate()
-            button_1_text = self._translator.get_translation_instance(user_locale).with_text("not_at_all_helpful").translate()
-            button_2_text = self._translator.get_translation_instance(user_locale).with_text("slightly_helpful").translate()
-            button_3_text = self._translator.get_translation_instance(user_locale).with_text("somewhat_helpful").translate()
-            button_4_text = self._translator.get_translation_instance(user_locale).with_text("very_helpful").translate()
-            button_5_text = self._translator.get_translation_instance(user_locale).with_text("extremely_helpful").translate()
-            response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 2, 1])
-            response_with_buttons.with_textual_option(button_1_text, self.INTENT_NOT_AT_ALL_HELPFUL)
-            response_with_buttons.with_textual_option(button_2_text, self.INTENT_SLIGHTLY_HELPFUL)
-            response_with_buttons.with_textual_option(button_3_text, self.INTENT_SOMEWHAT_HELPFUL)
-            response_with_buttons.with_textual_option(button_4_text, self.INTENT_VERY_HELPFUL)
-            response_with_buttons.with_textual_option(button_5_text, self.INTENT_EXTREMELY_HELPFUL)
-            response.with_message(response_with_buttons)
-            response.with_context(context)
-        else:
-            error_message = self._translator.get_translation_instance(user_locale).with_text("reason_is_not_text").translate()
-            response.with_message(TextualResponse(error_message))
+        context = incoming_event.context
+        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_1)
+        context.with_static_state(self.CONTEXT_CHOSEN_ANSWER_REASON, intent)
+        message = self._translator.get_translation_instance(user_locale).with_text("best_answer_helpful").translate()
+        button_1_text = self._translator.get_translation_instance(user_locale).with_text("not_at_all_helpful").translate()
+        button_2_text = self._translator.get_translation_instance(user_locale).with_text("slightly_helpful").translate()
+        button_3_text = self._translator.get_translation_instance(user_locale).with_text("somewhat_helpful").translate()
+        button_4_text = self._translator.get_translation_instance(user_locale).with_text("very_helpful").translate()
+        button_5_text = self._translator.get_translation_instance(user_locale).with_text("extremely_helpful").translate()
+        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 2, 1])
+        response_with_buttons.with_textual_option(button_1_text, self.INTENT_NOT_AT_ALL_HELPFUL)
+        response_with_buttons.with_textual_option(button_2_text, self.INTENT_SLIGHTLY_HELPFUL)
+        response_with_buttons.with_textual_option(button_3_text, self.INTENT_SOMEWHAT_HELPFUL)
+        response_with_buttons.with_textual_option(button_4_text, self.INTENT_VERY_HELPFUL)
+        response_with_buttons.with_textual_option(button_5_text, self.INTENT_EXTREMELY_HELPFUL)
+        response.with_message(response_with_buttons)
+        response.with_context(context)
         return response
 
     def action_best_answer_2(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
