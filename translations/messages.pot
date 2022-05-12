@@ -428,3 +428,27 @@ msgstr ""
 
 msgid "block_share_details"
 msgstr ""
+
+msgid "share_questioner_contact"
+msgstr ""
+
+msgid "share_answerer_contact"
+msgstr ""
+
+msgid "no_contact_available"
+msgstr ""
+
+msgid "shared_questioner_contact"
+msgstr ""
+
+msgid "shared_answerer_contact"
+msgstr ""
+
+msgid "not_shared_contact"
+msgstr ""
+
+msgid "not_follow_up"
+msgstr ""
+
+msgid "block_follow_up"
+msgstr ""

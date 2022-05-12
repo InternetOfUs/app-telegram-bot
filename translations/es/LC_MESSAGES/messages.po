@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-04-01 15:44+0200\n"
+"PO-Revision-Date: 2022-05-12 18:15+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: es\n"
@@ -545,3 +545,65 @@ msgstr ""
 "\n"
 "La respuesta que se escogió como la mejor es:\n"
 "{best_answer} - {answerer}"
+
+msgid "follow_up_button"
+msgstr ":speaking_head: Solicite el contacto de {answerer} para seguimiento"
+
+msgid "share_details_for_follow_up"
+msgstr "Tenga en cuenta que {answerer} también recibirá sus datos de contacto."
+
+msgid "share_details"
+msgstr ":white_check_mark: ¡Comparte mis datos de contacto!"
+
+msgid "not_share_details"
+msgstr ":x: Mejor no"
+
+msgid "sharing_details_message"
+msgstr ""
+"Ok, le preguntaré a {answerer}. También compartiré sus datos de contacto."
+
+msgid "not_sharing_details_message"
+msgstr "Ok, no preguntaré {answerer}."
+
+msgid "share_details_to_questioner"
+msgstr ""
+"{questioner} preguntó: “_{question}_”\n"
+"\n"
+"Respondiste: *{answer}*\n"
+"\n"
+"{questioner} solicitó sus datos de contacto para realizar un seguimiento."
+
+msgid "not_now_share_details"
+msgstr ":x: Ahora no"
+
+msgid "block_share_details"
+msgstr ":exclamation: bloquear estas solicitudes de este usuario"
+
+msgid "share_questioner_contact"
+msgstr "¡Súper! El contacto de {questioner_name} es {questioner_contact}"
+
+msgid "share_answerer_contact"
+msgstr ""
+"{answerer_name} aceptó compartir los detalles de contacto: {answerer_contact}"
+
+msgid "no_contact_available"
+msgstr ""
+"Lo siento, pero no pude obtener los datos de contacto de {name} porque "
+"{name} no tiene un nombre de usuario establecido en Telegram."
+
+msgid "shared_questioner_contact"
+msgstr "También compartí tus datos de contacto con {answerer_name}."
+
+msgid "shared_answerer_contact"
+msgstr "Informaré a {questioner_name} sobre tus datos de contacto."
+
+msgid "not_shared_contact"
+msgstr ""
+"No pude obtener sus datos de contacto porque no tiene un nombre de usuario "
+"establecido en Telegram."
+
+msgid "not_follow_up"
+msgstr "Vale, no compartiré tus datos de contacto con {questioner_name}."
+
+msgid "block_follow_up"
+msgstr "Ok, bloquearé automáticamente las solicitudes futuras de este usuario."

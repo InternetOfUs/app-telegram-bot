@@ -1459,14 +1459,18 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         response.with_context(context)
         return response
 
-    def _get_telegram_user(self, context: ConversationContext) -> str:
+    def _get_telegram_user(self, context: ConversationContext) -> Optional[str]:
         if not isinstance(self._connector, TelegramSocialConnector):
             logger.error(f"Expected telegram social connector, got [{type(self._connector)}]")
             raise Exception(f"Expected telegram social connector, got [{type(self._connector)}]")
 
         response = requests.get(f"{getattr(self._connector, '_telegram_url')}/getChat?chat_id={context.get_static_state(self.CONTEXT_TELEGRAM_USER_ID)}")
-        username = f"@{response.json()['result']['username']}"
-        return username.replace("_", "\\_").replace("*", "\\*").replace("`", "\\`")  # TODO handle cases in which username is not available (since is not available), in case say that it is not possible or ask user to provide/add a username
+        username = response.json()['result'].get('username', None)
+        if username is not None:  # The username could not available since is not mandatory to have it
+            username = f"@{username}"
+            return username.replace("_", "\\_").replace("*", "\\*").replace("`", "\\`")
+        else:
+            return username
 
     def action_follow_up_2(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
@@ -1486,36 +1490,55 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         questioner_locale = self._get_user_locale_from_wenet_id(questioner_user_id, context=questioner_account.context)
         questioner_contact = self._get_telegram_user(questioner_account.context)
 
-        # message = self._translator.get_translation_instance(user_locale).with_text("shared_questioner_contact") \
-        #     .with_substitution("questioner_name", questioner_name) \
-        #     .with_substitution("questioner_contact", questioner_contact) \
-        #     .translate()
-        message = questioner_contact
-        message = TextualResponse("test **" + message + "**")
+        if questioner_contact:
+            message = self._translator.get_translation_instance(user_locale).with_text("share_questioner_contact") \
+                .with_substitution("questioner_name", questioner_name) \
+                .with_substitution("questioner_contact", questioner_contact) \
+                .translate()
+            notification_message = self._translator.get_translation_instance(questioner_locale).with_text("shared_questioner_contact") \
+                .with_substitution("answerer_name", answerer_name) \
+                .translate()
+        else:  # Handle cases in which questioner username is not available since is not mandatory to have it saying that it is not possible to share it and in case ask user to add a username
+            message = self._translator.get_translation_instance(user_locale).with_text("no_contact_available") \
+                .with_substitution("name", questioner_name) \
+                .translate()
+            notification_message = self._translator.get_translation_instance(questioner_locale).with_text("not_shared_contact").translate()
 
-        # notification_message = self._translator.get_translation_instance(questioner_locale).with_text("share_details_to_questioner") \
-        #     .with_substitution("answerer_name", answerer_name) \
-        #     .with_substitution("answerer_contact", answerer_contact) \
-        #     .translate()
-        notification_message = answerer_contact
-        notification_message = TextualResponse("test **" + notification_message + "**")
+        if answerer_contact:
+            notification_message = self._translator.get_translation_instance(questioner_locale).with_text("share_answerer_contact") \
+                .with_substitution("answerer_name", answerer_name) \
+                .with_substitution("answerer_contact", answerer_contact) \
+                .translate() + "\n\n" + notification_message
+            message = message + "\n\n" + self._translator.get_translation_instance(user_locale).with_text("shared_answerer_contact") \
+                .with_substitution("questioner_name", questioner_name) \
+                .translate()
+        else:  # Handle cases in which answerer username is not available since is not mandatory to have it saying that it is not possible to share it and in case ask user to add a username
+            notification_message = self._translator.get_translation_instance(questioner_locale).with_text("no_contact_available") \
+                .with_substitution("name", answerer_name) \
+                .translate() + "\n\n" + notification_message
+            message = message + "\n\n" + self._translator.get_translation_instance(user_locale).with_text("not_shared_contact").translate()
 
+        notification_message = TextualResponse(notification_message)
         notification = self._get_notification_event_based_on_what_user_is_doing(questioner_account.context, questioner_account.social_details, [notification_message])
         try:
             self.send_notification(notification)
         except Exception as e:
             logger.exception(f"An exception [{type(e)}] occurs sending the notification [{notification.to_repr()}]", exc_info=e)
 
+        message = TextualResponse(message)
         response.with_message(message)
         response.with_context(context)
         return response
 
-    def action_not_follow_up(self, incoming_event: IncomingSocialEvent, _: ButtonPayload) -> OutgoingEvent:
+    def action_not_follow_up(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
 
         context = incoming_event.context
-        message = self._translator.get_translation_instance(user_locale).with_text("not_follow_up").translate()
+        questioner_name = button_payload.payload["questioner_name"]
+        message = self._translator.get_translation_instance(user_locale).with_text("not_follow_up") \
+            .with_substitution("questioner_name", questioner_name) \
+            .translate()
         message = TextualResponse(message)
 
         response.with_message(message)
@@ -1530,7 +1553,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         message = self._translator.get_translation_instance(user_locale).with_text("block_follow_up").translate()
         message = TextualResponse(message)
 
-        # TODO store in the context of the user that he does not want messages from that user
+        # Store in the context of the user that he does not want messages from that user
         questioner_user_id = button_payload.payload["questioner_user_id"]
         blocked_users_for_contact_request = context.get_static_state(self.CONTEXT_BLOCKED_USERS_FOR_CONTACT_REQUEST, [])
         blocked_users_for_contact_request.append(questioner_user_id)

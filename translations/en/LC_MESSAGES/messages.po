@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-05-06 16:09+0200\n"
+"PO-Revision-Date: 2022-05-12 18:15+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -555,4 +555,33 @@ msgid "not_now_share_details"
 msgstr ":x: Not now"
 
 msgid "block_share_details"
-msgstr ":exclamation: Block these requests from this questioner"
+msgstr ":exclamation: Block these requests from this user"
+
+msgid "share_questioner_contact"
+msgstr "Super! {questioner_name}’s contact is {questioner_contact}"
+
+msgid "share_answerer_contact"
+msgstr ""
+"{answerer_name} agreed to share the contact details: {answerer_contact}"
+
+msgid "no_contact_available"
+msgstr ""
+"Sorry, but I was not able to obtain {name}’s contact details since {name} "
+"has no username set on Telegram."
+
+msgid "shared_questioner_contact"
+msgstr "I also shared your contact details with {answerer_name}."
+
+msgid "shared_answerer_contact"
+msgstr "I will let {questioner_name} know about your contact details."
+
+msgid "not_shared_contact"
+msgstr ""
+"I was not able to obtain your contact details since you have no username set "
+"on Telegram."
+
+msgid "not_follow_up"
+msgstr "Ok, I won’t share your contact details with {questioner_name}."
+
+msgid "block_follow_up"
+msgstr "Ok, I will automatically block future requests from this user."
