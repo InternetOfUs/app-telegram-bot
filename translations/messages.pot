@@ -411,6 +411,9 @@ msgstr ""
 msgid "asked_message_without_attributes"
 msgstr ""
 
+msgid "asked_message_without_attributes_user"
+msgstr ""
+
 msgid "answer_reason_funny"
 msgstr ""
 

@@ -656,7 +656,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             message_attributes = message_attributes
         if message_attributes == "":
             message_attributes = self._translator.get_translation_instance(locale)\
-                .with_text("asked_message_without_attributes")\
+                .with_text("asked_message_without_attributes") \
+                .with_substitution("user", question_text) \
                 .with_substitution("question", question_text)\
                 .translate()
 
@@ -1506,6 +1507,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         return response_with_buttons
 
     def action_best_answer_publish(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+        # TODO edit this to show all answers for a question
         response = OutgoingEvent(social_details=incoming_event.social_details)
         context = incoming_event.context
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_0)
@@ -1513,6 +1515,33 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         question = context.get_static_state(self.CONTEXT_QUESTION)
         best_answer = context.get_static_state(self.CONTEXT_BEST_ANSWER)
         answerer_name = context.get_static_state(self.CONTEXT_ANSWERER_NAME)
+
+        # transaction_ids = []
+        # question_text = self.parse_text_with_markdown(self._prepare_string_to_telegram(message.question))
+        # message_answers = []
+        # message_users = []
+        # task = service_api.get_task(message.task_id)
+        # for transaction in task.transactions:
+        #     if transaction.label == self.LABEL_ANSWER_TRANSACTION:
+        #         message_answers.append(self.parse_text_with_markdown(self._prepare_string_to_telegram(transaction.attributes["answer"])))
+        #         answerer_user = service_api.get_user_profile(transaction.actioneer_id)
+        #         message_users.append(answerer_user.name.first if answerer_user.name.first and not message.attributes.get("anonymous", False) else self._translator.get_translation_instance(locale).with_text("anonymous_user").translate())
+        #         transaction_ids.append(transaction.id)
+
+        # if message_attributes == "":
+        #     message_attributes = self._translator.get_translation_instance(locale) \
+        # add "asked_message_without_attributes_user" on translations
+        #         .with_text("asked_message_without_attributes") \
+        #         .with_substitution("user", question_text) \
+        #         .with_substitution("question", question_text) \
+        #         .translate()
+        #
+        # message_string = f"{message_attributes} \n\n"
+        # message_string += f"{self._translator.get_translation_instance(locale).with_text('collected_answers').translate()} \n\n"
+        #
+        # for i in range(len(message_answers)):
+        #     message_string += f"{i + 1}. {message_answers[i]} - {message_users[i]} \n"
+
         if intent == self.INTENT_PUBLISH and isinstance(incoming_event.social_details, TelegramDetails):
             message = self._translator.get_translation_instance(self.publication_language).with_text('publish_question') \
                 .with_substitution("questioner", questioner_name) \
