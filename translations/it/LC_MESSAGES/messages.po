@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-05-10 17:07+0200\n"
+"PO-Revision-Date: 2022-05-12 15:41+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: it\n"
@@ -554,7 +554,28 @@ msgstr ""
 msgid "asked_message_without_attributes"
 msgstr "Hai fatto una domanda “*{question}*”"
 
+msgid "answer_reason_funny"
+msgstr "Divertente"
+
+msgid "answer_reason_thoughtful"
+msgstr "Ponderato"
+
+msgid "answer_reason_informative"
+msgstr "Informativo"
+
+msgid "answer_reason_creative"
+msgstr "Creativo"
+
+msgid "answer_reason_honest"
+msgstr "Onesto"
+
+msgid "answer_reason_kind"
+msgstr "Gentile"
+
+msgid "answer_reason_personal"
+msgstr "Personale / Soggettivo"
+
 #, fuzzy
-#| msgid "more_answers_button"
-msgid "ask_more_users_button"
-msgstr ":game_die: Chiedi a più persone"
+#~| msgid "more_answers_button"
+#~ msgid "ask_more_users_button"
+#~ msgstr ":game_die: Chiedi a più persone"

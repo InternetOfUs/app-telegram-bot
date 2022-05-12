@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-05-10 17:07+0200\n"
+"PO-Revision-Date: 2022-05-12 11:46+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -529,5 +529,26 @@ msgstr "Which response did you like the most? I can also ask more people."
 msgid "asked_message_without_attributes"
 msgstr "You asked “*{question}*”"
 
-msgid "ask_more_users_button"
-msgstr ":game_die: Ask more people"
+msgid "answer_reason_funny"
+msgstr "Funny"
+
+msgid "answer_reason_thoughtful"
+msgstr "Thoughtful"
+
+msgid "answer_reason_informative"
+msgstr "Informative"
+
+msgid "answer_reason_creative"
+msgstr "Creative"
+
+msgid "answer_reason_honest"
+msgstr "Honest"
+
+msgid "answer_reason_kind"
+msgstr "Kind"
+
+msgid "answer_reason_personal"
+msgstr "Personal / Subjective"
+
+#~ msgid "ask_more_users_button"
+#~ msgstr ":game_die: Ask more people"

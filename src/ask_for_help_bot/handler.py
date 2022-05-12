@@ -585,10 +585,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             .translate()
         return TextualResponse(message_string)
 
-    def _handle_question_expiration(self, message: QuestionExpirationMessage, service_api: ServiceApiInterface) -> List[TelegramRapidAnswerResponse]:
-        locale = "en"
-        # TODO get user locale from service api incoming event
-        # user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+    def _handle_question_expiration(self, message: QuestionExpirationMessage, service_api: ServiceApiInterface, user_object: WeNetUserProfile) -> List[TelegramRapidAnswerResponse]:
+        locale = user_object.locale
         transaction_ids = []
         question_text = self.parse_text_with_markdown(self._prepare_string_to_telegram(message.question))
         message_answers = []
@@ -742,7 +740,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 response = self._handle_answered_question(message, user_object, answerer_user)
                 responses = [response]
             elif isinstance(message, QuestionExpirationMessage):
-                responses = self._handle_question_expiration(message, service_api)
+                responses = self._handle_question_expiration(message, service_api, user_object)
             elif isinstance(message, AnsweredPickedMessage):
                 # handle an answer picked for a question
                 response = self._handle_answered_picked(message, user_object)
@@ -1044,7 +1042,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         anonymous = context.get_static_state(self.CONTEXT_ANONYMOUS_QUESTION, self.INTENT_NOT_ANONYMOUS_QUESTION)
         social_closeness = context.get_static_state(self.CONTEXT_SOCIAL_CLOSENESS)
         expiration_date = datetime.now() + timedelta(seconds=self.expiration_duration)
-        attributes = {  # TODO We should define a new app logic on the hub for that including norms
+        attributes = {
             "domain": domain,
             "domainInterest": domain_interest,
             "beliefsAndValues": belief_values_similarity,
@@ -1488,9 +1486,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         return response
 
     def _get_best_answer_reason_message(self, incoming_event: IncomingSocialEvent, task_id: str) -> TelegramRapidAnswerResponse:
-        # TODO enable user locale from incoming event
-        # user_locale = self._get_user_locale_from_incoming_event(incoming_event)
-        user_locale = "en"
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         message = self._translator.get_translation_instance(user_locale).with_text("best_answer_0").translate()
         button_1_text = self._translator.get_translation_instance(user_locale).with_text("answer_reason_funny").translate()
         button_2_text = self._translator.get_translation_instance(user_locale).with_text("answer_reason_thoughtful").translate()

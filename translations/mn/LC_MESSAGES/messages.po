@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-05-10 17:09+0200\n"
+"PO-Revision-Date: 2022-05-12 15:11+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: mn\n"
@@ -538,7 +538,28 @@ msgstr "Аль хариулт танд илүү таалагдсан бэ? Өө�
 msgid "asked_message_without_attributes"
 msgstr "Таны доорх “*{question}*” асуултанд"
 
+msgid "answer_reason_funny"
+msgstr "Хөгжилтэй"
+
+msgid "answer_reason_thoughtful"
+msgstr "Бодлогошруулсан"
+
+msgid "answer_reason_informative"
+msgstr "Мэдээлэлтэй"
+
+msgid "answer_reason_creative"
+msgstr "Үр бүтээлч"
+
+msgid "answer_reason_honest"
+msgstr "Шударга"
+
+msgid "answer_reason_kind"
+msgstr "Эелдэг"
+
+msgid "answer_reason_personal"
+msgstr "Хувийн / Субьектив"
+
 #, fuzzy
-#| msgid "more_answers_button"
-msgid "ask_more_users_button"
-msgstr ":game_die: Илүү олон хүнээс асуух"
+#~| msgid "more_answers_button"
+#~ msgid "ask_more_users_button"
+#~ msgstr ":game_die: Илүү олон хүнээс асуух"
