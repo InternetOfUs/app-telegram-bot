@@ -1360,8 +1360,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             response.with_context(context)
         return response
 
-    # TODO then complete all translations for the other languages
-
     def action_follow_up_0(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
