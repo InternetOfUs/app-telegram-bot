@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-05-12 17:18+0200\n"
+"PO-Revision-Date: 2022-05-13 12:04+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: it\n"
@@ -554,6 +554,9 @@ msgstr ""
 msgid "asked_message_without_attributes"
 msgstr "Hai fatto una domanda “*{question}*”"
 
+msgid "asked_message_without_attributes_user"
+msgstr "{user} ha chiesto “*{question}*”"
+
 msgid "answer_reason_funny"
 msgstr "Divertente"
 
@@ -574,6 +577,9 @@ msgstr "Gentile"
 
 msgid "answer_reason_personal"
 msgstr "Personale / Soggettivo"
+
+msgid "chosen_answer_by_user"
+msgstr "*[Scelto come miglior risposta da {user}]*"
 
 #, fuzzy
 #~| msgid "more_answers_button"

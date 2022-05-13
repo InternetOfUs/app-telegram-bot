@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-05-12 17:19+0200\n"
+"PO-Revision-Date: 2022-05-13 12:11+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: mn\n"
@@ -536,7 +536,10 @@ msgid "from_multiple_response"
 msgstr "Аль хариулт танд илүү таалагдсан бэ? Өөр хүмүүсээс дахиад асууж болно."
 
 msgid "asked_message_without_attributes"
-msgstr "Таны доорх “*{question}*” асуултанд"
+msgstr "Таны асуусан “*{question}*” асуултанд"
+
+msgid "asked_message_without_attributes_user"
+msgstr "{user} асуусан “*{question}*” асуултанд"
 
 msgid "answer_reason_funny"
 msgstr "Хөгжилтэй"
@@ -558,6 +561,9 @@ msgstr "Эелдэг"
 
 msgid "answer_reason_personal"
 msgstr "Хувийн / Субьектив"
+
+msgid "chosen_answer_by_user"
+msgstr "*[{user} үүнийг хамгийн сайн хариултаар сонгосон]*"
 
 #, fuzzy
 #~| msgid "more_answers_button"

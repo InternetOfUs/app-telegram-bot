@@ -1420,6 +1420,13 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             raise Exception(f"Missing conversation context for event {incoming_event}")
 
         task_id = button_payload.payload["task_id"]
+        # TODO update expiration date
+        # service_api.get_task()
+        # expiration_date = datetime.now() + timedelta(seconds=self.expiration_duration)
+        # expiration = int(expiration_date.timestamp())
+        # task.attributes.get(expiration) = expiration
+        # service_api.update_task()
+
         actioneer_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
         try:
             transaction = TaskTransaction(None, task_id, self.LABEL_MORE_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), actioneer_id, {}, [])
@@ -1507,49 +1514,50 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         return response_with_buttons
 
     def action_best_answer_publish(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
-        # TODO edit this to show all answers for a question
         response = OutgoingEvent(social_details=incoming_event.social_details)
         context = incoming_event.context
+        if context is not None:
+            service_api = self._get_service_api_interface_connector_from_context(context)
+        else:
+            raise Exception(f"Missing conversation context for event {incoming_event}")
+
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_0)
+        task_id = context.get_static_state(self.CONTEXT_TASK_ID)
         questioner_name = context.get_static_state(self.CONTEXT_QUESTIONER_NAME)
-        question = context.get_static_state(self.CONTEXT_QUESTION)
+        question_text = context.get_static_state(self.CONTEXT_QUESTION)
         best_answer = context.get_static_state(self.CONTEXT_BEST_ANSWER)
-        answerer_name = context.get_static_state(self.CONTEXT_ANSWERER_NAME)
 
-        # transaction_ids = []
-        # question_text = self.parse_text_with_markdown(self._prepare_string_to_telegram(message.question))
-        # message_answers = []
-        # message_users = []
-        # task = service_api.get_task(message.task_id)
-        # for transaction in task.transactions:
-        #     if transaction.label == self.LABEL_ANSWER_TRANSACTION:
-        #         message_answers.append(self.parse_text_with_markdown(self._prepare_string_to_telegram(transaction.attributes["answer"])))
-        #         answerer_user = service_api.get_user_profile(transaction.actioneer_id)
-        #         message_users.append(answerer_user.name.first if answerer_user.name.first and not message.attributes.get("anonymous", False) else self._translator.get_translation_instance(locale).with_text("anonymous_user").translate())
-        #         transaction_ids.append(transaction.id)
+        transaction_ids = []
+        message_answers = []
+        message_users = []
+        task = service_api.get_task(task_id)
+        for transaction in task.transactions:
+            if transaction.label == self.LABEL_ANSWER_TRANSACTION:
+                message_answers.append(self.parse_text_with_markdown(self._prepare_string_to_telegram(transaction.attributes["answer"])))
+                answerer_user = service_api.get_user_profile(transaction.actioneer_id)
+                message_users.append(answerer_user.name.first if answerer_user.name.first else self._translator.get_translation_instance(self.publication_language).with_text("anonymous_user").translate())
+                transaction_ids.append(transaction.id)
+        message_attributes = self._translator.get_translation_instance(self.publication_language) \
+            .with_text("asked_message_without_attributes_user") \
+            .with_substitution("user", questioner_name) \
+            .with_substitution("question", question_text) \
+            .translate()
 
-        # if message_attributes == "":
-        #     message_attributes = self._translator.get_translation_instance(locale) \
-        # add "asked_message_without_attributes_user" on translations
-        #         .with_text("asked_message_without_attributes") \
-        #         .with_substitution("user", question_text) \
-        #         .with_substitution("question", question_text) \
-        #         .translate()
-        #
-        # message_string = f"{message_attributes} \n\n"
-        # message_string += f"{self._translator.get_translation_instance(locale).with_text('collected_answers').translate()} \n\n"
-        #
-        # for i in range(len(message_answers)):
-        #     message_string += f"{i + 1}. {message_answers[i]} - {message_users[i]} \n"
+        message_string = f"{message_attributes} \n\n"
+        message_string += f"{self._translator.get_translation_instance(self.publication_language).with_text('collected_answers').translate()} \n\n"
+        message_best_answer = self._translator.get_translation_instance(self.publication_language)\
+            .with_text('chosen_answer_by_user')\
+            .with_substitution("user", questioner_name).translate()
+
+        for i in range(len(message_answers)):
+            message_string += f"{i + 1}. {message_answers[i]} - {message_users[i]}"
+            if message_answers[i] == best_answer:
+                message_string += " " + message_best_answer + "\n"
+            else:
+                message_string += "\n"
 
         if intent == self.INTENT_PUBLISH and isinstance(incoming_event.social_details, TelegramDetails):
-            message = self._translator.get_translation_instance(self.publication_language).with_text('publish_question') \
-                .with_substitution("questioner", questioner_name) \
-                .with_substitution("question", question) \
-                .with_substitution("best_answer", best_answer) \
-                .with_substitution("answerer", answerer_name) \
-                .translate()
-            notification = NotificationEvent(social_details=TelegramDetails(None, self.channel_id, incoming_event.social_details.telegram_bot_id), messages=[TextualResponse(message)])
+            notification = NotificationEvent(social_details=TelegramDetails(None, self.channel_id, incoming_event.social_details.telegram_bot_id), messages=[TextualResponse(message_string)])
             try:
                 self.send_notification(notification)
             except Exception as e:

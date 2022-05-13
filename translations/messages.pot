@@ -434,3 +434,7 @@ msgstr ""
 
 msgid "answer_reason_personal"
 msgstr ""
+
+msgid "chosen_answer_by_user"
+msgstr ""
+
