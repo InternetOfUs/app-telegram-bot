@@ -1680,23 +1680,37 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         else:
             raise Exception(f"Missing conversation context for event {incoming_event}")
         user_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
+
+        # TODO as suggested by stefano the selection of tasks can go in a dedicated method that returns the eligible tasks
         tasks = [
             t for t in service_api.get_all_tasks(app_id=self.app_id, task_type_id=self.task_type_id, has_close_ts=False) if t.requester_id != user_id
             and user_id not in set([transaction.actioneer_id for transaction in t.transactions if transaction.label == self.LABEL_ANSWER_TRANSACTION])
-        ]    # TODO when request the questions to ask we should check that it is not expired or if it is expired if there is ask more people and the time is not expired
+        ]
 
-        if not tasks:
+        eligible_tasks = []
+        expiration_date = int(datetime.now().timestamp())
+        for task in tasks:
+            if task.attributes.get("expirationDate") < expiration_date:
+                for transaction in task.transactions:
+                    if transaction.label == self.LABEL_MORE_ANSWER_TRANSACTION:
+                        if transaction.attributes.get("expirationDate") > expiration_date:
+                            eligible_tasks.append(task)
+                            break
+            else:
+                eligible_tasks.append(task)
+
+        if not eligible_tasks:
             response.with_message(TextualResponse(
                 self._translator.get_translation_instance(user_locale).with_text("answers_no_tasks").translate())
             )
         else:
-            if len(tasks) > 3:
+            if len(eligible_tasks) > 3:
                 # if more than 3 tasks, pick 3 random
-                tasks = random.sample(tasks, k=3)
+                eligible_tasks = random.sample(eligible_tasks, k=3)
             text = self._translator.get_translation_instance(user_locale).with_text("answers_tasks_intro").translate()
             proposed_tasks = []
             tasks_texts = []
-            for task in tasks:
+            for task in eligible_tasks:
                 questioning_user = service_api.get_user_profile(str(task.requester_id))
                 if questioning_user:
                     task_text = f"#{1 + len(proposed_tasks)}: *{self.parse_text_with_markdown(self._prepare_string_to_telegram(task.goal.name))}* - {questioning_user.name.first if questioning_user.name.first and not task.attributes.get('anonymous') else self._translator.get_translation_instance(user_locale).with_text('anonymous_user').translate()}"
