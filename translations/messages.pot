@@ -438,3 +438,8 @@ msgstr ""
 msgid "chosen_answer_by_user"
 msgstr ""
 
+msgid "like_answer_button"
+msgstr ""
+
+msgid "like_answer_text"
+msgstr ""

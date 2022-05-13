@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-05-13 11:55+0200\n"
+"PO-Revision-Date: 2022-05-13 17:11+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -559,6 +559,12 @@ msgstr "Personal / Subjective"
 
 msgid "chosen_answer_by_user"
 msgstr "*[Chosen as the best answer by {user}]*"
+
+msgid "like_answer_button"
+msgstr ":thumbsup: Like"
+
+msgid "like_answer_text"
+msgstr "You liked this answer!"
 
 #~ msgid "ask_more_users_button"
 #~ msgstr ":game_die: Ask more people"

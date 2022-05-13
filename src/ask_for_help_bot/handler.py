@@ -111,6 +111,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     INTENT_ANSWER_REPORT = "answer_report"
     INTENT_QUESTIONS = "/questions"
     INTENT_ANSWER_PICKED_QUESTION = "picked_answer"
+    INTENT_LIKE_ANSWER = "like_answer"
     INTENT_BEST_ANSWER = "best_answer"
     INTENT_PUBLISH = "publish"
     INTENT_NOT_PUBLISH = "not_publish"
@@ -134,6 +135,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     LABEL_REPORT_QUESTION_TRANSACTION = "reportQuestionTransaction"
     LABEL_REPORT_ANSWER_TRANSACTION = "reportAnswerTransaction"
     LABEL_MORE_ANSWER_TRANSACTION = "moreAnswerTransaction"
+    LABEL_LIKE_ANSWER_TRANSACTION = "likeAnswerTransaction"
     LABEL_BEST_ANSWER_TRANSACTION = "bestAnswerTransaction"
     # keys used in Redis cache
     CACHE_LOCALE = "locale-{}"
@@ -559,29 +561,26 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             .with_substitution("username", answerer_user.name.first if answerer_user.name.first and not message.attributes.get("anonymous", False) else self._translator.get_translation_instance(user_object.locale).with_text("anonymous_user").translate()) \
             .translate()
 
-        answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1, 1])
+        answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 1])
         button_report_text = self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate()
-        button_more_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("more_answers_button").translate()
-        button_best_answers_text = self._translator.get_translation_instance(user_object.locale).with_text("best_answers_button").translate()
-        button_ids = [str(uuid.uuid4()) for _ in range(3)]
+        button_like_answer_text = self._translator.get_translation_instance(user_object.locale).with_text("like_answer_button").translate()
+        button_ids = [str(uuid.uuid4()) for _ in range(2)]
         button_data = {
             "transaction_id": message.transaction_id,
             "task_id": message.attributes["taskId"],
-            "related_buttons": button_ids,
+            "related_buttons": button_ids
         }
-        self.cache.cache(ButtonPayload(button_data, self.INTENT_BEST_ANSWER).to_repr(), key=button_ids[0])
-        answer.with_textual_option(button_best_answers_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
-        self.cache.cache(ButtonPayload(button_data, self.INTENT_ASK_MORE_ANSWERS).to_repr(), key=button_ids[1])
-        answer.with_textual_option(button_more_answers_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[1]))
-        self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_REPORT).to_repr(), key=button_ids[2])
-        answer.with_textual_option(button_report_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_LIKE_ANSWER).to_repr(), key=button_ids[0])
+        answer.with_textual_option(button_like_answer_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_REPORT).to_repr(), key=button_ids[1])
+        answer.with_textual_option(button_report_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[1]))
         return answer
 
     def _handle_answered_picked(self, message: AnsweredPickedMessage, user_object: WeNetUserProfile) -> TextualResponse:
         # Translate the message that the answer to a question was picked as the best and insert the details of the question
         message_string = self._translator.get_translation_instance(user_object.locale) \
             .with_text("picked_best_answer") \
-            .with_substitution("question", self.parse_text_with_markdown(self._prepare_string_to_telegram(message.question))) \
+            .with_substitution("question", self.parse_text_with_markdown(self._prepare_string_to_telegram(message.attributes.get("question")))) \
             .translate()
         return TextualResponse(message_string)
 
@@ -800,6 +799,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             return self.action_report_message(incoming_event, button_payload)
         elif button_payload.intent == self.INTENT_REPORT_ABUSIVE or button_payload.intent == self.INTENT_REPORT_SPAM:
             return self.action_report_message_1(incoming_event, button_payload)
+        elif button_payload.intent == self.INTENT_LIKE_ANSWER:
+            return self.action_like_answer(incoming_event, button_payload)
         elif button_payload.intent == self.INTENT_BEST_ANSWER:
             return self.action_best_answer_0(incoming_event, button_payload)
         elif button_payload.intent == self.INTENT_ANSWER_NOT:
@@ -1420,16 +1421,16 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             raise Exception(f"Missing conversation context for event {incoming_event}")
 
         task_id = button_payload.payload["task_id"]
-        # TODO update expiration date
-        # service_api.get_task()
-        # expiration_date = datetime.now() + timedelta(seconds=self.expiration_duration)
-        # expiration = int(expiration_date.timestamp())
-        # task.attributes.get(expiration) = expiration
-        # service_api.update_task()
+
+        task = service_api.get_task(task_id)
+        expiration_date = datetime.fromtimestamp(task.attributes.get("expirationDate")) + timedelta(seconds=self.expiration_duration)
+        expiration = int(expiration_date.timestamp())
 
         actioneer_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
         try:
-            transaction = TaskTransaction(None, task_id, self.LABEL_MORE_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), actioneer_id, {}, [])
+            transaction = TaskTransaction(None, task_id, self.LABEL_MORE_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), actioneer_id, {
+                "expirationDate": expiration
+            }, [])
             service_api.create_task_transaction(transaction)
             logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
             message = self._translator.get_translation_instance(user_locale).with_text("ask_more_answers_text").translate()
@@ -1440,9 +1441,37 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 "Error in the creation of the transaction to ask more responses for the task [%s]. The service API responded with code %d and message %s"
                 % (task_id, e.http_status_code, json.dumps(e.server_response))
             )
-        finally:
-            context.delete_static_state(self.CONTEXT_CURRENT_STATE)
-            response.with_context(context)
+
+        response.with_context(context)
+        return response
+
+    def action_like_answer(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+        context = incoming_event.context
+        if context is not None:
+            service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
+        else:
+            raise Exception(f"Missing conversation context for event {incoming_event}")
+
+        task_id = button_payload.payload["task_id"]
+        actioneer_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
+        try:
+            transaction = TaskTransaction(None, task_id, self.LABEL_LIKE_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), actioneer_id, {
+                "transactionId": button_payload.payload["transaction_id"]
+            }, [])
+            service_api.create_task_transaction(transaction)
+            logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
+            message = self._translator.get_translation_instance(user_locale).with_text("like_answer_text").translate()
+            response.with_message(TextualResponse(message))
+        except CreationError as e:
+            response.with_message(TextualResponse(self._translator.get_translation_instance(user_locale).with_text("error_task_creation").translate()))
+            logger.error(
+                "Error in the creation of the transaction to like the answer for the question [%s]. The service API responded with code %d and message %s"
+                % (task_id, e.http_status_code, json.dumps(e.server_response))
+            )
+
+        response.with_context(context)
         return response
 
     def action_best_answer_0(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
@@ -1654,7 +1683,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         tasks = [
             t for t in service_api.get_all_tasks(app_id=self.app_id, task_type_id=self.task_type_id, has_close_ts=False) if t.requester_id != user_id
             and user_id not in set([transaction.actioneer_id for transaction in t.transactions if transaction.label == self.LABEL_ANSWER_TRANSACTION])
-        ]
+        ]    # TODO when request the questions to ask we should check that it is not expired or if it is expired if there is ask more people and the time is not expired
 
         if not tasks:
             response.with_message(TextualResponse(

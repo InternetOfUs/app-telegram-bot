@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-05-13 12:08+0200\n"
+"PO-Revision-Date: 2022-05-13 17:24+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: es\n"
@@ -581,6 +581,12 @@ msgstr "Personal / Subjetivo"
 
 msgid "chosen_answer_by_user"
 msgstr "*[Elegido como la mejor respuesta por {user}]*"
+
+msgid "like_answer_button"
+msgstr ":thumbsup: Like"
+
+msgid "like_answer_text"
+msgstr "¡Te gustó esta respuesta!"
 
 #, fuzzy
 #~| msgid "more_answers_button"
