@@ -295,6 +295,10 @@ class TestAskForHelpHandler(TestCase):
             }), user_object=WeNetUserProfile.empty("questioning_user"))
         self.assertIsInstance(response, TextualResponse)
 
+    # TODO test it with all necessary options depending on the message attributes
+    def test_handle_question_expiration(self):
+        pass
+
     def test_action_question(self):
         handler = MockAskForHelpHandler()
         translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
@@ -319,6 +323,7 @@ class TestAskForHelpHandler(TestCase):
         self.assertIsInstance(response, OutgoingEvent)
         self.assertEqual(1, len(response.messages))
         self.assertIsInstance(response.messages[0], TelegramRapidAnswerResponse)
+        # TODO fix 11 unresolved reference 'options' for class ResponseMessage
         self.assertEqual(11, len(response.messages[0].options))
         self.assertTrue(handler.CONTEXT_CURRENT_STATE in response.context._static_context and response.context._static_context[handler.CONTEXT_CURRENT_STATE] == handler.STATE_QUESTION_1)
 
@@ -406,6 +411,7 @@ class TestAskForHelpHandler(TestCase):
         self.assertEqual(2, len(response.messages[0].options))
         self.assertTrue(handler.CONTEXT_CURRENT_STATE in response.context._static_context and response.context._static_context[handler.CONTEXT_CURRENT_STATE] == handler.STATE_QUESTION_6)
 
+    # TODO check if this test needs rework
     def test_action_question_final(self):
         handler = MockAskForHelpHandler()
         translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
