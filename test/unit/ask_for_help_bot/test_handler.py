@@ -673,22 +673,38 @@ class TestAskForHelpHandler(TestCase):
             "sensitive": False,
             "anonymous": False,
             "socialCloseness": handler.INTENT_SIMILAR_SOCIALLY,
-            "positionOfAnswerer":  handler.INTENT_ASK_TO_NEARBY,
+            "positionOfAnswerer": handler.INTENT_ASK_TO_NEARBY,
             "maxUsers": 10,
             "maxAnswers": 15,
             "expirationDate": 1652705325
-        }, transactions=[TaskTransaction("transaction_id", "task_id", handler.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), "answerer_user", {"answer": "answer", "anonymous": True})]))
+        }, transactions=[TaskTransaction(
+            transaction_id="transaction_id",
+            task_id="task_id",
+            label=handler.LABEL_ANSWER_TRANSACTION,
+            creation_ts=int(datetime.now().timestamp()),
+            last_update_ts=int(datetime.now().timestamp()),
+            actioneer_id="answerer_user",
+            attributes={"answer": "answer", "anonymous": True}
+        )]))
         handler._get_service_api_interface_connector_from_context = Mock(return_value=service_api)
         handler.send_notification = Mock()
+        service_api.get_user_profile = Mock(return_value=WeNetUserProfile.empty("answerer_user"))
 
-        response = handler.action_best_answer_publish(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_BEST_ANSWER, ""), ConversationContext(static_context={
-            handler.CONTEXT_TASK_ID: "task_id",
-            handler.CONTEXT_TRANSACTION_ID: "transaction_id",
-            handler.CONTEXT_QUESTIONER_NAME: "questioner_name",
-            handler.CONTEXT_QUESTION: "question",
-            handler.CONTEXT_BEST_ANSWER: "answer",
-            handler.CONTEXT_ANSWERER_NAME: "answerer_name"
-        })), handler.INTENT_PUBLISH)
+        response = handler.action_best_answer_publish(
+            incoming_event=IncomingTelegramEvent(
+                instance_namespace="",
+                social_details=TelegramDetails(1, 1, ""),
+                incoming_message=IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_BEST_ANSWER, ""),
+                context=ConversationContext(
+                    static_context={
+                        handler.CONTEXT_TASK_ID: "task_id",
+                        handler.CONTEXT_TRANSACTION_ID: "transaction_id",
+                        handler.CONTEXT_QUESTIONER_NAME: "questioner_name",
+                        handler.CONTEXT_QUESTION: "question",
+                        handler.CONTEXT_BEST_ANSWER: "answer"
+                        })
+            ),
+            intent=handler.INTENT_PUBLISH)
         self.assertIsInstance(response, OutgoingEvent)
         self.assertEqual(1, len(response.messages))
         self.assertIsInstance(response.messages[0], TextualResponse)
