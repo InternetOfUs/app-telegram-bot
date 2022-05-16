@@ -674,7 +674,9 @@ class TestAskForHelpHandler(TestCase):
             "anonymous": False,
             "socialCloseness": handler.INTENT_SIMILAR_SOCIALLY,
             "positionOfAnswerer":  handler.INTENT_ASK_TO_NEARBY,
-            "maxUsers": 10
+            "maxUsers": 10,
+            "maxAnswers": 15,
+            "expirationDate": 1652705325
         }, transactions=[TaskTransaction("transaction_id", "task_id", handler.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), "answerer_user", {"answer": "answer", "anonymous": True})]))
         handler._get_service_api_interface_connector_from_context = Mock(return_value=service_api)
         handler.send_notification = Mock()

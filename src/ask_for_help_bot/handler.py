@@ -1671,6 +1671,25 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             response.with_context(context)
         return response
 
+    def _get_eligible_tasks(self, service_api: ServiceApiInterface, user_id: str) -> List[Task]:
+        expiration_date = int(datetime.now().timestamp())
+        # tasks = [
+        #     t for t in service_api.get_all_tasks(app_id=self.app_id, task_type_id=self.task_type_id, has_close_ts=False) if t.requester_id != user_id
+        #     and user_id not in set([transaction.actioneer_id for transaction in t.transactions if transaction.label == self.LABEL_ANSWER_TRANSACTION])
+        # ]
+        eligible_tasks = []
+        for task in service_api.get_all_tasks(app_id=self.app_id, task_type_id=self.task_type_id, has_close_ts=False):
+            if task.requester_id != user_id and user_id not in set([transaction.actioneer_id for transaction in task.transactions if transaction.label == self.LABEL_ANSWER_TRANSACTION]):
+                if task.attributes.get("expirationDate") < expiration_date:
+                    for transaction in task.transactions:
+                        if transaction.label == self.LABEL_MORE_ANSWER_TRANSACTION:
+                            if transaction.attributes.get("expirationDate") > expiration_date:
+                                eligible_tasks.append(task)
+                                break
+                    else:
+                        eligible_tasks.append(task)
+        return eligible_tasks
+
     def action_answer(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
@@ -1680,24 +1699,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         else:
             raise Exception(f"Missing conversation context for event {incoming_event}")
         user_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
-
-        # TODO as suggested by stefano the selection of tasks can go in a dedicated method that returns the eligible tasks
-        tasks = [
-            t for t in service_api.get_all_tasks(app_id=self.app_id, task_type_id=self.task_type_id, has_close_ts=False) if t.requester_id != user_id
-            and user_id not in set([transaction.actioneer_id for transaction in t.transactions if transaction.label == self.LABEL_ANSWER_TRANSACTION])
-        ]
-
-        eligible_tasks = []
-        expiration_date = int(datetime.now().timestamp())
-        for task in tasks:
-            if task.attributes.get("expirationDate") < expiration_date:
-                for transaction in task.transactions:
-                    if transaction.label == self.LABEL_MORE_ANSWER_TRANSACTION:
-                        if transaction.attributes.get("expirationDate") > expiration_date:
-                            eligible_tasks.append(task)
-                            break
-            else:
-                eligible_tasks.append(task)
+        eligible_tasks = self._get_eligible_tasks(service_api, user_id)
 
         if not eligible_tasks:
             response.with_message(TextualResponse(
