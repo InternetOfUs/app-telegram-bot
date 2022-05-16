@@ -236,8 +236,8 @@ class TestAskForHelpHandler(TestCase):
                 "anonymous": True
             }), user_object=WeNetUserProfile.empty("questioning_user"), answerer_user=answerer_user)
         self.assertIsInstance(response, TelegramRapidAnswerResponse)
-        self.assertEqual(3, len(response.options))
-        self.assertEqual(3, len(handler.cache._cache))
+        self.assertEqual(2, len(response.options))
+        self.assertEqual(2, len(handler.cache._cache))
         for key in handler.cache._cache:
             cached_item = handler.cache.get(key)
             self.assertEqual("transaction_id", cached_item["payload"]["transaction_id"])
@@ -267,8 +267,8 @@ class TestAskForHelpHandler(TestCase):
                 "anonymous": False
             }), user_object=WeNetUserProfile.empty("questioning_user"), answerer_user=answerer_user)
         self.assertIsInstance(response, TelegramRapidAnswerResponse)
-        self.assertEqual(3, len(response.options))
-        self.assertEqual(3, len(handler.cache._cache))
+        self.assertEqual(2, len(response.options))
+        self.assertEqual(2, len(handler.cache._cache))
         for key in handler.cache._cache:
             cached_item = handler.cache.get(key)
             self.assertEqual("transaction_id", cached_item["payload"]["transaction_id"])
@@ -726,18 +726,19 @@ class TestAskForHelpHandler(TestCase):
             "anonymous": False,
             "socialCloseness": handler.INTENT_SIMILAR_SOCIALLY,
             "positionOfAnswerer":  handler.INTENT_ASK_TO_NEARBY,
-            "maxUsers": 10
+            "maxUsers": 10,
+            "maxAnswers": 15,
+            "expirationDate": 1652711297
         }, transactions=[TaskTransaction("transaction_id", "task_id", handler.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), "answerer_user", {"answer": "answer", "anonymous": True})]))
         handler._get_service_api_interface_connector_from_context = Mock(return_value=service_api)
         handler.send_notification = Mock()
-
+        service_api.get_user_profile = Mock(return_value=WeNetUserProfile.empty("answerer_user"))
         response = handler.action_best_answer_publish(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_BEST_ANSWER, ""), ConversationContext(static_context={
             handler.CONTEXT_TASK_ID: "task_id",
             handler.CONTEXT_TRANSACTION_ID: "transaction_id",
             handler.CONTEXT_QUESTIONER_NAME: "questioner_name",
             handler.CONTEXT_QUESTION: "question",
-            handler.CONTEXT_BEST_ANSWER: "answer",
-            handler.CONTEXT_ANSWERER_NAME: "answerer_name"
+            handler.CONTEXT_BEST_ANSWER: "answer"
         })), handler.INTENT_NOT_PUBLISH)
         self.assertIsInstance(response, OutgoingEvent)
         self.assertEqual(1, len(response.messages))
