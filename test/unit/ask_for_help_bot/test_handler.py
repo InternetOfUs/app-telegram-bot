@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import List
 from unittest import TestCase
 from unittest.mock import Mock
 
@@ -17,6 +18,7 @@ from wenet.model.task.transaction import TaskTransaction
 from wenet.model.user.profile import WeNetUserProfile
 
 from common.button_payload import ButtonPayload
+from common.callback_messages import QuestionExpirationMessage
 from test.unit.ask_for_help_bot.mock import MockAskForHelpHandler
 
 
@@ -295,9 +297,75 @@ class TestAskForHelpHandler(TestCase):
             }), user_object=WeNetUserProfile.empty("questioning_user"))
         self.assertIsInstance(response, TextualResponse)
 
-    # TODO test it with all necessary options depending on the message attributes
     def test_handle_question_expiration(self):
-        pass
+        handler = MockAskForHelpHandler()
+        translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
+        translator_instance.translate = Mock(return_value="")
+        handler._translator.get_translation_instance = Mock(return_value=translator_instance)
+        handler._get_user_locale_from_incoming_event = Mock(return_value="en")
+        service_api = ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
+        service_api.get_task = Mock(return_value=Task("task_id", None, None, "task_type_id", "questioning_user", "app_id", None, TaskGoal("question", ""), attributes={
+            "domain": handler.INTENT_STUDYING_CAREER,
+            "domainInterest": handler.INTENT_DIFFERENT_DOMAIN,
+            "beliefsAndValues": handler.INTENT_DIFFERENT_BELIEF_VALUES,
+            "sensitive": False,
+            "anonymous": False,
+            "socialCloseness": handler.INTENT_SIMILAR_SOCIALLY,
+            "positionOfAnswerer": handler.INTENT_ASK_TO_NEARBY,
+            "maxUsers": 10,
+            "maxAnswers": 15,
+            "expirationDate": 1652884728
+        }, transactions=[
+            TaskTransaction(
+                transaction_id="transaction_id",
+                task_id="task_id_1",
+                label=handler.LABEL_ANSWER_TRANSACTION,
+                creation_ts=int(datetime.now().timestamp()),
+                last_update_ts=int(datetime.now().timestamp()),
+                actioneer_id="answerer_user",
+                attributes={"answer": "answer", "anonymous": True}
+            ),
+            TaskTransaction(
+                transaction_id="transaction_id",
+                task_id="task_id_2",
+                label=handler.LABEL_ANSWER_TRANSACTION,
+                creation_ts=int(datetime.now().timestamp()),
+                last_update_ts=int(datetime.now().timestamp()),
+                actioneer_id="answerer_user",
+                attributes={"answer": "answer", "anonymous": True}
+            )
+        ]))
+        handler._get_service_api_interface_connector_from_context = Mock(return_value=service_api)
+        handler.send_notification = Mock()
+        service_api.get_user_profile = Mock(return_value=WeNetUserProfile.empty("answerer_user"))
+        questioner_user = WeNetUserProfile.empty("answerer_user")
+        questioner_user.name.first = "name"
+
+        handler.cache._cache = {}
+
+        response = handler._handle_question_expiration(
+            message=QuestionExpirationMessage(
+                app_id="app_id",
+                receiver_id="receiver_id",
+                task_id="task_id",
+                question="question",
+                transaction_ids=["0", "1"],
+                user_id="user_id",
+                attributes={
+                    "taskId": "task_id",
+                    "userId": "user_id",
+                    "question": "test_question",
+                    "listOfTransactionIds": ["0", "1"],
+                    "answer": "test_answer",
+                    "anonymous": False
+                }),
+            service_api=service_api,
+            user_object=questioner_user
+        )
+        self.assertIsInstance(response, List)
+        self.assertEqual(1, len(response))
+        self.assertIsInstance(response[0], TelegramRapidAnswerResponse)
+        self.assertEqual(3, len(handler.cache._cache))
 
     def test_action_question(self):
         handler = MockAskForHelpHandler()
@@ -411,8 +479,8 @@ class TestAskForHelpHandler(TestCase):
         self.assertEqual(2, len(response.messages[0].options))
         self.assertTrue(handler.CONTEXT_CURRENT_STATE in response.context._static_context and response.context._static_context[handler.CONTEXT_CURRENT_STATE] == handler.STATE_QUESTION_6)
 
-    # TODO check if this test needs rework
     def test_action_question_final(self):
+        # TODO check if this test needs rework
         handler = MockAskForHelpHandler()
         translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
         translator_instance.translate = Mock(return_value="")
