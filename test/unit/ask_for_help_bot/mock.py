@@ -47,4 +47,3 @@ class MockAskForHelpHandler(AskForHelpHandler):
         self.publication_language = "en"
         self.max_answers = 15
         self.expiration_duration = 1
-        self.answerer_user = "answerer_user"

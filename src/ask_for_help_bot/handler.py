@@ -1672,11 +1672,14 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         return response
 
     def _get_eligible_tasks(self, service_api: ServiceApiInterface, user_id: str) -> List[Task]:
+        """
+        From all tasks, pick the ones that are:
+            - task owner is not answering
+            - task owner is not answering their own question
+            - tasks are within the expiration date
+            - task owner is requested to ask more questions
+        """
         expiration_date = int(datetime.now().timestamp())
-        # tasks = [
-        #     t for t in service_api.get_all_tasks(app_id=self.app_id, task_type_id=self.task_type_id, has_close_ts=False) if t.requester_id != user_id
-        #     and user_id not in set([transaction.actioneer_id for transaction in t.transactions if transaction.label == self.LABEL_ANSWER_TRANSACTION])
-        # ]
         eligible_tasks = []
         for task in service_api.get_all_tasks(app_id=self.app_id, task_type_id=self.task_type_id, has_close_ts=False):
             if task.requester_id != user_id and user_id not in set([transaction.actioneer_id for transaction in task.transactions if transaction.label == self.LABEL_ANSWER_TRANSACTION]):

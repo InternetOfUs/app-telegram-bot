@@ -350,7 +350,6 @@ class TestAskForHelpHandler(TestCase):
                 task_id="task_id",
                 question="question",
                 transaction_ids=["0", "1"],
-                user_id="user_id",
                 attributes={
                     "taskId": "task_id",
                     "userId": "user_id",
