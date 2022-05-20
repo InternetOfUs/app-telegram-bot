@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-05-13 17:24+0200\n"
+"PO-Revision-Date: 2022-05-20 16:52+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: es\n"
@@ -587,6 +587,13 @@ msgstr ":thumbsup: Like"
 
 msgid "like_answer_text"
 msgstr "¡Te gustó esta respuesta!"
+
+msgid "no_answer_text"
+msgstr ""
+"Desafortunadamente, nadie ha respondido en las últimas {expiration_duration} "
+"horas. \n"
+"\n"
+"Que te gustaría hacer?"
 
 #, fuzzy
 #~| msgid "more_answers_button"

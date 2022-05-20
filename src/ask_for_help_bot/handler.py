@@ -660,18 +660,37 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 .with_substitution("question", question_text)\
                 .translate()
 
-        message_string = f"{message_attributes} \n\n"
-        message_string += f"{self._translator.get_translation_instance(locale).with_text('collected_answers').translate()} \n\n"
+        message_string = f"{message_attributes} \n\n" # you asked blablabla or you asked a question with domain and blablabla
 
-        for i in range(len(message_answers)):
-            message_string += f"{i + 1}. {message_answers[i]} - {message_users[i]} \n"
-        message_string += f"\n{self._translator.get_translation_instance(locale).with_text('from_multiple_response').translate()}"
+        if len(message_answers) != 0:
+            message_string += f"{self._translator.get_translation_instance(locale).with_text('collected_answers').translate()} \n\n"
 
-        answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[len(transaction_ids) + 1])
-        button_ids = [str(uuid.uuid4()) for _ in range(len(transaction_ids) + 1)]
-        for i in range(len(transaction_ids)):
-            self.cache.cache(ButtonPayload({"task_id": message.task_id, "transaction_id": transaction_ids[i], "related_buttons": button_ids}, self.INTENT_BEST_ANSWER).to_repr(), key=button_ids[i])
-            answer.with_textual_option(f"#{1 + i}", self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[i]))
+            for i in range(len(message_answers)):
+                message_string += f"{i + 1}. {message_answers[i]} - {message_users[i]} \n"
+            message_string += f"\n{self._translator.get_translation_instance(locale).with_text('from_multiple_response').translate()}"
+
+            button_rows = []
+            button_count = len(transaction_ids) + 1
+            for i in range(int(button_count/2)):
+                button_count -= 2
+                button_rows.append(2)
+                if button_count == 1:
+                    button_rows.append(1)
+
+            answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=button_rows)
+            button_ids = [str(uuid.uuid4()) for _ in range(len(transaction_ids) + 1)]
+            for i in range(len(transaction_ids)):
+                self.cache.cache(ButtonPayload({"task_id": message.task_id, "transaction_id": transaction_ids[i], "related_buttons": button_ids}, self.INTENT_BEST_ANSWER).to_repr(), key=button_ids[i])
+                answer.with_textual_option(f"#{1 + i}", self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[i]))
+
+        else:
+            no_reply_string = self._translator.get_translation_instance(locale) \
+                .with_text("no_answer_text") \
+                .with_substitution("expiration_duration", str(int(self.expiration_duration/3600)))\
+                .translate()
+            message_string += no_reply_string
+            answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1])
+            button_ids = [str(uuid.uuid4())]
 
         button_data = {
             "task_id": message.attributes["taskId"],
@@ -680,7 +699,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         self.cache.cache(ButtonPayload(button_data, self.INTENT_ASK_MORE_ANSWERS).to_repr(), key=button_ids[len(transaction_ids)])
         button_ask_more_text = self._translator.get_translation_instance(locale).with_text("more_answers_button").translate()
         answer.with_textual_option(button_ask_more_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[len(transaction_ids)]))
-
         return [answer]
 
     def _get_incentive_badge_translated_message(self, message: IncentiveBadge, user_object: WeNetUserProfile) -> TextualResponse:
@@ -1554,7 +1572,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         task_id = context.get_static_state(self.CONTEXT_TASK_ID)
         questioner_name = context.get_static_state(self.CONTEXT_QUESTIONER_NAME)
         question_text = context.get_static_state(self.CONTEXT_QUESTION)
-        best_answer = context.get_static_state(self.CONTEXT_BEST_ANSWER)
+        best_answer_transaction = context.get_static_state(self.CONTEXT_TRANSACTION_ID)
 
         transaction_ids = []
         message_answers = []
@@ -1580,7 +1598,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
         for i in range(len(message_answers)):
             message_string += f"{i + 1}. {message_answers[i]} - {message_users[i]}"
-            if message_answers[i] == best_answer:
+            if transaction_ids[i] == best_answer_transaction:
                 message_string += " " + message_best_answer + "\n"
             else:
                 message_string += "\n"
