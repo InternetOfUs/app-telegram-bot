@@ -1689,7 +1689,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             response.with_context(context)
         return response
 
-    def _get_eligible_tasks(self, service_api: ServiceApiInterface, user_id: str) -> List[Task]:
+    def _get_eligible_tasks(self, service_api: ServiceApiInterface, user_id: str, expiration_date: int) -> List[Task]:
         """
         From all tasks, pick the ones that are:
             - task owner is not answering
@@ -1697,18 +1697,17 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             - tasks are within the expiration date
             - task owner is requested to ask more questions
         """
-        expiration_date = int(datetime.now().timestamp())
         eligible_tasks = []
         for task in service_api.get_all_tasks(app_id=self.app_id, task_type_id=self.task_type_id, has_close_ts=False):
             if task.requester_id != user_id and user_id not in set([transaction.actioneer_id for transaction in task.transactions if transaction.label == self.LABEL_ANSWER_TRANSACTION]):
                 if task.attributes.get("expirationDate") < expiration_date:
                     for transaction in task.transactions:
                         if transaction.label == self.LABEL_MORE_ANSWER_TRANSACTION:
-                            if transaction.attributes.get("expirationDate") > expiration_date:
+                            if task.attributes.get("expirationDate") > expiration_date:
                                 eligible_tasks.append(task)
                                 break
-                    else:
-                        eligible_tasks.append(task)
+                else:
+                    eligible_tasks.append(task)
         return eligible_tasks
 
     def action_answer(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
@@ -1720,7 +1719,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         else:
             raise Exception(f"Missing conversation context for event {incoming_event}")
         user_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
-        eligible_tasks = self._get_eligible_tasks(service_api, user_id)
+        expiration_date = int(datetime.now().timestamp())
+        eligible_tasks = self._get_eligible_tasks(service_api, user_id, expiration_date)
 
         if not eligible_tasks:
             response.with_message(TextualResponse(

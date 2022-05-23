@@ -878,10 +878,65 @@ class TestAskForHelpHandler(TestCase):
         self.assertIsInstance(response.messages[0], TextualResponse)
 
     def test_get_eligible_tasks(self):
-        # TODO mock list of tasks from get eligible tasks (service api)
-        # output should be the list of tasks
+        # TODO check if the logic is correct
+        handler = MockAskForHelpHandler()
+        service_api = ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
 
-        pass
+        service_api.get_all_tasks = Mock(return_value=[
+            Task("task_id-1", None, None, "task_type_id", "questioning_user-1", "app_id", None, TaskGoal("question", ""),
+                 attributes={
+                    "domain": handler.INTENT_STUDYING_CAREER,
+                    "domainInterest": handler.INTENT_DIFFERENT_DOMAIN,
+                    "beliefsAndValues": handler.INTENT_DIFFERENT_BELIEF_VALUES,
+                    "sensitive": False,
+                    "anonymous": False,
+                    "socialCloseness": handler.INTENT_SIMILAR_SOCIALLY,
+                    "positionOfAnswerer": handler.INTENT_ASK_TO_NEARBY,
+                    "maxUsers": 10,
+                    "maxAnswers": 15,
+                    "expirationDate": 1600000000
+                },
+            transactions=[
+                TaskTransaction(
+                    transaction_id="transaction_id-1",
+                    task_id="task_id-1",
+                    label=handler.LABEL_MORE_ANSWER_TRANSACTION,
+                    creation_ts=int(datetime.now().timestamp()),
+                    last_update_ts=int(datetime.now().timestamp()),
+                    actioneer_id="answerer_user-1",
+                    attributes={"answer": "answer", "anonymous": True}
+                )]
+            ),
+            Task("task_id-2", None, None, "task_type_id", "questioning_user-2", "app_id", None, TaskGoal("question", ""),
+                 attributes={
+                     "domain": handler.INTENT_STUDYING_CAREER,
+                     "domainInterest": handler.INTENT_DIFFERENT_DOMAIN,
+                     "beliefsAndValues": handler.INTENT_DIFFERENT_BELIEF_VALUES,
+                     "sensitive": False,
+                     "anonymous": False,
+                     "socialCloseness": handler.INTENT_SIMILAR_SOCIALLY,
+                     "positionOfAnswerer": handler.INTENT_ASK_TO_NEARBY,
+                     "maxUsers": 10,
+                     "maxAnswers": 15,
+                     "expirationDate": 1600000002
+                 },
+                 transactions=[
+                     TaskTransaction(
+                         transaction_id="transaction_id-2",
+                         task_id="task_id-2",
+                         label=handler.LABEL_MORE_ANSWER_TRANSACTION,
+                         creation_ts=int(datetime.now().timestamp()),
+                         last_update_ts=int(datetime.now().timestamp()),
+                         actioneer_id="answerer_user-2",
+                         attributes={"answer": "answer", "anonymous": True}
+                     )]
+                 )
+        ])
+        expiration_date = 1600000001
+        response = handler._get_eligible_tasks(service_api=service_api, user_id="user_id", expiration_date=expiration_date)
+
+        self.assertIsInstance(response, List)
+        self.assertEqual(1, len(response))
 
     def test_action_badges(self):
         handler = MockAskForHelpHandler()
