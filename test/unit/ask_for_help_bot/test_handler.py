@@ -851,6 +851,38 @@ class TestAskForHelpHandler(TestCase):
         self.assertEqual(1, len(response.messages))
         self.assertIsInstance(response.messages[0], TextualResponse)
 
+    def test_action_like_answer(self):
+        handler = MockAskForHelpHandler()
+        translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
+        translator_instance.translate = Mock(return_value="")
+        handler._translator.get_translation_instance = Mock(return_value=translator_instance)
+        handler._get_user_locale_from_incoming_event = Mock(return_value="en")
+        service_api = ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
+        service_api.create_task_transaction = Mock()
+        service_api.get_user_profile = Mock(return_value=WeNetUserProfile.empty("questioning_user"))
+        handler._get_service_api_interface_connector_from_context = Mock(return_value=service_api)
+
+        response = handler.action_like_answer(
+            IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_LIKE_ANSWER, ""), ConversationContext(static_context={
+                handler.CONTEXT_WENET_USER_ID: ""
+            })),
+            ButtonPayload({
+                "transaction_id": "transaction_id",
+                "task_id": "task_id",
+                "related_buttons": ["button_ids"]
+                },
+            handler.INTENT_LIKE_ANSWER)
+        )
+        self.assertIsInstance(response, OutgoingEvent)
+        self.assertEqual(1, len(response.messages))
+        self.assertIsInstance(response.messages[0], TextualResponse)
+
+    def test_get_eligible_tasks(self):
+        # TODO mock list of tasks from get eligible tasks (service api)
+        # output should be the list of tasks
+
+        pass
+
     def test_action_badges(self):
         handler = MockAskForHelpHandler()
         translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
