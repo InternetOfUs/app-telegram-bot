@@ -660,13 +660,31 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 .with_substitution("question", question_text)\
                 .translate()
 
-        message_string = f"{message_attributes} \n\n" # you asked blablabla or you asked a question with domain and blablabla
+        message_upper_part = f"{message_attributes} \n\n"
+        answer = []
 
         if len(message_answers) != 0:
-            message_string += f"{self._translator.get_translation_instance(locale).with_text('collected_answers').translate()} \n\n"
+            message_upper_part += f"{self._translator.get_translation_instance(locale).with_text('collected_answers').translate()} \n\n"
+            answer_upper_part = TelegramRapidAnswerResponse(TextualResponse(message_upper_part))
+            answer.append(answer_upper_part)
+
+            message_string = ""
+
+            # TODO cut message string by 5 message answers here
+            # [1, 2, 3, 4, 5, 6, 7, 8]
+            # get [1, 2, 3, 4, 5] create an answer TelegramRapidAnswerResponse(TextualResponse(message_string))
+            # add answer to answer list
+
+            n = 5
+            test_list = ["answer-1", "answer-2", "answer-3", "answer-4"]
+            output = [test_list[i:i + n] for i in range(0, len(test_list), n)]
+            print(output)
+            print(len(output))
 
             for i in range(len(message_answers)):
                 message_string += f"{i + 1}. {message_answers[i]} - {message_users[i]} \n"
+
+            # TODO add the final part starting here
             message_string += f"\n{self._translator.get_translation_instance(locale).with_text('from_multiple_response').translate()}"
 
             button_rows = []
@@ -677,19 +695,20 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 if button_count == 1:
                     button_rows.append(1)
 
-            answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=button_rows)
+            # TODO create answer with the remaining message string
+            answer_lower_part = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=button_rows)
             button_ids = [str(uuid.uuid4()) for _ in range(len(transaction_ids) + 1)]
             for i in range(len(transaction_ids)):
                 self.cache.cache(ButtonPayload({"task_id": message.task_id, "transaction_id": transaction_ids[i], "related_buttons": button_ids}, self.INTENT_BEST_ANSWER).to_repr(), key=button_ids[i])
-                answer.with_textual_option(f"#{1 + i}", self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[i]))
+                answer_lower_part.with_textual_option(f"#{1 + i}", self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[i]))
 
         else:
             no_reply_string = self._translator.get_translation_instance(locale) \
                 .with_text("no_answer_text") \
                 .with_substitution("expiration_duration", str(int(self.expiration_duration/3600)))\
                 .translate()
-            message_string += no_reply_string
-            answer = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1])
+            message_upper_part += no_reply_string
+            answer_lower_part = TelegramRapidAnswerResponse(TextualResponse(message_upper_part), row_displacement=[1])
             button_ids = [str(uuid.uuid4())]
 
         button_data = {
@@ -698,8 +717,10 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         }
         self.cache.cache(ButtonPayload(button_data, self.INTENT_ASK_MORE_ANSWERS).to_repr(), key=button_ids[len(transaction_ids)])
         button_ask_more_text = self._translator.get_translation_instance(locale).with_text("more_answers_button").translate()
-        answer.with_textual_option(button_ask_more_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[len(transaction_ids)]))
-        return [answer]
+        answer_lower_part.with_textual_option(button_ask_more_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[len(transaction_ids)]))
+        answer.append(answer_lower_part)
+
+        return answer
 
     def _get_incentive_badge_translated_message(self, message: IncentiveBadge, user_object: WeNetUserProfile) -> TextualResponse:
         if message.badge_class == os.getenv("FIRST_QUESTION_BADGE_ID"):
