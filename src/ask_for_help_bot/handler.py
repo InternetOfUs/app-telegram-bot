@@ -592,17 +592,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         message_users = []
         task = service_api.get_task(message.task_id)
         for transaction in task.transactions:
-            print(f"transaction_id: {transaction.id}")
-            print(f"transaction_id type is: {type(transaction.id)}")
-            print(f"question expiration message transaction id: {message.attributes.get('listOfTransactionIds')}")
-            print(f"question expiration message transaction id type is: {type(message.attributes.get('listOfTransactionIds')[0])}")
-            # TODO instead of using label, use listOfTransaction list, and use the order (id) of the list to check and order
-            if transaction.label == self.LABEL_ANSWER_TRANSACTION:
-            # # if transaction.id in message.attributes.get("listOfTransactionIds"):
-            # for t_id in message.attributes.get("listOfTransactionIds"):
-            #     print(t_id)
-            #     print(transaction.id)
-            #     if str(transaction.id) == str(t_id):
+            if transaction.id in message.attributes.get("listOfTransactionIds") and transaction.label == self.LABEL_ANSWER_TRANSACTION:
                 message_answers.append(self.parse_text_with_markdown(self._prepare_string_to_telegram(transaction.attributes["answer"])))
                 answerer_user = service_api.get_user_profile(transaction.actioneer_id)
                 message_users.append(answerer_user.name.first if answerer_user.name.first and not message.attributes.get("anonymous", False) else self._translator.get_translation_instance(locale).with_text("anonymous_user").translate())
