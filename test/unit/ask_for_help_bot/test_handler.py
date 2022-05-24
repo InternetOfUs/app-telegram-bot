@@ -364,7 +364,7 @@ class TestAskForHelpHandler(TestCase):
         self.assertIsInstance(response, List)
         self.assertEqual(1, len(response))
         self.assertIsInstance(response[0], TelegramRapidAnswerResponse)
-        self.assertEqual(3, len(handler.cache._cache))
+        self.assertEqual(1, len(handler.cache._cache))
 
     def test_action_question(self):
         handler = MockAskForHelpHandler()
