@@ -116,7 +116,9 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     INTENT_BEST_ANSWER = "best_answer"
     INTENT_PUBLISH = "publish"
     INTENT_NOT_PUBLISH = "not_publish"
-    # TODO define here 3 intents for publishing answer
+    INTENT_AGREE_PUBLISH_ANONYMOUSLY = "agree_publish_anonymously"
+    INTENT_AGREE_PUBLISH_NAME = "agree_publish_name"
+    INTENT_NOT_AGREE_PUBLISH = "not_agree_publish"
     INTENT_NOT_AT_ALL_HELPFUL = "notAtAllHelpful"
     INTENT_SLIGHTLY_HELPFUL = "slightlyHelpful"
     INTENT_SOMEWHAT_HELPFUL = "somewhatHelpful"
@@ -276,9 +278,10 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING_ANONYMOUSLY)
             )
         )
-        for publishing_intent in []:  # TODo this should be a list containing the intents of the new buttons
+        publish_intents = [self.INTENT_AGREE_PUBLISH_ANONYMOUSLY, self.INTENT_AGREE_PUBLISH_NAME, self.INTENT_NOT_AGREE_PUBLISH]
+        for publishing_intent in publish_intents:
             self.intent_manager.with_fulfiller(
-                IntentFulfillerV3(publishing_intent, self.fftyftuyfyufuyfuy).with_rule(
+                IntentFulfillerV3(publishing_intent, self.action_agree_to_publish).with_rule(
                     intent=publishing_intent,
                     static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_PUBLISHING_ANSWER_TO_CHANNEL)
                 )
@@ -1269,7 +1272,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_PUBLISHING_ANSWER_TO_CHANNEL)
         if self.channel_id:  # ask to publish only if there is the channel
-            pass  # TODO here we have to add the additional message with the buttons (every button wil have an intent)
+            pass  # TODO here we have to add the additional message with the buttons (every button will have an intent)
         else:
             if incoming_event.context is not None:
                 service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
@@ -1316,7 +1319,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 context.with_static_state(self.CONTEXT_ANSWER_TO_QUESTION, answer)
                 context.with_static_state(self.CONTEXT_ANONYMOUS_ANSWER, False)
                 context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_PUBLISHING_ANSWER_TO_CHANNEL)
-                pass  # TODO here we have to add the additional message with the buttons (every button wil have an intent)
+                pass  # TODO here we have to add the additional message with the buttons (every button will have an intent)
             else:
                 if incoming_event.context is not None:
                     service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
@@ -1347,7 +1350,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             response.with_message(TextualResponse(error_message))
         return response
 
-    def fftyftuyfyufuyfuy(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:  # TODO here we go after pressing a button using the rules above and the intents of the buttons
+    def action_agree_to_publish(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:  # TODO here we go after pressing a button using the rules above and the intents of the buttons
         if incoming_event.context is not None:
             service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
         else:
@@ -1362,7 +1365,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         anonymous = context.get_static_state(self.CONTEXT_ANONYMOUS_ANSWER)
         actioneer_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
         try:
-            transaction = TaskTransaction(None, question_id, self.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), actioneer_id, {"answer": answer, "anonymous": anonymous, "publish": True, "publishAnonymously": False}, [])  # TODO add values to new attributes based on the intent
+            transaction = TaskTransaction(None, question_id, self.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), actioneer_id, {"answer": answer, "anonymous": anonymous, "publish": True if intent == self.INTENT_AGREE_PUBLISH_NAME or intent == self.INTENT_AGREE_PUBLISH_ANONYMOUSLY else False, "publishAnonymously": True if intent == self.INTENT_AGREE_PUBLISH_ANONYMOUSLY else False}, [])  # TODO add values to new attributes based on the intent
             service_api.create_task_transaction(transaction)
             logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
             message = self._translator.get_translation_instance(user_locale).with_text("create_A_message").translate()  # TODO create the message
@@ -1625,7 +1628,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             if transaction.label == self.LABEL_ANSWER_TRANSACTION:  # TODO remove the questions that we are not allowed to publish
                 message_answers.append(self.parse_text_with_markdown(self._prepare_string_to_telegram(transaction.attributes["answer"])))
                 answerer_user = service_api.get_user_profile(transaction.actioneer_id)
-                message_users.append(answerer_user.name.first if answerer_user.name.first else self._translator.get_translation_instance(self.publication_language).with_text("anonymous_user").translate())  # TODO anonymize the users that want to be anonymized
+                message_users.append(answerer_user.name.first if answerer_user.name.first else self._translator.get_translation_instance(self.publication_language).with_text("anonymous_user").translate())  # TODO anonymize the users that want to be anonymized looking at to publishAnonymously
                 transaction_ids.append(transaction.id)
         message_attributes = self._translator.get_translation_instance(self.publication_language) \
             .with_text("asked_message_without_attributes_user") \
