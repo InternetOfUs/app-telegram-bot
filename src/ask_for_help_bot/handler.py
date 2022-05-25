@@ -1368,7 +1368,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             transaction = TaskTransaction(None, question_id, self.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), actioneer_id, {"answer": answer, "anonymous": anonymous, "publish": True if intent == self.INTENT_AGREE_PUBLISH_NAME or intent == self.INTENT_AGREE_PUBLISH_ANONYMOUSLY else False, "publishAnonymously": True if intent == self.INTENT_AGREE_PUBLISH_ANONYMOUSLY else False}, [])  # TODO add values to new attributes based on the intent
             service_api.create_task_transaction(transaction)
             logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
-            message = self._translator.get_translation_instance(user_locale).with_text("create_A_message").translate()  # TODO create the message
+            message = self._translator.get_translation_instance(user_locale).with_text("create_A_message").translate()  # TODO create the message for create_A_message
             response.with_message(TextualResponse(message))
         except CreationError as e:
             response.with_message(TextualResponse(self._translator.get_translation_instance(user_locale).with_text("error_task_creation").translate()))
