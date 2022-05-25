@@ -60,6 +60,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     CONTEXT_BELIEF_VALUES_SIMILARITY = "belief_values_similarity"
     CONTEXT_SENSITIVE_QUESTION = "sensitive_question"
     CONTEXT_ANONYMOUS_QUESTION = "anonymous_question"
+    CONTEXT_ANONYMOUS_ANSWER = "anonymous_answer"
     CONTEXT_SOCIAL_CLOSENESS = "social_closeness"
     CONTEXT_ANSWER_TO_QUESTION = "answer_to_question"
     CONTEXT_QUESTION_TO_ANSWER = "question_to_answer"
@@ -273,6 +274,13 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 intent=self.INTENT_ANSWER_NOT_ANONYMOUSLY,
                 static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING_ANONYMOUSLY)
             )
+        )
+        for publishing_intent in []:  # TODo this should be a list containing the intents of the new buttons
+            self.intent_manager.with_fulfiller(
+                IntentFulfillerV3(publishing_intent, self.fftyftuyfyufuyfuy).with_rule(
+                    intent=publishing_intent,
+                    static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_PUBLISHING_ANSWER_TO_CHANNEL)
+                )
         )
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_QUESTIONS, self.action_answer).with_rule(
@@ -1248,6 +1256,49 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         """
         QuestionToAnswerMessage flow, collect if the user's answer should be anonymous and thank her
         """
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+        context = incoming_event.context
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        if intent == self.INTENT_ANSWER_ANONYMOUSLY:
+            message = self._translator.get_translation_instance(user_locale).with_text("answered_message_anonymously").translate()
+            context.with_static_state(self.CONTEXT_ANONYMOUS_ANSWER, True)
+        else:
+            message = self._translator.get_translation_instance(user_locale).with_text("answered_message").translate()
+            context.with_static_state(self.CONTEXT_ANONYMOUS_ANSWER, False)
+
+        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_PUBLISHING_ANSWER_TO_CHANNEL)
+        if self.channel_id:  # ask to publish only if there is the channel
+            pass  # TODO here we have to add the additional message with the buttons (every button wil have an intent)
+
+        response.with_message(TextualResponse(message))
+        response.with_context(context)
+        return response
+
+    def action_answer_question_2(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+        """
+        QuestionToAnswerMessage flow, collect the user's answer and thank her
+        """
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+        context = incoming_event.context
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        if isinstance(incoming_event.incoming_message, IncomingTextMessage):
+            answer = self._prepare_string_to_wenet(incoming_event.incoming_message.text)
+            context.with_static_state(self.CONTEXT_ANSWER_TO_QUESTION, answer)
+            context.with_static_state(self.CONTEXT_ANONYMOUS_ANSWER, False)
+            message = self._translator.get_translation_instance(user_locale).with_text("answered_message").translate()
+            response.with_message(TextualResponse(message))
+
+            context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_PUBLISHING_ANSWER_TO_CHANNEL)
+            if self.channel_id:  # ask to publish only if there is the channel
+                pass  # TODO here we have to add the additional message with the buttons (every button wil have an intent)
+
+            response.with_context(context)
+        else:
+            error_message = self._translator.get_translation_instance(user_locale).with_text("answerer_is_not_text").translate()
+            response.with_message(TextualResponse(error_message))
+        return response
+
+    def fftyftuyfyufuyfuy(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:  # TODO here we go after pressing a button using the rules above and the intents of the buttons
         if incoming_event.context is not None:
             service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
         else:
@@ -1256,21 +1307,16 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         context = incoming_event.context
 
-        if not context.has_static_state(self.CONTEXT_QUESTION_TO_ANSWER) or not context.has_static_state(self.CONTEXT_ANSWER_TO_QUESTION):
-            logger.error("Illegal state, expected the question and the answer in the context, but they do not exist")
-            raise ValueError("Illegal state, expected the question and the answer in the context, but they do not exist")
         response = OutgoingEvent(social_details=incoming_event.social_details)
         question_id = context.get_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
         answer = context.get_static_state(self.CONTEXT_ANSWER_TO_QUESTION)
+        anonymous = context.get_static_state(self.CONTEXT_ANONYMOUS_ANSWER)
         actioneer_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
         try:
-            transaction = TaskTransaction(None, question_id, self.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), actioneer_id, {"answer": answer, "anonymous": True if intent == self.INTENT_ANSWER_ANONYMOUSLY else False}, [])
+            transaction = TaskTransaction(None, question_id, self.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), actioneer_id, {"answer": answer, "anonymous": anonymous, "publish": True, "publishAnonymously": False}, [])  # TODO add values to new attributes based on the intent
             service_api.create_task_transaction(transaction)
             logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
-            if intent == self.INTENT_ANSWER_ANONYMOUSLY:
-                message = self._translator.get_translation_instance(user_locale).with_text("answered_message_anonymously").translate()
-            else:
-                message = self._translator.get_translation_instance(user_locale).with_text("answered_message").translate()
+            message = self._translator.get_translation_instance(user_locale).with_text("create_A_message").translate()  # TODO create the message
             response.with_message(TextualResponse(message))
         except CreationError as e:
             response.with_message(TextualResponse(self._translator.get_translation_instance(user_locale).with_text("error_task_creation").translate()))
@@ -1282,48 +1328,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             context.delete_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
             context.delete_static_state(self.CONTEXT_ANSWER_TO_QUESTION)
             context.delete_static_state(self.CONTEXT_CURRENT_STATE)
+            context.delete_static_state(self.CONTEXT_ANONYMOUS_ANSWER)
             response.with_context(context)
-        return response
-
-    def action_answer_question_2(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
-        """
-        QuestionToAnswerMessage flow, collect the user's answer and thank her
-        """
-        if incoming_event.context is not None:
-            service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
-        else:
-            raise Exception(f"Missing conversation context for event {incoming_event}")
-
-        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
-        context = incoming_event.context
-
-        if not context.has_static_state(self.CONTEXT_QUESTION_TO_ANSWER):
-            logger.error("Illegal state, expected the question ID in the context, but it does not exist")
-            raise ValueError("Illegal state, expected the question ID in the context, but it does not exist")
-        response = OutgoingEvent(social_details=incoming_event.social_details)
-        if isinstance(incoming_event.incoming_message, IncomingTextMessage):
-            question_id = context.get_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
-            answer = self._prepare_string_to_wenet(incoming_event.incoming_message.text)
-            actioneer_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
-            try:
-                transaction = TaskTransaction(None, question_id, self.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), actioneer_id, {"answer": answer, "anonymous": False}, [])
-                service_api.create_task_transaction(transaction)
-                logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
-                message = self._translator.get_translation_instance(user_locale).with_text("answered_message").translate()
-                response.with_message(TextualResponse(message))
-            except CreationError as e:
-                response.with_message(TextualResponse(self._translator.get_translation_instance(user_locale).with_text("error_task_creation").translate()))
-                logger.error(
-                    "Error in the creation of the transaction for answering the task [%s]. The service API responded with code %d and message %s"
-                    % (question_id, e.http_status_code, json.dumps(e.server_response))
-                )
-            finally:
-                context.delete_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
-                context.delete_static_state(self.CONTEXT_CURRENT_STATE)
-                response.with_context(context)
-        else:
-            error_message = self._translator.get_translation_instance(user_locale).with_text("answerer_is_not_text").translate()
-            response.with_message(TextualResponse(error_message))
         return response
 
     def action_not_answer_question(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
@@ -1519,48 +1525,11 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
     def action_best_answer_0(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
-        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         context = incoming_event.context
-        if context is not None:
-            service_api = self._get_service_api_interface_connector_from_context(context)
-        else:
-            raise Exception(f"Missing conversation context for event {incoming_event}")
-
         context.with_static_state(self.CONTEXT_TASK_ID, button_payload.payload["task_id"])
         context.with_static_state(self.CONTEXT_TRANSACTION_ID, button_payload.payload["transaction_id"])
-        task = service_api.get_task(button_payload.payload["task_id"])
-        question = self.parse_text_with_markdown(self._prepare_string_to_telegram(task.goal.name))
-        anonymous = task.attributes.get("anonymous", False)
-        questioning_user = None
-        if not anonymous:
-            questioning_user = service_api.get_user_profile(str(task.requester_id))
-        best_answer = ""
-        anonymous_answer = False
-        answerer_user = None
-        for transaction in task.transactions:
-            if transaction.id == button_payload.payload["transaction_id"]:
-                best_answer = self.parse_text_with_markdown(self._prepare_string_to_telegram(transaction.attributes.get("answer")))
-                anonymous_answer = transaction.attributes.get("anonymous", False)
-                if not answerer_user:
-                    answerer_user = service_api.get_user_profile(transaction.actioneer_id)
-                break
-
-        if self.channel_id:  # ask to publish only if there is the channel
-            context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_PUBLISH)
-            context.with_static_state(self.CONTEXT_QUESTIONER_NAME, questioning_user.name.first if not anonymous and questioning_user and questioning_user.name.first else self._translator.get_translation_instance(self.publication_language).with_text("anonymous_user").translate())
-            context.with_static_state(self.CONTEXT_QUESTION, question)
-            context.with_static_state(self.CONTEXT_BEST_ANSWER, best_answer)
-            context.with_static_state(self.CONTEXT_ANSWERER_NAME, answerer_user.name.first if not anonymous_answer and answerer_user and answerer_user.name.first else self._translator.get_translation_instance(self.publication_language).with_text("anonymous_user").translate())
-            message = self._translator.get_translation_instance(user_locale).with_text("publish_question_to_channel").translate()
-            button_1_text = self._translator.get_translation_instance(user_locale).with_text("publish").translate()
-            button_2_text = self._translator.get_translation_instance(user_locale).with_text("not_publish").translate()
-            message = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2])
-            message.with_textual_option(button_1_text, self.INTENT_PUBLISH)
-            message.with_textual_option(button_2_text, self.INTENT_NOT_PUBLISH)
-        else:
-            context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_0)
-            message = self._get_best_answer_reason_message(incoming_event, button_payload.payload["task_id"])
-
+        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_0)
+        message = self._get_best_answer_reason_message(incoming_event, button_payload.payload["task_id"])
         response.with_message(message)
         response.with_context(context)
         return response
@@ -1621,7 +1590,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             .with_text('chosen_answer_by_user')\
             .with_substitution("user", questioner_name).translate()
 
-        for i in range(len(message_answers)):
+        for i in range(len(message_answers)):  # TODO also here we should group answers by 5 (and also remove the questions that we are not allowed to publish, and anonymize the users that want to be anonymized)
             message_string += f"{i + 1}. {message_answers[i]} - {message_users[i]}"
             if transaction_ids[i] == best_answer_transaction:
                 message_string += " " + message_best_answer + "\n"
@@ -1636,9 +1605,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 logger.exception(f"An exception [{type(e)}] occurs sending the notification [{notification.to_repr()}]", exc_info=e)
             logger.info(f"Notification sent to the telegram channel {self.channel_id}")
 
-        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_0)
-        task_id = context.get_static_state(self.CONTEXT_TASK_ID)
-        message = self._get_best_answer_reason_message(incoming_event, task_id)
+        message = TextualResponse("message")  # TODO make a message after clicking button for publishing or not the question
         response.with_message(message)
         response.with_context(context)
         return response
@@ -1712,6 +1679,35 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             context.delete_static_state(self.CONTEXT_ANSWERER_NAME)
             context.delete_static_state(self.CONTEXT_CURRENT_STATE)
             response.with_context(context)
+
+        if self.channel_id:  # ask to publish only if there is the channel
+            task = service_api.get_task(task_id)
+            question = self.parse_text_with_markdown(self._prepare_string_to_telegram(task.goal.name))
+            anonymous = task.attributes.get("anonymous", False)
+            questioning_user = None
+            if not anonymous:
+                questioning_user = service_api.get_user_profile(str(task.requester_id))
+            best_answer = ""
+            anonymous_answer = False
+            answerer_user = None
+            for transaction in task.transactions:
+                if transaction.id == transaction_id:
+                    best_answer = self.parse_text_with_markdown(self._prepare_string_to_telegram(transaction.attributes.get("answer")))
+                    anonymous_answer = transaction.attributes.get("anonymous", False)
+                    if not answerer_user:
+                        answerer_user = service_api.get_user_profile(transaction.actioneer_id)
+                    break
+            context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_PUBLISH)
+            context.with_static_state(self.CONTEXT_QUESTIONER_NAME, questioning_user.name.first if not anonymous and questioning_user and questioning_user.name.first else self._translator.get_translation_instance(self.publication_language).with_text("anonymous_user").translate())
+            context.with_static_state(self.CONTEXT_QUESTION, question)
+            context.with_static_state(self.CONTEXT_BEST_ANSWER, best_answer)
+            context.with_static_state(self.CONTEXT_ANSWERER_NAME, answerer_user.name.first if not anonymous_answer and answerer_user and answerer_user.name.first else self._translator.get_translation_instance(self.publication_language).with_text("anonymous_user").translate())
+            message = self._translator.get_translation_instance(user_locale).with_text("publish_question_to_channel").translate()
+            button_1_text = self._translator.get_translation_instance(user_locale).with_text("publish").translate()
+            button_2_text = self._translator.get_translation_instance(user_locale).with_text("not_publish").translate()
+            message = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2])
+            message.with_textual_option(button_1_text, self.INTENT_PUBLISH)
+            message.with_textual_option(button_2_text, self.INTENT_NOT_PUBLISH)
         return response
 
     def _get_eligible_tasks(self, service_api: ServiceApiInterface, user_id: str, current_date: int) -> List[Task]:
