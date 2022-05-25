@@ -1573,10 +1573,10 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         message_users = []
         task = service_api.get_task(task_id)
         for transaction in task.transactions:
-            if transaction.label == self.LABEL_ANSWER_TRANSACTION:
+            if transaction.label == self.LABEL_ANSWER_TRANSACTION:  # TODO remove the questions that we are not allowed to publish
                 message_answers.append(self.parse_text_with_markdown(self._prepare_string_to_telegram(transaction.attributes["answer"])))
                 answerer_user = service_api.get_user_profile(transaction.actioneer_id)
-                message_users.append(answerer_user.name.first if answerer_user.name.first else self._translator.get_translation_instance(self.publication_language).with_text("anonymous_user").translate())
+                message_users.append(answerer_user.name.first if answerer_user.name.first else self._translator.get_translation_instance(self.publication_language).with_text("anonymous_user").translate())  # TODO anonymize the users that want to be anonymized
                 transaction_ids.append(transaction.id)
         message_attributes = self._translator.get_translation_instance(self.publication_language) \
             .with_text("asked_message_without_attributes_user") \
@@ -1590,7 +1590,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             .with_text('chosen_answer_by_user')\
             .with_substitution("user", questioner_name).translate()
 
-        for i in range(len(message_answers)):  # TODO also here we should group answers by 5 (and also remove the questions that we are not allowed to publish, and anonymize the users that want to be anonymized)
+        for i in range(len(message_answers)):  # TODO also here we should group answers by 5
             message_string += f"{i + 1}. {message_answers[i]} - {message_users[i]}"
             if transaction_ids[i] == best_answer_transaction:
                 message_string += " " + message_best_answer + "\n"
@@ -1678,7 +1678,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             context.delete_static_state(self.CONTEXT_BEST_ANSWER)
             context.delete_static_state(self.CONTEXT_ANSWERER_NAME)
             context.delete_static_state(self.CONTEXT_CURRENT_STATE)
-            response.with_context(context)
 
         if self.channel_id:  # ask to publish only if there is the channel
             task = service_api.get_task(task_id)
@@ -1687,27 +1686,19 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             questioning_user = None
             if not anonymous:
                 questioning_user = service_api.get_user_profile(str(task.requester_id))
-            best_answer = ""
-            anonymous_answer = False
-            answerer_user = None
-            for transaction in task.transactions:
-                if transaction.id == transaction_id:
-                    best_answer = self.parse_text_with_markdown(self._prepare_string_to_telegram(transaction.attributes.get("answer")))
-                    anonymous_answer = transaction.attributes.get("anonymous", False)
-                    if not answerer_user:
-                        answerer_user = service_api.get_user_profile(transaction.actioneer_id)
-                    break
             context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_PUBLISH)
             context.with_static_state(self.CONTEXT_QUESTIONER_NAME, questioning_user.name.first if not anonymous and questioning_user and questioning_user.name.first else self._translator.get_translation_instance(self.publication_language).with_text("anonymous_user").translate())
             context.with_static_state(self.CONTEXT_QUESTION, question)
-            context.with_static_state(self.CONTEXT_BEST_ANSWER, best_answer)
-            context.with_static_state(self.CONTEXT_ANSWERER_NAME, answerer_user.name.first if not anonymous_answer and answerer_user and answerer_user.name.first else self._translator.get_translation_instance(self.publication_language).with_text("anonymous_user").translate())
+            context.with_static_state(self.CONTEXT_TRANSACTION_ID, transaction_id)
             message = self._translator.get_translation_instance(user_locale).with_text("publish_question_to_channel").translate()
             button_1_text = self._translator.get_translation_instance(user_locale).with_text("publish").translate()
             button_2_text = self._translator.get_translation_instance(user_locale).with_text("not_publish").translate()
             message = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2])
             message.with_textual_option(button_1_text, self.INTENT_PUBLISH)
             message.with_textual_option(button_2_text, self.INTENT_NOT_PUBLISH)
+            response.with_message(message)
+
+        response.with_context(context)
         return response
 
     def _get_eligible_tasks(self, service_api: ServiceApiInterface, user_id: str, current_date: int) -> List[Task]:
