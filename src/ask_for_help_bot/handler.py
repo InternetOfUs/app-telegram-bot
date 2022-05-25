@@ -670,21 +670,26 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
             message_string = ""
 
-            # TODO cut message string by 5 message answers here
-            # [1, 2, 3, 4, 5, 6, 7, 8]
-            # get [1, 2, 3, 4, 5] create an answer TelegramRapidAnswerResponse(TextualResponse(message_string))
-            # add answer to answer list
-
-            n = 5
-            test_list = ["answer-1", "answer-2", "answer-3", "answer-4"]
-            output = [test_list[i:i + n] for i in range(0, len(test_list), n)]
-            print(output)
-            print(len(output))
-
+            n = 5  # group of answers to show on one batch of result
+            # test_answers_list = ["answer-1", "answer-2", "answer-3", "answer-4", "answer-5", "answer-6", "answer-7", "answer-8", "answer-9", "answer-10", "answer-11"]
+            # test_user_list = ["user-1", "user-2", "user-3", "user-4", "user-5", "user-6", "user-7", "user-8", "user-9", "user-10", "user-11"]
+            test_output = []
             for i in range(len(message_answers)):
-                message_string += f"{i + 1}. {message_answers[i]} - {message_users[i]} \n"
+                answer_string = f"{i + 1}. {message_answers[i]} - {message_users[i]} \n"
+                test_output.append(answer_string)
+            grouped_answers = [test_output[i:i + n] for i in range(0, len(test_output), n)]
 
-            # TODO add the final part starting here
+            for i in range(len(grouped_answers)):
+                message_string_middle = ""
+                if i != len(grouped_answers) - 1:
+                    for j in range(len(grouped_answers[i])):
+                        message_string_middle += grouped_answers[i][j]
+                    answer_middle_part = TelegramRapidAnswerResponse(TextualResponse(message_string_middle))
+                    answer.append(answer_middle_part)
+                else:
+                    for j in range(len(grouped_answers[i])):
+                        message_string += grouped_answers[i][j]
+
             message_string += f"\n{self._translator.get_translation_instance(locale).with_text('from_multiple_response').translate()}"
 
             button_rows = []
@@ -695,7 +700,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 if button_count == 1:
                     button_rows.append(1)
 
-            # TODO create answer with the remaining message string
             answer_lower_part = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=button_rows)
             button_ids = [str(uuid.uuid4()) for _ in range(len(transaction_ids) + 1)]
             for i in range(len(transaction_ids)):
