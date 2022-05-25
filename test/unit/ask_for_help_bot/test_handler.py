@@ -878,7 +878,6 @@ class TestAskForHelpHandler(TestCase):
         self.assertIsInstance(response.messages[0], TextualResponse)
 
     def test_get_eligible_tasks(self):
-        # TODO check if the logic is correct
         handler = MockAskForHelpHandler()
         service_api = ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
 
@@ -904,7 +903,7 @@ class TestAskForHelpHandler(TestCase):
                     creation_ts=int(datetime.now().timestamp()),
                     last_update_ts=int(datetime.now().timestamp()),
                     actioneer_id="answerer_user-1",
-                    attributes={"answer": "answer", "anonymous": True}
+                    attributes={"expirationDate": 1600000000}
                 )]
             ),
             Task("task_id-2", None, None, "task_type_id", "questioning_user-2", "app_id", None, TaskGoal("question", ""),
@@ -918,7 +917,7 @@ class TestAskForHelpHandler(TestCase):
                      "positionOfAnswerer": handler.INTENT_ASK_TO_NEARBY,
                      "maxUsers": 10,
                      "maxAnswers": 15,
-                     "expirationDate": 1600000002
+                     "expirationDate": 1600000000
                  },
                  transactions=[
                      TaskTransaction(
@@ -928,12 +927,12 @@ class TestAskForHelpHandler(TestCase):
                          creation_ts=int(datetime.now().timestamp()),
                          last_update_ts=int(datetime.now().timestamp()),
                          actioneer_id="answerer_user-2",
-                         attributes={"answer": "answer", "anonymous": True}
+                         attributes={"expirationDate": 1600000002}
                      )]
                  )
         ])
-        expiration_date = 1600000001
-        response = handler._get_eligible_tasks(service_api=service_api, user_id="user_id", expiration_date=expiration_date)
+        current_date = 1600000001
+        response = handler._get_eligible_tasks(service_api=service_api, user_id="user_id", current_date=current_date)
 
         self.assertIsInstance(response, List)
         self.assertEqual(1, len(response))

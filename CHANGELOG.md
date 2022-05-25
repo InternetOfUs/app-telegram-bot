@@ -4,6 +4,7 @@
 
 ### 3.0.0
 - Added support for task expiration
+- Added Like button for the preferred answer
 
 ## Version 2.*
 

@@ -591,12 +591,14 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         message_answers = []
         message_users = []
         task = service_api.get_task(message.task_id)
-        for transaction in task.transactions:
-            if transaction.id in message.attributes.get("listOfTransactionIds") and transaction.label == self.LABEL_ANSWER_TRANSACTION:
-                message_answers.append(self.parse_text_with_markdown(self._prepare_string_to_telegram(transaction.attributes["answer"])))
-                answerer_user = service_api.get_user_profile(transaction.actioneer_id)
-                message_users.append(answerer_user.name.first if answerer_user.name.first and not message.attributes.get("anonymous", False) else self._translator.get_translation_instance(locale).with_text("anonymous_user").translate())
-                transaction_ids.append(transaction.id)
+        for i in message.attributes.get("listOfTransactionIds"):
+            for transaction in task.transactions:
+                if transaction.id == i and transaction.label == self.LABEL_ANSWER_TRANSACTION:
+                    message_answers.append(self.parse_text_with_markdown(self._prepare_string_to_telegram(transaction.attributes["answer"])))
+                    answerer_user = service_api.get_user_profile(transaction.actioneer_id)
+                    message_users.append(answerer_user.name.first if answerer_user.name.first and not message.attributes.get("anonymous", False) else self._translator.get_translation_instance(locale).with_text("anonymous_user").translate())
+                    transaction_ids.append(transaction.id)
+                    break
 
         domain = task.attributes["domain"]
         domain_interest = task.attributes["domainInterest"]
@@ -671,8 +673,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             message_string = ""
 
             n = 5  # group of answers to show on one batch of result
-            # test_answers_list = ["answer-1", "answer-2", "answer-3", "answer-4", "answer-5", "answer-6", "answer-7", "answer-8", "answer-9", "answer-10", "answer-11"]
-            # test_user_list = ["user-1", "user-2", "user-3", "user-4", "user-5", "user-6", "user-7", "user-8", "user-9", "user-10", "user-11"]
             test_output = []
             for i in range(len(message_answers)):
                 answer_string = f"{i + 1}. {message_answers[i]} - {message_users[i]} \n"
@@ -1714,7 +1714,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             response.with_context(context)
         return response
 
-    def _get_eligible_tasks(self, service_api: ServiceApiInterface, user_id: str, expiration_date: int) -> List[Task]:
+    def _get_eligible_tasks(self, service_api: ServiceApiInterface, user_id: str, current_date: int) -> List[Task]:
         """
         From all tasks, pick the ones that are:
             - task owner is not answering
@@ -1725,10 +1725,10 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         eligible_tasks = []
         for task in service_api.get_all_tasks(app_id=self.app_id, task_type_id=self.task_type_id, has_close_ts=False):
             if task.requester_id != user_id and user_id not in set([transaction.actioneer_id for transaction in task.transactions if transaction.label == self.LABEL_ANSWER_TRANSACTION]):
-                if task.attributes.get("expirationDate") < expiration_date:
+                if task.attributes.get("expirationDate") < current_date:
                     for transaction in task.transactions:
                         if transaction.label == self.LABEL_MORE_ANSWER_TRANSACTION:
-                            if task.attributes.get("expirationDate") > expiration_date:
+                            if transaction.attributes.get("expirationDate") > current_date:
                                 eligible_tasks.append(task)
                                 break
                 else:
@@ -1744,8 +1744,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         else:
             raise Exception(f"Missing conversation context for event {incoming_event}")
         user_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
-        expiration_date = int(datetime.now().timestamp())
-        eligible_tasks = self._get_eligible_tasks(service_api, user_id, expiration_date)
+        current_date = int(datetime.now().timestamp())
+        eligible_tasks = self._get_eligible_tasks(service_api, user_id, current_date)
 
         if not eligible_tasks:
             response.with_message(TextualResponse(
