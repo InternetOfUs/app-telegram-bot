@@ -446,3 +446,21 @@ msgstr ""
 
 msgid "no_answer_text"
 msgstr ""
+
+msgid "ok_to_publish_message"
+msgstr ""
+
+msgid "button_yes_anonymously_publish_text"
+msgstr ""
+
+msgid "button_yes_name_publish_text"
+msgstr ""
+
+msgid "button_no_publish_text"
+msgstr ""
+
+msgid "thank_you_message"
+msgstr ""
+
+msgid "no_collected_answers"
+msgstr ""
