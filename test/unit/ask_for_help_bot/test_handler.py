@@ -646,7 +646,7 @@ class TestAskForHelpHandler(TestCase):
             handler.CONTEXT_WENET_USER_ID: "user_id"
         })), handler.INTENT_ANSWER_ANONYMOUSLY)
         self.assertIsInstance(response, OutgoingEvent)
-        self.assertEqual(1, len(response.messages))
+        self.assertEqual(2, len(response.messages))
         self.assertIsInstance(response.messages[0], TextualResponse)
 
     def test_action_answer_question_2(self):
@@ -664,7 +664,7 @@ class TestAskForHelpHandler(TestCase):
             handler.CONTEXT_WENET_USER_ID: "user_id"
         })), "")
         self.assertIsInstance(response, OutgoingEvent)
-        self.assertEqual(1, len(response.messages))
+        self.assertEqual(2, len(response.messages))
         self.assertIsInstance(response.messages[0], TextualResponse)
 
     def test_action_best_answer_0(self):
@@ -696,7 +696,7 @@ class TestAskForHelpHandler(TestCase):
         self.assertIsInstance(response, OutgoingEvent)
         self.assertEqual(1, len(response.messages))
         self.assertIsInstance(response.messages[0], TelegramRapidAnswerResponse)
-        self.assertEqual(2, len(response.messages[0].options))
+        self.assertEqual(7, len(response.messages[0].options))
         self.assertTrue(handler.CONTEXT_CURRENT_STATE in response.context._static_context and response.context._static_context[handler.CONTEXT_CURRENT_STATE] == handler.STATE_BEST_ANSWER_PUBLISH)
 
     def test_action_best_answer_0_no_channel_id(self):
@@ -840,7 +840,27 @@ class TestAskForHelpHandler(TestCase):
         service_api = ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
         service_api.create_task_transaction = Mock()
         handler._get_service_api_interface_connector_from_context = Mock(return_value=service_api)
-
+        service_api.get_task = Mock(return_value=Task("task_id", None, None, "task_type_id", "questioning_user", "app_id", None, TaskGoal("question", ""), attributes={
+            "domain": handler.INTENT_STUDYING_CAREER,
+            "domainInterest": handler.INTENT_DIFFERENT_DOMAIN,
+            "beliefsAndValues": handler.INTENT_DIFFERENT_BELIEF_VALUES,
+            "sensitive": False,
+            "anonymous": False,
+            "socialCloseness": handler.INTENT_SIMILAR_SOCIALLY,
+            "positionOfAnswerer": handler.INTENT_ASK_TO_NEARBY,
+            "maxUsers": 10,
+            "maxAnswers": 15,
+            "expirationDate": 1652705325
+        }, transactions=[TaskTransaction(
+            transaction_id="transaction_id",
+            task_id="task_id",
+            label=handler.LABEL_ANSWER_TRANSACTION,
+            creation_ts=int(datetime.now().timestamp()),
+            last_update_ts=int(datetime.now().timestamp()),
+            actioneer_id="answerer_user",
+            attributes={"answer": "answer", "anonymous": True}
+        )]))
+        service_api.get_user_profile = Mock(return_value=WeNetUserProfile.empty("questioning_user"))
         response = handler.action_best_answer_2(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_EXTREMELY_HELPFUL, ""), ConversationContext(static_context={
             handler.CONTEXT_WENET_USER_ID: "",
             handler.CONTEXT_TRANSACTION_ID: "transaction_id",
@@ -848,7 +868,7 @@ class TestAskForHelpHandler(TestCase):
             handler.CONTEXT_CHOSEN_ANSWER_REASON: "reason"
         })), handler.INTENT_EXTREMELY_HELPFUL)
         self.assertIsInstance(response, OutgoingEvent)
-        self.assertEqual(1, len(response.messages))
+        self.assertEqual(2, len(response.messages))
         self.assertIsInstance(response.messages[0], TextualResponse)
 
     def test_action_like_answer(self):
