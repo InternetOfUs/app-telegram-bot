@@ -1682,6 +1682,49 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             .translate()
         message_string = f"{message_attributes} \n\n"
         if len(message_answers):
+        # if len(message_answers) != 0:
+        #     message_upper_part += f"{self._translator.get_translation_instance(locale).with_text('collected_answers').translate()} \n\n"
+        #     answer_upper_part = TelegramRapidAnswerResponse(TextualResponse(message_upper_part))
+        #     answer.append(answer_upper_part)
+        #
+        #     message_string = ""
+        #
+        #     n = 5  # group of answers to show on one batch of result
+        #     test_output = []
+        #     for i in range(len(message_answers)):
+        #         answer_string = f"{i + 1}. {message_answers[i]} - {message_users[i]} \n"
+        #         test_output.append(answer_string)
+        #     grouped_answers = [test_output[i:i + n] for i in range(0, len(test_output), n)]
+        #
+        #     for i in range(len(grouped_answers)):
+        #         message_string_middle = ""
+        #         if i != len(grouped_answers) - 1:
+        #             for j in range(len(grouped_answers[i])):
+        #                 message_string_middle += grouped_answers[i][j]
+        #             answer_middle_part = TelegramRapidAnswerResponse(TextualResponse(message_string_middle))
+        #             answer.append(answer_middle_part)
+        #         else:
+        #             for j in range(len(grouped_answers[i])):
+        #                 message_string += grouped_answers[i][j]
+        #
+        #     message_string += f"\n{self._translator.get_translation_instance(locale).with_text('from_multiple_response').translate()}"
+        #
+        #     button_rows = []
+        #     button_count = len(transaction_ids) + 1
+        #     for i in range(int(button_count/2)):
+        #         button_count -= 2
+        #         button_rows.append(2)
+        #         if button_count == 1:
+        #             button_rows.append(1)
+        #
+        #     answer_lower_part = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=button_rows)
+        #     button_ids = [str(uuid.uuid4()) for _ in range(len(transaction_ids) + 1)]
+        #     for i in range(len(transaction_ids)):
+        #         self.cache.cache(ButtonPayload({"task_id": message.task_id, "transaction_id": transaction_ids[i], "related_buttons": button_ids}, self.INTENT_BEST_ANSWER).to_repr(), key=button_ids[i])
+        #         answer_lower_part.with_textual_option(f"#{1 + i}", self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[i]))
+        #
+        # else:
+
             message_string += f"{self._translator.get_translation_instance(self.publication_language).with_text('collected_answers').translate()} \n\n"
             message_best_answer = self._translator.get_translation_instance(self.publication_language)\
                 .with_text('chosen_answer_by_user')\

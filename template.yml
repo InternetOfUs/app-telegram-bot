@@ -77,8 +77,8 @@
           - name: build
           - name: test
             in_docker: false
-          - name: test
-            type: coverage
+#          - name: test
+#            type: coverage
           - name: push
           - name: notify
       staging:
@@ -87,8 +87,8 @@
             manual: true
           - name: test
             in_docker: false
-          - name: test
-            type: coverage
+#          - name: test
+#            type: coverage
           - name: push
           - name: trigger
             git_ref: develop
@@ -96,18 +96,18 @@
         stages:
           - name: test
             in_docker: false
-          - name: test
-            type: coverage
+#          - name: test
+#            type: coverage
       issue:
         stages:
           - name: test
             in_docker: false
-          - name: test
-            type: coverage
+#          - name: test
+#            type: coverage
       default:
         stages:
-          - name: test
-            type: coverage
+#          - name: test
+#            type: coverage
           - name: build
             type: badge
 

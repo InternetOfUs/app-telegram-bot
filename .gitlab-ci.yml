@@ -142,38 +142,6 @@ unit:production:
     - tags
 
 
-coverage:production:
-  stage: test
-  image: public.registry.u-hopper.com/python:3.8
-  allow_failure: true
-  script:
-    - python -v
-    - mkdir -p ~/.config/pip
-    - echo "$PIP_CONF_DOCKER" > ~/.config/pip/pip.conf
-    - python -m venv venv
-    - source venv/bin/activate
-    - pip install --upgrade pip
-    - pip install -r requirements.txt
-    - pip install coverage pytest-cov
-    - cp -r test src/
-    - cp docker-support/run_test_coverage.sh src/
-    - cp docker-support/.coveragerc src/
-    - cd src
-    - PYTHONPATH=. ./run_test_coverage.sh test .
-  cache:
-    paths:
-      - .cache/pip
-      - venv/
-  artifacts:
-    when: always
-    reports:
-      junit: src/report.xml
-      cobertura: src/coverage.xml
-  needs: []
-  only:
-    - tags
-
-
 push:production:
   stage: push
   script:
@@ -257,38 +225,6 @@ unit:staging:
     - develop
 
 
-coverage:staging:
-  stage: test
-  image: public.registry.u-hopper.com/python:3.8
-  allow_failure: true
-  script:
-    - python -v
-    - mkdir -p ~/.config/pip
-    - echo "$PIP_CONF_DOCKER" > ~/.config/pip/pip.conf
-    - python -m venv venv
-    - source venv/bin/activate
-    - pip install --upgrade pip
-    - pip install -r requirements.txt
-    - pip install coverage pytest-cov
-    - cp -r test src/
-    - cp docker-support/run_test_coverage.sh src/
-    - cp docker-support/.coveragerc src/
-    - cd src
-    - PYTHONPATH=. ./run_test_coverage.sh test .
-  cache:
-    paths:
-      - .cache/pip
-      - venv/
-  artifacts:
-    when: always
-    reports:
-      junit: src/report.xml
-      cobertura: src/coverage.xml
-  needs: []
-  only:
-    - develop
-
-
 push:staging:
   stage: push
   script:
@@ -349,38 +285,6 @@ unit:mr:
     - merge_requests
 
 
-coverage:mr:
-  stage: test
-  image: public.registry.u-hopper.com/python:3.8
-  allow_failure: true
-  script:
-    - python -v
-    - mkdir -p ~/.config/pip
-    - echo "$PIP_CONF_DOCKER" > ~/.config/pip/pip.conf
-    - python -m venv venv
-    - source venv/bin/activate
-    - pip install --upgrade pip
-    - pip install -r requirements.txt
-    - pip install coverage pytest-cov
-    - cp -r test src/
-    - cp docker-support/run_test_coverage.sh src/
-    - cp docker-support/.coveragerc src/
-    - cd src
-    - PYTHONPATH=. ./run_test_coverage.sh test .
-  cache:
-    paths:
-      - .cache/pip
-      - venv/
-  artifacts:
-    when: always
-    reports:
-      junit: src/report.xml
-      cobertura: src/coverage.xml
-  needs: []
-  only:
-    - merge_requests
-
-
 #
 # Stages for issue.
 #
@@ -412,75 +316,9 @@ unit:issue:
     - /^milestone.*$/i
 
 
-coverage:issue:
-  stage: test
-  image: public.registry.u-hopper.com/python:3.8
-  allow_failure: true
-  script:
-    - python -v
-    - mkdir -p ~/.config/pip
-    - echo "$PIP_CONF_DOCKER" > ~/.config/pip/pip.conf
-    - python -m venv venv
-    - source venv/bin/activate
-    - pip install --upgrade pip
-    - pip install -r requirements.txt
-    - pip install coverage pytest-cov
-    - cp -r test src/
-    - cp docker-support/run_test_coverage.sh src/
-    - cp docker-support/.coveragerc src/
-    - cd src
-    - PYTHONPATH=. ./run_test_coverage.sh test .
-  cache:
-    paths:
-      - .cache/pip
-      - venv/
-  artifacts:
-    when: always
-    reports:
-      junit: src/report.xml
-      cobertura: src/coverage.xml
-  needs: []
-  only:
-    - /^feature.*$/i
-    - /^hotfix.*$/i
-    - /^milestone.*$/i
-
-
 #
 # Stages for default.
 #
-
-
-coverage:default:
-  stage: test
-  image: public.registry.u-hopper.com/python:3.8
-  allow_failure: true
-  script:
-    - python -v
-    - mkdir -p ~/.config/pip
-    - echo "$PIP_CONF_DOCKER" > ~/.config/pip/pip.conf
-    - python -m venv venv
-    - source venv/bin/activate
-    - pip install --upgrade pip
-    - pip install -r requirements.txt
-    - pip install coverage pytest-cov
-    - cp -r test src/
-    - cp docker-support/run_test_coverage.sh src/
-    - cp docker-support/.coveragerc src/
-    - cd src
-    - PYTHONPATH=. ./run_test_coverage.sh test .
-  cache:
-    paths:
-      - .cache/pip
-      - venv/
-  artifacts:
-    when: always
-    reports:
-      junit: src/report.xml
-      cobertura: src/coverage.xml
-  needs: []
-  only:
-    - master
 
 
 badges:default:
