@@ -669,7 +669,24 @@ class TestAskForHelpHandler(TestCase):
 
     # TODO implement the test
     def test_action_agree_to_publish(self):
-        pass
+        handler = MockAskForHelpHandler()
+        translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
+        translator_instance.translate = Mock(return_value="")
+        handler._translator.get_translation_instance = Mock(return_value=translator_instance)
+        handler._get_user_locale_from_incoming_event = Mock(return_value="en")
+        service_api = ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
+        service_api.create_task_transaction = Mock()
+        handler._get_service_api_interface_connector_from_context = Mock(return_value=service_api)
+
+        response = handler.action_agree_to_publish(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingTextMessage("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", "answer"), ConversationContext(static_context={
+            handler.CONTEXT_QUESTION_TO_ANSWER: "task_id",
+            handler.CONTEXT_ANSWER_TO_QUESTION: "answer",
+            handler.CONTEXT_WENET_USER_ID: "user_id",
+            handler.CONTEXT_ANONYMOUS_ANSWER: True
+        })), "")
+        self.assertIsInstance(response, OutgoingEvent)
+        self.assertEqual(1, len(response.messages))
+        self.assertIsInstance(response.messages[0], TextualResponse)
 
     def test_action_best_answer_0(self):
         handler = MockAskForHelpHandler()
