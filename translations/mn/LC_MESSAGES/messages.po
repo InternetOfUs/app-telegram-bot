@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-05-20 16:49+0200\n"
+"PO-Revision-Date: 2022-05-27 17:36+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: mn\n"
@@ -577,6 +577,27 @@ msgstr ""
 "байна.\n"
 "\n"
 "Та юу хиймээр байна?"
+
+msgid "ok_to_publish_message"
+msgstr "Таны хариултыг дараа олон нийтэд нийтэлвэл зүгээр үү?"
+
+msgid "button_yes_anonymously_publish_text"
+msgstr ""
+
+msgid "button_yes_name_publish_text"
+msgstr "Тиймээ, миний нэрээр"
+
+msgid "button_no_publish_text"
+msgstr "Үгүй"
+
+msgid "thank_you_message"
+msgstr "Баярлалаа!"
+
+msgid "no_collected_answers"
+msgstr "Харамсалтай нь хариултуудыг харуулахыг зөвшөөрөөгүй байна."
+
+msgid "best_answer_not_published"
+msgstr "Харамсалтай нь хамгийн сайн хариултыг харуулахыг зөвшөөрөөгүй байна."
 
 #, fuzzy
 #~| msgid "more_answers_button"

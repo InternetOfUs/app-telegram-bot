@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-05-20 16:52+0200\n"
+"PO-Revision-Date: 2022-05-27 17:30+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: es\n"
@@ -594,6 +594,28 @@ msgstr ""
 "horas. \n"
 "\n"
 "Que te gustaría hacer?"
+
+msgid "ok_to_publish_message"
+msgstr ""
+"¿Estarías de acuerdo en publicar tu respuesta más tarde para la comunidad?"
+
+msgid "button_yes_anonymously_publish_text"
+msgstr "Sí, pero de forma anónima."
+
+msgid "button_yes_name_publish_text"
+msgstr "Si, con mi primer nombre"
+
+msgid "button_no_publish_text"
+msgstr "No"
+
+msgid "thank_you_message"
+msgstr "¡Gracias!"
+
+msgid "no_collected_answers"
+msgstr "Desafortunadamente, no se permite mostrar ninguna respuesta."
+
+msgid "best_answer_not_published"
+msgstr "Desafortunadamente, no se permite mostrar la mejor respuesta."
 
 #, fuzzy
 #~| msgid "more_answers_button"

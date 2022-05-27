@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-05-20 16:46+0200\n"
+"PO-Revision-Date: 2022-05-27 16:10+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -572,6 +572,27 @@ msgstr ""
 "hours.\n"
 "\n"
 "What would you like to do?"
+
+msgid "ok_to_publish_message"
+msgstr "Would you be okay to publish your answer later to the community?"
+
+msgid "button_yes_anonymously_publish_text"
+msgstr "Yes, but anonymously"
+
+msgid "button_yes_name_publish_text"
+msgstr "Yes, with my first name"
+
+msgid "button_no_publish_text"
+msgstr "No"
+
+msgid "thank_you_message"
+msgstr "Thank you!"
+
+msgid "no_collected_answers"
+msgstr "Unfortunately, no answers are allowed to show."
+
+msgid "best_answer_not_published"
+msgstr "Unfortunately, the best answer is not allowed to show."
 
 #~ msgid "ask_more_users_button"
 #~ msgstr ":game_die: Ask more people"
