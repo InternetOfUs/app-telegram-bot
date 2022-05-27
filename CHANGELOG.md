@@ -4,7 +4,9 @@
 
 ### 3.0.0
 - Added support for task expiration
-- Added Like button for the preferred answer
+- Added support to Liking preferred answer
+- Added support to showing received answers in batches
+- Added support to publishing answers in a preferred way. e.g: Anonymously
 
 ## Version 2.*
 

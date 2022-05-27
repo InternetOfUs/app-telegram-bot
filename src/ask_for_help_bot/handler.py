@@ -685,11 +685,11 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             message_string = ""
 
             n = 5  # group of answers to show on one batch of result
-            test_output = []
+            output = []
             for i in range(len(message_answers)):
                 answer_string = f"{i + 1}. {message_answers[i]} - {message_users[i]} \n"
-                test_output.append(answer_string)
-            grouped_answers = [test_output[i:i + n] for i in range(0, len(test_output), n)]
+                output.append(answer_string)
+            grouped_answers = [output[i:i + n] for i in range(0, len(output), n)]
 
             for i in range(len(grouped_answers)):
                 message_string_middle = ""
@@ -1668,7 +1668,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         message_users = []
         task = service_api.get_task(task_id)
         for transaction in task.transactions:
-            print(f"publish true or not: {transaction.attributes.get('publish')}")
             if transaction.attributes.get("publish") and transaction.label == self.LABEL_ANSWER_TRANSACTION:
                 message_answers.append(self.parse_text_with_markdown(self._prepare_string_to_telegram(transaction.attributes["answer"])))
                 answerer_user = service_api.get_user_profile(transaction.actioneer_id)
@@ -1680,67 +1679,48 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             .with_substitution("user", questioner_name) \
             .with_substitution("question", question_text) \
             .translate()
-        message_string = f"{message_attributes} \n\n"
-        if len(message_answers):
-        # if len(message_answers) != 0:
-        #     message_upper_part += f"{self._translator.get_translation_instance(locale).with_text('collected_answers').translate()} \n\n"
-        #     answer_upper_part = TelegramRapidAnswerResponse(TextualResponse(message_upper_part))
-        #     answer.append(answer_upper_part)
-        #
-        #     message_string = ""
-        #
-        #     n = 5  # group of answers to show on one batch of result
-        #     test_output = []
-        #     for i in range(len(message_answers)):
-        #         answer_string = f"{i + 1}. {message_answers[i]} - {message_users[i]} \n"
-        #         test_output.append(answer_string)
-        #     grouped_answers = [test_output[i:i + n] for i in range(0, len(test_output), n)]
-        #
-        #     for i in range(len(grouped_answers)):
-        #         message_string_middle = ""
-        #         if i != len(grouped_answers) - 1:
-        #             for j in range(len(grouped_answers[i])):
-        #                 message_string_middle += grouped_answers[i][j]
-        #             answer_middle_part = TelegramRapidAnswerResponse(TextualResponse(message_string_middle))
-        #             answer.append(answer_middle_part)
-        #         else:
-        #             for j in range(len(grouped_answers[i])):
-        #                 message_string += grouped_answers[i][j]
-        #
-        #     message_string += f"\n{self._translator.get_translation_instance(locale).with_text('from_multiple_response').translate()}"
-        #
-        #     button_rows = []
-        #     button_count = len(transaction_ids) + 1
-        #     for i in range(int(button_count/2)):
-        #         button_count -= 2
-        #         button_rows.append(2)
-        #         if button_count == 1:
-        #             button_rows.append(1)
-        #
-        #     answer_lower_part = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=button_rows)
-        #     button_ids = [str(uuid.uuid4()) for _ in range(len(transaction_ids) + 1)]
-        #     for i in range(len(transaction_ids)):
-        #         self.cache.cache(ButtonPayload({"task_id": message.task_id, "transaction_id": transaction_ids[i], "related_buttons": button_ids}, self.INTENT_BEST_ANSWER).to_repr(), key=button_ids[i])
-        #         answer_lower_part.with_textual_option(f"#{1 + i}", self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[i]))
-        #
-        # else:
 
-            message_string += f"{self._translator.get_translation_instance(self.publication_language).with_text('collected_answers').translate()} \n\n"
+        message_upper_part = f"{message_attributes} \n\n"
+        message_notification = []
+        message_string = ""
+        if len(message_answers) != 0:
+            message_upper_part += f"{self._translator.get_translation_instance(self.publication_language).with_text('collected_answers').translate()} \n\n"
+            message_notification.append(TextualResponse(message_upper_part))
+
             message_best_answer = self._translator.get_translation_instance(self.publication_language)\
                 .with_text('chosen_answer_by_user')\
                 .with_substitution("user", questioner_name).translate()
 
-            for i in range(len(message_answers)):  # TODO also here we should group answers by 5
-                message_string += f"{i + 1}. {message_answers[i]} - {message_users[i]}"
+            n = 5  # group of answers to show on one batch of result
+            output = []
+            for i in range(len(message_answers)):
+                answer_string = f"{i + 1}. {message_answers[i]} - {message_users[i]}"
                 if transaction_ids[i] == best_answer_transaction:
-                    message_string += " " + message_best_answer + "\n"
+                    answer_string += " " + message_best_answer + "\n"
                 else:
-                    message_string += "\n"
+                    answer_string += "\n"
+                output.append(answer_string)
+            grouped_answers = [output[i:i + n] for i in range(0, len(output), n)]
+
+            for i in range(len(grouped_answers)):
+                message_string_middle = ""
+                if i != len(grouped_answers) - 1:
+                    for j in range(len(grouped_answers[i])):
+                        message_string_middle += grouped_answers[i][j]
+                    answer_middle_part = TextualResponse(message_string_middle)
+                    message_notification.append(answer_middle_part)
+                else:
+                    for j in range(len(grouped_answers[i])):
+                        message_string += grouped_answers[i][j]
+
+            if best_answer_transaction not in transaction_ids:
+                message_string += f"\n\n {self._translator.get_translation_instance(self.publication_language).with_text('best_answer_not_published').translate()} \n\n"
         else:
             message_string += f"{self._translator.get_translation_instance(self.publication_language).with_text('no_collected_answers').translate()} \n\n"
+        message_notification.append(TextualResponse(message_string))
 
         if intent == self.INTENT_PUBLISH and isinstance(incoming_event.social_details, TelegramDetails):
-            notification = NotificationEvent(social_details=TelegramDetails(None, self.channel_id, incoming_event.social_details.telegram_bot_id), messages=[TextualResponse(message_string)])
+            notification = NotificationEvent(social_details=TelegramDetails(None, self.channel_id, incoming_event.social_details.telegram_bot_id), messages=message_notification)
             try:
                 self.send_notification(notification)
             except Exception as e:

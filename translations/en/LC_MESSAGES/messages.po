@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-05-26 17:54+0200\n"
+"PO-Revision-Date: 2022-05-27 16:10+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -590,6 +590,9 @@ msgstr "Thank you!"
 
 msgid "no_collected_answers"
 msgstr "Unfortunately, no answers are allowed to show."
+
+msgid "best_answer_not_published"
+msgstr "Unfortunately, the best answer is not allowed to show."
 
 #~ msgid "ask_more_users_button"
 #~ msgstr ":game_die: Ask more people"

@@ -464,3 +464,7 @@ msgstr ""
 
 msgid "no_collected_answers"
 msgstr ""
+
+msgid "best_answer_not_published"
+msgstr ""
+

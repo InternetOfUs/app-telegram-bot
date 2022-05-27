@@ -667,6 +667,10 @@ class TestAskForHelpHandler(TestCase):
         self.assertEqual(2, len(response.messages))
         self.assertIsInstance(response.messages[0], TextualResponse)
 
+    # TODO implement the test
+    def test_action_agree_to_publish(self):
+        pass
+
     def test_action_best_answer_0(self):
         handler = MockAskForHelpHandler()
         translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
