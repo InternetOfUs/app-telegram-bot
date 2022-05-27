@@ -697,7 +697,7 @@ class TestAskForHelpHandler(TestCase):
         self.assertEqual(1, len(response.messages))
         self.assertIsInstance(response.messages[0], TelegramRapidAnswerResponse)
         self.assertEqual(7, len(response.messages[0].options))
-        self.assertTrue(handler.CONTEXT_CURRENT_STATE in response.context._static_context and response.context._static_context[handler.CONTEXT_CURRENT_STATE] == handler.STATE_BEST_ANSWER_PUBLISH)
+        self.assertTrue(handler.CONTEXT_CURRENT_STATE in response.context._static_context and response.context._static_context[handler.CONTEXT_CURRENT_STATE] == handler.STATE_BEST_ANSWER_0)
 
     def test_action_best_answer_0_no_channel_id(self):
         handler = MockAskForHelpHandler()
