@@ -1277,14 +1277,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             button_2_text = self._translator.get_translation_instance(user_locale).with_text("button_yes_name_publish_text").translate()
             button_3_text = self._translator.get_translation_instance(user_locale).with_text("button_no_publish_text").translate()
             message_response = TelegramRapidAnswerResponse(TextualResponse(message_text), row_displacement=[2, 1])
-            button_ids = [str(uuid.uuid4()) for _ in range(2)]
-            button_data = {
-                "related_buttons": button_ids
-            }
-            self.cache.cache(ButtonPayload(button_data, self.INTENT_REPORT_ABUSIVE).to_repr(), key=button_ids[0])
-            self.cache.cache(ButtonPayload(button_data, self.INTENT_REPORT_SPAM).to_repr(), key=button_ids[1])
-            message_response.with_textual_option(button_1_text, self.INTENT_AGREE_PUBLISH_ANONYMOUSLY.format(button_ids[0]))
-            message_response.with_textual_option(button_2_text, self.INTENT_AGREE_PUBLISH_NAME.format(button_ids[1]))
+            message_response.with_textual_option(button_1_text, self.INTENT_AGREE_PUBLISH_ANONYMOUSLY)
+            message_response.with_textual_option(button_2_text, self.INTENT_AGREE_PUBLISH_NAME)
             message_response.with_textual_option(button_3_text, self.INTENT_NOT_AGREE_PUBLISH)
             response.with_message(message_response)
         else:
@@ -1338,14 +1332,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 button_2_text = self._translator.get_translation_instance(user_locale).with_text("button_yes_name_publish_text").translate()
                 button_3_text = self._translator.get_translation_instance(user_locale).with_text("button_no_publish_text").translate()
                 message_response = TelegramRapidAnswerResponse(TextualResponse(message_text), row_displacement=[2, 1])
-                button_ids = [str(uuid.uuid4()) for _ in range(2)]
-                button_data = {
-                    "related_buttons": button_ids
-                }
-                self.cache.cache(ButtonPayload(button_data, self.INTENT_REPORT_ABUSIVE).to_repr(), key=button_ids[0])
-                self.cache.cache(ButtonPayload(button_data, self.INTENT_REPORT_SPAM).to_repr(), key=button_ids[1])
-                message_response.with_textual_option(button_1_text, self.INTENT_AGREE_PUBLISH_ANONYMOUSLY.format(button_ids[0]))
-                message_response.with_textual_option(button_2_text, self.INTENT_AGREE_PUBLISH_NAME.format(button_ids[1]))
+                message_response.with_textual_option(button_1_text, self.INTENT_AGREE_PUBLISH_ANONYMOUSLY)
+                message_response.with_textual_option(button_2_text, self.INTENT_AGREE_PUBLISH_NAME)
                 message_response.with_textual_option(button_3_text, self.INTENT_NOT_AGREE_PUBLISH)
                 response.with_message(message_response)
             else:
@@ -1668,7 +1656,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         message_users = []
         task = service_api.get_task(task_id)
         for transaction in task.transactions:
-            if transaction.attributes.get("publish") and transaction.label == self.LABEL_ANSWER_TRANSACTION:
+            if transaction.label == self.LABEL_ANSWER_TRANSACTION and transaction.attributes.get("publish"):
                 message_answers.append(self.parse_text_with_markdown(self._prepare_string_to_telegram(transaction.attributes["answer"])))
                 answerer_user = service_api.get_user_profile(transaction.actioneer_id)
                 answerer = self._translator.get_translation_instance(self.publication_language).with_text("anonymous_user").translate() if transaction.attributes.get("publishAnonymously") or not answerer_user.name.first else answerer_user.name.first
