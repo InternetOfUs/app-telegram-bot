@@ -9,6 +9,7 @@ class StateMixin:
     CONTEXT_PENDING_WENET_MESSAGES = "pending_wenet_messages"
     CONTEXT_PENDING_ANSWERS = "pending_answers"
     # available states
+    # TODO edit available states according to new list of action answers
     STATE_QUESTION_0 = "question_0"
     STATE_QUESTION_1 = "question_1"
     STATE_QUESTION_2 = "question_2"

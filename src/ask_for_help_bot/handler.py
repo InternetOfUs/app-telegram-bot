@@ -172,6 +172,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 intent=self.INTENT_ASK
             )
         )
+
+        # TODO check logic for action_questions 1 to 6 and their intents (state is the state that the user is currently in)
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_FIRST_QUESTION, self.action_question_0).with_rule(
                 intent=self.INTENT_FIRST_QUESTION
@@ -900,6 +902,155 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         response.with_context(context)
         return response
 
+    # def action_question_1(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+    #     """
+    #     Save the why this type of desired answerer, and ask the domain of the question
+    #     """
+    #     user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+    #     response = OutgoingEvent(social_details=incoming_event.social_details)
+    #     if isinstance(incoming_event.incoming_message, IncomingTextMessage):
+    #         question = self._prepare_string_to_wenet(incoming_event.incoming_message.text)
+    #         context = incoming_event.context
+    #         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_1)
+    #         context.with_static_state(self.CONTEXT_ASKED_QUESTION, question)
+    #         message = self._translator.get_translation_instance(user_locale).with_text("domain_question").translate()
+    #         button_1_text = self._translator.get_translation_instance(user_locale).with_text("studying_career_button").translate()
+    #         button_2_text = self._translator.get_translation_instance(user_locale).with_text("local_university_button").translate()
+    #         button_3_text = self._translator.get_translation_instance(user_locale).with_text("local_things_button").translate()
+    #         button_4_text = self._translator.get_translation_instance(user_locale).with_text("physical_activity_button").translate()
+    #         button_5_text = self._translator.get_translation_instance(user_locale).with_text("cultural_interests_button").translate()
+    #         button_6_text = self._translator.get_translation_instance(user_locale).with_text("food_and_cooking_button").translate()
+    #         button_7_text = self._translator.get_translation_instance(user_locale).with_text("cinema_theatre_button").translate()
+    #         button_8_text = self._translator.get_translation_instance(user_locale).with_text("music_button").translate()
+    #         button_9_text = self._translator.get_translation_instance(user_locale).with_text("arts_and_crafts_button").translate()
+    #         button_10_text = self._translator.get_translation_instance(user_locale).with_text("life_ponders_button").translate()
+    #         button_11_text = self._translator.get_translation_instance(user_locale).with_text("varia_misc_button").translate()
+    #         response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 2, 2, 2, 2, 1])
+    #         response_with_buttons.with_textual_option(button_1_text, self.INTENT_STUDYING_CAREER)
+    #         response_with_buttons.with_textual_option(button_2_text, self.INTENT_LOCAL_UNIVERSITY)
+    #         response_with_buttons.with_textual_option(button_3_text, self.INTENT_LOCAL_THINGS)
+    #         response_with_buttons.with_textual_option(button_4_text, self.INTENT_PHYSICAL_ACTIVITY)
+    #         response_with_buttons.with_textual_option(button_5_text, self.INTENT_CULTURAL_INTERESTS)
+    #         response_with_buttons.with_textual_option(button_6_text, self.INTENT_FOOD_AND_COOKING)
+    #         response_with_buttons.with_textual_option(button_7_text, self.INTENT_CINEMA_THEATRE)
+    #         response_with_buttons.with_textual_option(button_8_text, self.INTENT_MUSIC)
+    #         response_with_buttons.with_textual_option(button_9_text, self.INTENT_ARTS_AND_CRAFTS)
+    #         response_with_buttons.with_textual_option(button_10_text, self.INTENT_LIFE_PONDERS)
+    #         response_with_buttons.with_textual_option(button_11_text, self.INTENT_VARIA_MISC)
+    #         response.with_message(response_with_buttons)
+    #         response.with_context(context)
+    #     else:
+    #         error_message = self._translator.get_translation_instance(user_locale).with_text("question_is_not_text").translate()
+    #         response.with_message(TextualResponse(error_message))
+    #     return response
+    #
+    # def action_question_2(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+    #     """
+    #     Save the domain of the question, and ask whether people that should answer the question should have a similar interest in the domain
+    #     """
+    #     user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+    #     response = OutgoingEvent(social_details=incoming_event.social_details)
+    #     context = incoming_event.context
+    #     context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_2)
+    #     context.with_static_state(self.CONTEXT_QUESTION_DOMAIN, intent)
+    #     message = self._translator.get_translation_instance(user_locale).with_text("domain_similarity_question")\
+    #         .with_substitution("domain", self._translator.get_translation_instance(user_locale).with_text(intent).translate())\
+    #         .translate()
+    #     button_1_text = self._translator.get_translation_instance(user_locale).with_text("answer_similar_domain").translate()
+    #     button_2_text = self._translator.get_translation_instance(user_locale).with_text("answer_different_domain").translate()
+    #     button_3_text = self._translator.get_translation_instance(user_locale).with_text("answer_indifferent_domain").translate()
+    #     response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 1])
+    #     response_with_buttons.with_textual_option(button_1_text, self.INTENT_SIMILAR_DOMAIN)
+    #     response_with_buttons.with_textual_option(button_2_text, self.INTENT_DIFFERENT_DOMAIN)
+    #     response_with_buttons.with_textual_option(button_3_text, self.INTENT_INDIFFERENT_DOMAIN)
+    #     response.with_message(response_with_buttons)
+    #     response.with_context(context)
+    #     return response
+    #
+    # def action_question_3(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+    #     """
+    #     Save whether people that should answer the question should have a similar interest in the domain, and ask whether people that should answer the question should have a similar belief and values
+    #     """
+    #     user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+    #     response = OutgoingEvent(social_details=incoming_event.social_details)
+    #     context = incoming_event.context
+    #     context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_3)
+    #     context.with_static_state(self.CONTEXT_DOMAIN_INTEREST, intent)
+    #     message = self._translator.get_translation_instance(user_locale).with_text("belief_values_question").translate()
+    #     button_1_text = self._translator.get_translation_instance(user_locale).with_text("answer_similar_belief_values").translate()
+    #     button_2_text = self._translator.get_translation_instance(user_locale).with_text("answer_different_belief_values").translate()
+    #     button_3_text = self._translator.get_translation_instance(user_locale).with_text("answer_indifferent_belief_values").translate()
+    #     response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 1])
+    #     response_with_buttons.with_textual_option(button_1_text, self.INTENT_SIMILAR_BELIEF_VALUES)
+    #     response_with_buttons.with_textual_option(button_2_text, self.INTENT_DIFFERENT_BELIEF_VALUES)
+    #     response_with_buttons.with_textual_option(button_3_text, self.INTENT_INDIFFERENT_BELIEF_VALUES)
+    #     response.with_message(response_with_buttons)
+    #     response.with_context(context)
+    #     return response
+    #
+    # def action_question_4(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+    #     """
+    #     Save whether people that should answer the question should have a similar belief and values, and ask whether the question is sensitive or not
+    #     """
+    #     user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+    #     response = OutgoingEvent(social_details=incoming_event.social_details)
+    #     context = incoming_event.context
+    #     context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_4)
+    #     context.with_static_state(self.CONTEXT_BELIEF_VALUES_SIMILARITY, intent)
+    #     message = self._translator.get_translation_instance(user_locale).with_text("sensitive_question").translate()
+    #     button_1_text = self._translator.get_translation_instance(user_locale).with_text("sensitive").translate()
+    #     button_2_text = self._translator.get_translation_instance(user_locale).with_text("not_sensitive").translate()
+    #     response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1])
+    #     response_with_buttons.with_textual_option(button_1_text, self.INTENT_SENSITIVE_QUESTION)
+    #     response_with_buttons.with_textual_option(button_2_text, self.INTENT_NOT_SENSITIVE_QUESTION)
+    #     response.with_message(response_with_buttons)
+    #     response.with_context(context)
+    #     return response
+    #
+    # def action_question_5(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+    #     """
+    #     Save whether the question is not sensitive or whether to ask the question anonymously or not, and ask whether people that should answer the question should be socially closer
+    #     """
+    #     user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+    #     response = OutgoingEvent(social_details=incoming_event.social_details)
+    #     context = incoming_event.context
+    #     context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_5)
+    #     if intent in [self.INTENT_ANONYMOUS_QUESTION, self.INTENT_NOT_ANONYMOUS_QUESTION]:
+    #         context.with_static_state(self.CONTEXT_ANONYMOUS_QUESTION, intent)
+    #     else:
+    #         context.with_static_state(self.CONTEXT_SENSITIVE_QUESTION, intent)
+    #     message = self._translator.get_translation_instance(user_locale).with_text("social_closeness_question").translate()
+    #     button_1_text = self._translator.get_translation_instance(user_locale).with_text("answer_socially_close").translate()
+    #     button_2_text = self._translator.get_translation_instance(user_locale).with_text("answer_socially_distant").translate()
+    #     button_3_text = self._translator.get_translation_instance(user_locale).with_text("answer_socially_indifferent").translate()
+    #     response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 1])
+    #     response_with_buttons.with_textual_option(button_1_text, self.INTENT_SIMILAR_SOCIALLY)
+    #     response_with_buttons.with_textual_option(button_2_text, self.INTENT_DIFFERENT_SOCIALLY)
+    #     response_with_buttons.with_textual_option(button_3_text, self.INTENT_INDIFFERENT_SOCIALLY)
+    #     response.with_message(response_with_buttons)
+    #     response.with_context(context)
+    #     return response
+    #
+    # def action_question_6(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
+    #     """
+    #     Save whether people that should answer the question should be socially closer, and ask where should be the people that should answer the question
+    #     """
+    #     user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+    #     response = OutgoingEvent(social_details=incoming_event.social_details)
+    #     context = incoming_event.context
+    #     context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_6)
+    #     context.with_static_state(self.CONTEXT_SOCIAL_CLOSENESS, intent)
+    #     message = self._translator.get_translation_instance(user_locale).with_text("specify_answerer_location").translate()
+    #     button_1_text = self._translator.get_translation_instance(user_locale).with_text("location_answer_1").translate()
+    #     button_2_text = self._translator.get_translation_instance(user_locale).with_text("location_answer_2").translate()
+    #     response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1])
+    #     response_with_buttons.with_textual_option(button_1_text, self.INTENT_ASK_TO_NEARBY)
+    #     response_with_buttons.with_textual_option(button_2_text, self.INTENT_ASK_TO_ANYWHERE)
+    #     response.with_message(response_with_buttons)
+    #     response.with_context(context)
+    #     return response
+
+    # TODO edit with lesser number of domains
     def action_question_1(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         """
         Save the why this type of desired answerer, and ask the domain of the question
@@ -942,70 +1093,12 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             response.with_message(TextualResponse(error_message))
         return response
 
+    # TODO implement the function with new intents
     def action_question_2(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
-        """
-        Save the domain of the question, and ask whether people that should answer the question should have a similar interest in the domain
-        """
-        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
-        response = OutgoingEvent(social_details=incoming_event.social_details)
-        context = incoming_event.context
-        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_2)
-        context.with_static_state(self.CONTEXT_QUESTION_DOMAIN, intent)
-        message = self._translator.get_translation_instance(user_locale).with_text("domain_similarity_question")\
-            .with_substitution("domain", self._translator.get_translation_instance(user_locale).with_text(intent).translate())\
-            .translate()
-        button_1_text = self._translator.get_translation_instance(user_locale).with_text("answer_similar_domain").translate()
-        button_2_text = self._translator.get_translation_instance(user_locale).with_text("answer_different_domain").translate()
-        button_3_text = self._translator.get_translation_instance(user_locale).with_text("answer_indifferent_domain").translate()
-        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 1])
-        response_with_buttons.with_textual_option(button_1_text, self.INTENT_SIMILAR_DOMAIN)
-        response_with_buttons.with_textual_option(button_2_text, self.INTENT_DIFFERENT_DOMAIN)
-        response_with_buttons.with_textual_option(button_3_text, self.INTENT_INDIFFERENT_DOMAIN)
-        response.with_message(response_with_buttons)
-        response.with_context(context)
-        return response
+        pass
 
+    # TODO update anonymous_question text
     def action_question_3(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
-        """
-        Save whether people that should answer the question should have a similar interest in the domain, and ask whether people that should answer the question should have a similar belief and values
-        """
-        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
-        response = OutgoingEvent(social_details=incoming_event.social_details)
-        context = incoming_event.context
-        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_3)
-        context.with_static_state(self.CONTEXT_DOMAIN_INTEREST, intent)
-        message = self._translator.get_translation_instance(user_locale).with_text("belief_values_question").translate()
-        button_1_text = self._translator.get_translation_instance(user_locale).with_text("answer_similar_belief_values").translate()
-        button_2_text = self._translator.get_translation_instance(user_locale).with_text("answer_different_belief_values").translate()
-        button_3_text = self._translator.get_translation_instance(user_locale).with_text("answer_indifferent_belief_values").translate()
-        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 1])
-        response_with_buttons.with_textual_option(button_1_text, self.INTENT_SIMILAR_BELIEF_VALUES)
-        response_with_buttons.with_textual_option(button_2_text, self.INTENT_DIFFERENT_BELIEF_VALUES)
-        response_with_buttons.with_textual_option(button_3_text, self.INTENT_INDIFFERENT_BELIEF_VALUES)
-        response.with_message(response_with_buttons)
-        response.with_context(context)
-        return response
-
-    def action_question_4(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
-        """
-        Save whether people that should answer the question should have a similar belief and values, and ask whether the question is sensitive or not
-        """
-        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
-        response = OutgoingEvent(social_details=incoming_event.social_details)
-        context = incoming_event.context
-        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_4)
-        context.with_static_state(self.CONTEXT_BELIEF_VALUES_SIMILARITY, intent)
-        message = self._translator.get_translation_instance(user_locale).with_text("sensitive_question").translate()
-        button_1_text = self._translator.get_translation_instance(user_locale).with_text("sensitive").translate()
-        button_2_text = self._translator.get_translation_instance(user_locale).with_text("not_sensitive").translate()
-        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1])
-        response_with_buttons.with_textual_option(button_1_text, self.INTENT_SENSITIVE_QUESTION)
-        response_with_buttons.with_textual_option(button_2_text, self.INTENT_NOT_SENSITIVE_QUESTION)
-        response.with_message(response_with_buttons)
-        response.with_context(context)
-        return response
-
-    def action_question_4_1(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
         """
         Save whether the question is sensitive or not, and ask whether to ask the question anonymously or not
         """
@@ -1024,49 +1117,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         response.with_context(context)
         return response
 
-    def action_question_5(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
-        """
-        Save whether the question is not sensitive or whether to ask the question anonymously or not, and ask whether people that should answer the question should be socially closer
-        """
-        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
-        response = OutgoingEvent(social_details=incoming_event.social_details)
-        context = incoming_event.context
-        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_5)
-        if intent in [self.INTENT_ANONYMOUS_QUESTION, self.INTENT_NOT_ANONYMOUS_QUESTION]:
-            context.with_static_state(self.CONTEXT_ANONYMOUS_QUESTION, intent)
-        else:
-            context.with_static_state(self.CONTEXT_SENSITIVE_QUESTION, intent)
-        message = self._translator.get_translation_instance(user_locale).with_text("social_closeness_question").translate()
-        button_1_text = self._translator.get_translation_instance(user_locale).with_text("answer_socially_close").translate()
-        button_2_text = self._translator.get_translation_instance(user_locale).with_text("answer_socially_distant").translate()
-        button_3_text = self._translator.get_translation_instance(user_locale).with_text("answer_socially_indifferent").translate()
-        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 1])
-        response_with_buttons.with_textual_option(button_1_text, self.INTENT_SIMILAR_SOCIALLY)
-        response_with_buttons.with_textual_option(button_2_text, self.INTENT_DIFFERENT_SOCIALLY)
-        response_with_buttons.with_textual_option(button_3_text, self.INTENT_INDIFFERENT_SOCIALLY)
-        response.with_message(response_with_buttons)
-        response.with_context(context)
-        return response
-
-    def action_question_6(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
-        """
-        Save whether people that should answer the question should be socially closer, and ask where should be the people that should answer the question
-        """
-        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
-        response = OutgoingEvent(social_details=incoming_event.social_details)
-        context = incoming_event.context
-        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_6)
-        context.with_static_state(self.CONTEXT_SOCIAL_CLOSENESS, intent)
-        message = self._translator.get_translation_instance(user_locale).with_text("specify_answerer_location").translate()
-        button_1_text = self._translator.get_translation_instance(user_locale).with_text("location_answer_1").translate()
-        button_2_text = self._translator.get_translation_instance(user_locale).with_text("location_answer_2").translate()
-        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1])
-        response_with_buttons.with_textual_option(button_1_text, self.INTENT_ASK_TO_NEARBY)
-        response_with_buttons.with_textual_option(button_2_text, self.INTENT_ASK_TO_ANYWHERE)
-        response.with_message(response_with_buttons)
-        response.with_context(context)
-        return response
-
+    # TODO edit app logic, update the attributes
     def action_question_final(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
         """
         Conclude the /ask flow, with a final message
