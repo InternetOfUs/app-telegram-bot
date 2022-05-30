@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-05-27 17:36+0200\n"
+"PO-Revision-Date: 2022-05-30 09:14+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: mn\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 2.4.2\n"
+"X-Generator: Poedit 3.0.1\n"
 
 #: src/ask_for_help/handler.py:32
 msgid "info_text"
@@ -582,7 +582,7 @@ msgid "ok_to_publish_message"
 msgstr "Таны хариултыг дараа олон нийтэд нийтэлвэл зүгээр үү?"
 
 msgid "button_yes_anonymously_publish_text"
-msgstr ""
+msgstr "Тийм ээ, гэхдээ нэргүй"
 
 msgid "button_yes_name_publish_text"
 msgstr "Тиймээ, миний нэрээр"
@@ -598,8 +598,3 @@ msgstr "Харамсалтай нь хариултуудыг харуулахы�
 
 msgid "best_answer_not_published"
 msgstr "Харамсалтай нь хамгийн сайн хариултыг харуулахыг зөвшөөрөөгүй байна."
-
-#, fuzzy
-#~| msgid "more_answers_button"
-#~ msgid "ask_more_users_button"
-#~ msgstr ":game_die: Илүү олон хүнээс асуух"

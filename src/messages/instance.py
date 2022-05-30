@@ -25,7 +25,7 @@ class WeNetMessageInterface(Resource):
     def post(self):
         data = request.get_json()
         try:
-            message = MessageBuilder.build(data)  # TODO as for the other callbacks, it is probably more easy to define an ad-hoc message for QuestionExpirationMessage and probably AnsweredQuestionMessage will be no more used
+            message = MessageBuilder.build(data)
             logger.info("Message received: [%s] %s" % (type(message), str(message.to_repr())))
             event = IncomingCustomEvent(self.instance_namespace, message.to_repr(), self.bot_id)
             self.mqtt_publisher.publish_data(self.mqtt_topic, event.to_repr())

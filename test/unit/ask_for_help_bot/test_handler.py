@@ -682,7 +682,7 @@ class TestAskForHelpHandler(TestCase):
             handler.CONTEXT_ANSWER_TO_QUESTION: "answer",
             handler.CONTEXT_WENET_USER_ID: "user_id",
             handler.CONTEXT_ANONYMOUS_ANSWER: True
-        })), "")
+        })), handler.INTENT_AGREE_PUBLISH_ANONYMOUSLY)
         self.assertIsInstance(response, OutgoingEvent)
         self.assertEqual(1, len(response.messages))
         self.assertIsInstance(response.messages[0], TextualResponse)
