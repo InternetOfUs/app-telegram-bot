@@ -1,11 +1,20 @@
 # Changelog
 
-## Version 2.*
+## Version 3.*
 
-### 2.3.0
+### 3.0.0
 
 :rocket: New features
+- Added support for task expiration callbacks
+- Added support for liking preferred answer
+- Added support for showing received answers in batches
+- Added support for publishing answers in a preferred way (e.g., Anonymously) or not publishing them
 - Added support for follow-up between requester and responder
+
+:house: Internal
+- Updated project template to version `4.12.2`
+
+## Version 2.*
 
 ### 2.2.0
 

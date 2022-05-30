@@ -37,4 +37,4 @@ if [[ -z "${GUNICORN_WORKERS}" ]]; then
     GUNICORN_WORKERS=${DEFAULT_WORKERS}
 fi
 
-exec gunicorn -w "${GUNICORN_WORKERS}" -b 0.0.0.0:80 "messages.main:bot_messages_app"
+exec gunicorn -w "${GUNICORN_WORKERS}" -b 0.0.0.0:80  "messages.main:bot_messages_app"

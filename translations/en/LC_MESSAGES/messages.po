@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-05-12 18:15+0200\n"
+"PO-Revision-Date: 2022-05-30 10:38+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -523,6 +523,76 @@ msgstr ""
 "\n"
 "The answer that was chosen as the best is:\n"
 "{best_answer} - {answerer}"
+
+msgid "collected_answers"
+msgstr "Following answers were received:"
+
+msgid "from_multiple_response"
+msgstr "Which response did you like the most? I can also ask more people."
+
+msgid "asked_message_without_attributes"
+msgstr "You asked “*{question}*”"
+
+msgid "asked_message_without_attributes_user"
+msgstr "{user} asked “*{question}*”"
+
+msgid "answer_reason_funny"
+msgstr "Funny"
+
+msgid "answer_reason_thoughtful"
+msgstr "Thoughtful"
+
+msgid "answer_reason_informative"
+msgstr "Informative"
+
+msgid "answer_reason_creative"
+msgstr "Creative"
+
+msgid "answer_reason_honest"
+msgstr "Honest"
+
+msgid "answer_reason_kind"
+msgstr "Kind"
+
+msgid "answer_reason_personal"
+msgstr "Personal / Subjective"
+
+msgid "chosen_answer_by_user"
+msgstr "*[Chosen as the best answer by {user}]*"
+
+msgid "like_answer_button"
+msgstr ":thumbsup: Like"
+
+msgid "like_answer_text"
+msgstr "You liked this answer!"
+
+msgid "no_answer_text"
+msgstr ""
+"Unfortunately, no one has answered it in the last {expiration_duration} "
+"hours.\n"
+"\n"
+"What would you like to do?"
+
+msgid "ok_to_publish_message"
+msgstr "Would you be okay to publish your answer later to the community?"
+
+msgid "button_yes_anonymously_publish_text"
+msgstr "Yes, but anonymously"
+
+msgid "button_yes_name_publish_text"
+msgstr "Yes, with my first name"
+
+msgid "button_no_publish_text"
+msgstr "No"
+
+msgid "thank_you_message"
+msgstr "Thank you!"
+
+msgid "no_collected_answers"
+msgstr "Unfortunately, no answers are allowed to show."
+
+msgid "best_answer_not_published"
+msgstr "Unfortunately, the best answer is not allowed to show."
 
 msgid "follow_up_button"
 msgstr ":speaking_head: Request {answerer}’s contact for follow-up"

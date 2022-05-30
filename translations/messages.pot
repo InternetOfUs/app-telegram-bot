@@ -402,6 +402,72 @@ msgstr ""
 msgid "publish_question"
 msgstr ""
 
+msgid "collected_answers"
+msgstr ""
+
+msgid "from_multiple_response"
+msgstr ""
+
+msgid "asked_message_without_attributes"
+msgstr ""
+
+msgid "asked_message_without_attributes_user"
+msgstr ""
+
+msgid "answer_reason_funny"
+msgstr ""
+
+msgid "answer_reason_thoughtful"
+msgstr ""
+
+msgid "answer_reason_informative"
+msgstr ""
+
+msgid "answer_reason_creative"
+msgstr ""
+
+msgid "answer_reason_honest"
+msgstr ""
+
+msgid "answer_reason_kind"
+msgstr ""
+
+msgid "answer_reason_personal"
+msgstr ""
+
+msgid "chosen_answer_by_user"
+msgstr ""
+
+msgid "like_answer_button"
+msgstr ""
+
+msgid "like_answer_text"
+msgstr ""
+
+msgid "no_answer_text"
+msgstr ""
+
+msgid "ok_to_publish_message"
+msgstr ""
+
+msgid "button_yes_anonymously_publish_text"
+msgstr ""
+
+msgid "button_yes_name_publish_text"
+msgstr ""
+
+msgid "button_no_publish_text"
+msgstr ""
+
+msgid "thank_you_message"
+msgstr ""
+
+msgid "no_collected_answers"
+msgstr ""
+
+msgid "best_answer_not_published"
+msgstr ""
+
 msgid "follow_up_button"
 msgstr ""
 

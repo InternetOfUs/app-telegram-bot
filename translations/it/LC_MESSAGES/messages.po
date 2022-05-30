@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-05-12 18:16+0200\n"
+"PO-Revision-Date: 2022-05-30 10:38+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: it\n"
@@ -543,6 +543,78 @@ msgstr ""
 "\n"
 "La risposta che è stata scelta come la migliore è:\n"
 "{best_answer} - {answerer}"
+
+msgid "collected_answers"
+msgstr "Sono pervenute le seguenti risposte:"
+
+msgid "from_multiple_response"
+msgstr ""
+"Quale risposta ti è piaciuta di più? Posso anche chiedere a più persone."
+
+msgid "asked_message_without_attributes"
+msgstr "Hai fatto una domanda “*{question}*”"
+
+msgid "asked_message_without_attributes_user"
+msgstr "{user} ha chiesto “*{question}*”"
+
+msgid "answer_reason_funny"
+msgstr "Divertente"
+
+msgid "answer_reason_thoughtful"
+msgstr "Ponderato"
+
+msgid "answer_reason_informative"
+msgstr "Informativo"
+
+msgid "answer_reason_creative"
+msgstr "Creativo"
+
+msgid "answer_reason_honest"
+msgstr "Onesto"
+
+msgid "answer_reason_kind"
+msgstr "Gentile"
+
+msgid "answer_reason_personal"
+msgstr "Personale / Soggettivo"
+
+msgid "chosen_answer_by_user"
+msgstr "*[Scelto come miglior risposta da {user}]*"
+
+msgid "like_answer_button"
+msgstr ":thumbsup: Like"
+
+msgid "like_answer_text"
+msgstr "Ti è piaciuta questa risposta!"
+
+msgid "no_answer_text"
+msgstr ""
+"Sfortunatamente, nessuno ha risposto nelle ultime {expiration_duration} "
+"ore. \n"
+"\n"
+"Cosa ti piacerebbe fare?"
+
+msgid "ok_to_publish_message"
+msgstr ""
+"Potresti pubblicare la tua risposta in un secondo momento nella community?"
+
+msgid "button_yes_anonymously_publish_text"
+msgstr "Sì, ma in forma anonima"
+
+msgid "button_yes_name_publish_text"
+msgstr "Sì, con il mio nome"
+
+msgid "button_no_publish_text"
+msgstr "No"
+
+msgid "thank_you_message"
+msgstr "Grazie!"
+
+msgid "no_collected_answers"
+msgstr "Sfortunatamente, non mi è consentito mostrare risposte."
+
+msgid "best_answer_not_published"
+msgstr "Sfortunatamente, la risposta migliore non può essere mostrata."
 
 msgid "follow_up_button"
 msgstr ":speaking_head: Richiedi il contatto di {answerer} per il follow-up"
