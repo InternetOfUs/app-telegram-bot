@@ -1670,10 +1670,10 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
         message_upper_part = f"{message_attributes} \n\n"
         message_notification = []
-        message_string = ""
         if len(message_answers) != 0:
             message_upper_part += f"{self._translator.get_translation_instance(self.publication_language).with_text('collected_answers').translate()} \n\n"
             message_notification.append(TextualResponse(message_upper_part))
+            message_string = ""
 
             message_best_answer = self._translator.get_translation_instance(self.publication_language)\
                 .with_text('chosen_answer_by_user')\
@@ -1703,9 +1703,10 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
             if best_answer_transaction not in transaction_ids:
                 message_string += f"\n\n {self._translator.get_translation_instance(self.publication_language).with_text('best_answer_not_published').translate()} \n\n"
+            message_notification.append(TextualResponse(message_string))
         else:
-            message_string += f"{self._translator.get_translation_instance(self.publication_language).with_text('no_collected_answers').translate()} \n\n"
-        message_notification.append(TextualResponse(message_string))
+            message_upper_part += f"{self._translator.get_translation_instance(self.publication_language).with_text('no_collected_answers').translate()} \n\n"
+            message_notification.append(TextualResponse(message_upper_part))
 
         if intent == self.INTENT_PUBLISH and isinstance(incoming_event.social_details, TelegramDetails):
             notification = NotificationEvent(social_details=TelegramDetails(None, self.channel_id, incoming_event.social_details.telegram_bot_id), messages=message_notification)
