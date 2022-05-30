@@ -1,3 +1,7 @@
+from __future__ import annotations
+
+from functools import total_ordering
+
 import anybadge
 import yaml
 from yaml import Loader
@@ -13,6 +17,56 @@ import re
 #   - pip package versions
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
+
+
+class Release(object):
+
+    def __init__(self, major: int, minor: int, patch: int) -> None:
+        self.major = major
+        self.minor = minor
+        self.patch = patch
+
+    def __str__(self) -> str:
+        return f"{self.major}.{self.minor}.{self.patch}"
+
+    @staticmethod
+    def build(version: str) -> Release:
+        result = re.search("([0-9]+).([0-9]+).([0-9]+)([a-zA-Z.\-]+)?", version)
+        if result:
+            return Release(
+                int(result.group(1)),
+                int(result.group(2)),
+                int(result.group(3))
+            )
+        else:
+            raise ValueError(f"Can not build release from {version}")
+
+    def __eq__(self, o: object) -> bool:
+        return super().__eq__(o) and isinstance(o, Release) and self.major == o.major and self.minor == o.minor and self.patch == o.patch
+
+    def __lt__(self, o: object) -> bool:
+        if not isinstance(o, Release):
+            raise ValueError
+
+        if self == o:
+            return False
+
+        if (self.major < o.major) or (self.major == o.major and self.minor < o.minor) or (self.major == o.major and self.minor == o.minor and self.patch < o.patch):
+            return True
+        else:
+            return False
+
+    def __gt__(self, o: object) -> bool:
+        if not isinstance(o, Release):
+            raise ValueError
+
+        if self == o:
+            return False
+
+        if (self.major > o.major) or (self.major == o.major and self.minor > o.minor) or (self.major == o.major and self.minor == o.minor and self.patch > o.patch):
+            return True
+        else:
+            return False
 
 
 def create_badge(label: str, value: str):
@@ -38,9 +92,18 @@ def release_badge():
         pass
     else:
         tags = [tag for tag in stdoutput.decode("utf-8").split("\n") if tag != ""]
-        if len(tags) > 0:
+        releases = []
+        for tag in tags:
+            try:
+                releases.append(Release.build(tag))
+            except ValueError:
+                pass
+
+        releases.sort(reverse=True)
+
+        if len(releases) > 0:
             print(" - Creating [release] badge")
-            create_badge("release", tags[len(tags) - 1])
+            create_badge("release", str(releases[0]))
         else:
             print(" - No tags available for creating the [release] badge")
 
@@ -93,7 +156,9 @@ uhopper_pip_libraries = [
     "uhopper-chatbot",
     "uhopper-rule-engine",
     "wenet-common",
-    "datumo-core"
+    "datumo-core",
+    "datumo-core-min",
+    "datumo-crm"
 ]
 
 if os.path.isfile(f"{dir_path}/../requirements.txt"):

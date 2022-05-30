@@ -44,6 +44,8 @@ if __name__ == "__main__":
     task_type_id = os.getenv("TASK_TYPE_ID")
     community_id = os.getenv("COMMUNITY_ID")
     max_users = int(os.getenv("MAX_USERS", 5))
+    max_answers = int(os.getenv("MAX_ANSWERS", 15))
+    expiration_duration = int(os.getenv("EXPIRATION_DURATION", 86400))  # 1 day is 86400 seconds
     survey_url = os.getenv("SURVEY_URL")
     helper_url = os.getenv("PILOT_HELPER_URL")
     channel_id = os.getenv("CHANNEL_ID")
@@ -62,28 +64,30 @@ if __name__ == "__main__":
     translator.with_language("es", is_default=False, aliases=["es_ES", "es_PY", "es_AR", "es_MX"])
 
     handler = AskForHelpHandler(
-        instance_namespace,
-        "wenet-ask-for-help",
-        "wenet-ask-for-help-handler",
-        bot_token,
-        wenet_instance_url,
-        wenet_hub_url,
-        app_id,
-        client_secret,
-        redirect_url,
-        wenet_authentication_url,
-        wenet_authentication_management_url,
-        task_type_id,
-        community_id,
-        max_users,
-        survey_url,
-        helper_url,
-        channel_id,
-        publication_language,
-        alert_module,
-        connector,
-        None,
-        translator
+        instance_namespace=instance_namespace,
+        bot_id="wenet-ask-for-help",
+        handler_id="wenet-ask-for-help-handler",
+        telegram_id=bot_token,
+        wenet_instance_url=wenet_instance_url,
+        wenet_hub_url=wenet_hub_url,
+        app_id=app_id,
+        client_secret=client_secret,
+        redirect_url=redirect_url,
+        wenet_authentication_url=wenet_authentication_url,
+        wenet_authentication_management_url=wenet_authentication_management_url,
+        task_type_id=task_type_id,
+        community_id=community_id,
+        max_users=max_users,
+        max_answers=max_answers,
+        expiration_duration=expiration_duration,
+        survey_url=survey_url,
+        helper_url=helper_url,
+        channel_id=channel_id,
+        publication_language=publication_language,
+        alert_module=alert_module,
+        connector=connector,
+        nlp_handler=None,
+        translator=translator
     )
     instance_manager = InstanceManager(instance_namespace, subscriber, MultiThreadEventDispatcher())
     instance_manager.with_event_handler(handler)

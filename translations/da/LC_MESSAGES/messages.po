@@ -6,10 +6,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-04-01 15:43+0200\n"
+"PO-Revision-Date: 2022-05-30 09:15+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
-"Language: da\n"
+"Language: en\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -61,8 +61,8 @@ msgstr "Please write your question :point_down:"
 
 msgid "domain_question"
 msgstr ""
-"Okay, I will ask others to answer your question. Now I will ask you a few "
-"questions to specify who to ask more precisely :dart:.\n"
+"Good question! Please help me find the best people who can answer your "
+"question :dart:.\n"
 "\n"
 "1/6: What’s the *domain* of your question?"
 
@@ -151,8 +151,8 @@ msgstr "Skip this :point_down:"
 
 msgid "belief_values_question"
 msgstr ""
-"3/6: Should these persons have similar or different *belief and values* than "
-"you?"
+"3/6: Should these persons have similar or different *beliefs and values* "
+"than you?"
 
 msgid "answer_similar_belief_values"
 msgstr "Similar"
@@ -519,7 +519,77 @@ msgstr "No"
 
 msgid "publish_question"
 msgstr ""
-":question: {questioner} asked question: “{question}”\n"
+":question: {questioner} asked question: {question}\n"
 "\n"
 "The answer that was chosen as the best is:\n"
 "{best_answer} - {answerer}"
+
+msgid "collected_answers"
+msgstr "Following answers were received:"
+
+msgid "from_multiple_response"
+msgstr "Which response did you like the most? I can also ask more people."
+
+msgid "asked_message_without_attributes"
+msgstr "You asked “*{question}*”"
+
+msgid "asked_message_without_attributes_user"
+msgstr "{user} asked “*{question}*”"
+
+msgid "answer_reason_funny"
+msgstr "Funny"
+
+msgid "answer_reason_thoughtful"
+msgstr "Thoughtful"
+
+msgid "answer_reason_informative"
+msgstr "Informative"
+
+msgid "answer_reason_creative"
+msgstr "Creative"
+
+msgid "answer_reason_honest"
+msgstr "Honest"
+
+msgid "answer_reason_kind"
+msgstr "Kind"
+
+msgid "answer_reason_personal"
+msgstr "Personal / Subjective"
+
+msgid "chosen_answer_by_user"
+msgstr "*[Chosen as the best answer by {user}]*"
+
+msgid "like_answer_button"
+msgstr ":thumbsup: Like"
+
+msgid "like_answer_text"
+msgstr "You liked this answer!"
+
+msgid "no_answer_text"
+msgstr ""
+"Unfortunately, no one has answered it in the last {expiration_duration} "
+"hours.\n"
+"\n"
+"What would you like to do?"
+
+msgid "ok_to_publish_message"
+msgstr "Would you be okay to publish your answer later to the community?"
+
+msgid "button_yes_anonymously_publish_text"
+msgstr "Yes, but anonymously"
+
+msgid "button_yes_name_publish_text"
+msgstr "Yes, with my first name"
+
+msgid "button_no_publish_text"
+msgstr "No"
+
+msgid "thank_you_message"
+msgstr "Thank you!"
+
+msgid "no_collected_answers"
+msgstr "Unfortunately, no answers are allowed to show."
+
+msgid "best_answer_not_published"
+msgstr "Unfortunately, the best answer is not allowed to show."

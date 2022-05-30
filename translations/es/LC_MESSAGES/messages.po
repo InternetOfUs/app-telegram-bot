@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-04-01 15:44+0200\n"
+"PO-Revision-Date: 2022-05-30 09:14+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: es\n"
@@ -545,3 +545,74 @@ msgstr ""
 "\n"
 "La respuesta que se escogió como la mejor es:\n"
 "{best_answer} - {answerer}"
+
+msgid "collected_answers"
+msgstr "Se recibieron las siguientes respuestas:"
+
+msgid "from_multiple_response"
+msgstr "¿Qué respuesta te gustó más? También puedo preguntar a más personas."
+
+msgid "asked_message_without_attributes"
+msgstr "Preguntaste “*{question}*”"
+
+msgid "asked_message_without_attributes_user"
+msgstr "{user} preguntó “*{question}*”"
+
+msgid "answer_reason_funny"
+msgstr "Divertido"
+
+msgid "answer_reason_thoughtful"
+msgstr "Pensativo"
+
+msgid "answer_reason_informative"
+msgstr "Informativo"
+
+msgid "answer_reason_creative"
+msgstr "Creativo"
+
+msgid "answer_reason_honest"
+msgstr "Honesto"
+
+msgid "answer_reason_kind"
+msgstr "Amable"
+
+msgid "answer_reason_personal"
+msgstr "Personal / Subjetivo"
+
+msgid "chosen_answer_by_user"
+msgstr "*[Elegido como la mejor respuesta por {user}]*"
+
+msgid "like_answer_button"
+msgstr ":thumbsup: Like"
+
+msgid "like_answer_text"
+msgstr "¡Te gustó esta respuesta!"
+
+msgid "no_answer_text"
+msgstr ""
+"Desafortunadamente, nadie ha respondido en las últimas {expiration_duration} "
+"horas. \n"
+"\n"
+"Que te gustaría hacer?"
+
+msgid "ok_to_publish_message"
+msgstr ""
+"¿Estarías de acuerdo en publicar tu respuesta más tarde para la comunidad?"
+
+msgid "button_yes_anonymously_publish_text"
+msgstr "Sí, pero de forma anónima."
+
+msgid "button_yes_name_publish_text"
+msgstr "Si, con mi primer nombre"
+
+msgid "button_no_publish_text"
+msgstr "No"
+
+msgid "thank_you_message"
+msgstr "¡Gracias!"
+
+msgid "no_collected_answers"
+msgstr "Desafortunadamente, no se permite mostrar ninguna respuesta."
+
+msgid "best_answer_not_published"
+msgstr "Desafortunadamente, no se permite mostrar la mejor respuesta."
