@@ -613,11 +613,11 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             "task_id": message.attributes["taskId"],
             "question": question_text,
             "questioner_user_id": user_object.profile_id,
-            "related_buttons": button_ids  # TODO then check if we want to allow only one click for this set of buttons, considering that a like will substitute the best answer one
+            "related_buttons": button_ids  # TODO then check if we want to allow only one click for this set of buttons: not all the buttons should expire when we press one of them
         }
         self.cache.cache(ButtonPayload(button_data, self.INTENT_LIKE_ANSWER).to_repr(), key=button_ids[0])
         answer.with_textual_option(button_like_answer_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
-                self.cache.cache(ButtonPayload(button_data, self.INTENT_FOLLOW_UP).to_repr(), key=button_ids[1])
+        self.cache.cache(ButtonPayload(button_data, self.INTENT_FOLLOW_UP).to_repr(), key=button_ids[1])
         answer.with_textual_option(button_follow_up_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[1]))
         self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_REPORT).to_repr(), key=button_ids[2])
         answer.with_textual_option(button_report_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
@@ -1619,7 +1619,9 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         response.with_context(context)
         return response
 
-    def action_follow_up_0(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
+    # TODO Add tests for the new methods for the follow-up
+
+    def action_follow_up_0(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:  # TODO if there is no username on Telegram when he wants to share it: ask to set username and send to him the telegram instruction in order to set it
         response = OutgoingEvent(social_details=incoming_event.social_details)
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
 
@@ -1729,7 +1731,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         else:
             return username
 
-    def action_follow_up_2(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
+    def action_follow_up_2(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:  # TODO if there is no username on Telegram when he wants to share it: ask to set username and send to him the telegram instruction in order to set it
         response = OutgoingEvent(social_details=incoming_event.social_details)
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
 
@@ -1785,7 +1787,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         message = TextualResponse(message)
         response.with_message(message)
         response.with_context(context)
-        return response
+        return response  # TODO Relate to how was the follow up: after how much: 12/24h (that can be set as an environmental variable), where to store it: in a transaction the information that they did the follow-up (with an expiration date to receive the callback) and in another transaction how was the follow up details
 
     def action_not_follow_up(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
