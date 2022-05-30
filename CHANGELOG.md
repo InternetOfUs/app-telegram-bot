@@ -7,6 +7,7 @@
 - Added support for liking preferred answer
 - Added support for showing received answers in batches
 - Added support for publishing answers in a preferred way (e.g., Anonymously) or not publishing them
+- Updated project template to version `4.12.2`
 
 ## Version 2.*
 

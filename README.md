@@ -151,6 +151,8 @@ Both the chatbots use the following environment variables:
 
 The ask4help bot also needs the following environment variables:
 * `MAX_USERS`: the maximum number of users that should receive the question in the ask4help bot (default is 5)
+* `MAX_ANSWERS`: the maximum number of answers that should receive a question in the ask4help bot before expiring (default is 15)
+* `EXPIRATION_DURATION`: the maximum amount of time before a question in the ask4help bot expires (default is 86400)
 * `SURVEY_URL`: the url of the survey
 * `PILOT_HELPER_URL`: (Optional) the url of the helper page specific for a pilot
 * `CHANNEL_ID`: (Optional) the id of the channel where to publish questions and best answers
