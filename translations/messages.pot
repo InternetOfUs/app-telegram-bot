@@ -468,3 +468,6 @@ msgstr ""
 msgid "best_answer_not_published"
 msgstr ""
 
+msgid "basic_needs_button"
+msgstr ""
+

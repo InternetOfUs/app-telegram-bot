@@ -9,15 +9,10 @@ class StateMixin:
     CONTEXT_PENDING_WENET_MESSAGES = "pending_wenet_messages"
     CONTEXT_PENDING_ANSWERS = "pending_answers"
     # available states
-    # TODO edit available states according to new list of action answers
     STATE_QUESTION_0 = "question_0"
     STATE_QUESTION_1 = "question_1"
     STATE_QUESTION_2 = "question_2"
     STATE_QUESTION_3 = "question_3"
-    STATE_QUESTION_4 = "question_4"
-    STATE_QUESTION_4_1 = "question_4_1"
-    STATE_QUESTION_5 = "question_5"
-    STATE_QUESTION_6 = "question_6"
     STATE_ANSWERING = "answer_2"
     STATE_ANSWERING_SENSITIVE = "answer_sensitive"
     STATE_ANSWERING_ANONYMOUSLY = "answer_anonymously"
@@ -33,7 +28,6 @@ class StateMixin:
         statuses = [
             self.STATE_ANSWERING, self.STATE_ANSWERING_SENSITIVE, self.STATE_ANSWERING_ANONYMOUSLY,
             self.STATE_QUESTION_0, self.STATE_QUESTION_1, self.STATE_QUESTION_2, self.STATE_QUESTION_3,
-            self.STATE_QUESTION_4, self.STATE_QUESTION_4_1, self.STATE_QUESTION_5, self.STATE_QUESTION_6,
             self.STATE_BEST_ANSWER_0, self.STATE_BEST_ANSWER_PUBLISH, self.STATE_PUBLISHING_ANSWER_TO_CHANNEL,
             self.STATE_BEST_ANSWER_1
         ]
