@@ -880,7 +880,29 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
     def action_question_2(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
         # TODO check intent_sensitive and provide different answer text before moving to step2
-        pass
+        # TODO add more buttons+logos save intents
+        """
+        Subjective matters
+        """
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        context = incoming_event.context
+        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_2)
+        # context.with_static_state(self.CONTEXT_SOMETHING, intent)
+        message = self._translator.get_translation_instance(user_locale).with_text("with this question ... text").translate()
+        button_1_text = self._translator.get_translation_instance(user_locale).with_text("button text similar").translate()
+        button_2_text = self._translator.get_translation_instance(user_locale).with_text("button text different").translate()
+        button_3_text = self._translator.get_translation_instance(user_locale).with_text("button text expert").translate()
+        button_4_text = self._translator.get_translation_instance(user_locale).with_text("button text random").translate()
+        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 2])
+        response_with_buttons.with_textual_option(button_1_text, self.INTENT_SUBJECT_SIMILAR)
+        response_with_buttons.with_textual_option(button_2_text, self.INTENT_SUBJECT_DIFFERENT)
+        response_with_buttons.with_textual_option(button_3_text, self.INTENT_SUBJECT_EXPERT)
+        random_intent = random.choice([self.INTENT_SUBJECT_SIMILAR, self.INTENT_SUBJECT_DIFFERENT, self.INTENT_SUBJECT_EXPERT])
+        response_with_buttons.with_textual_option(button_4_text, random_intent)
+        response.with_message(response_with_buttons)
+        response.with_context(context)
+        return response
 
     def action_question_3(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
         """
@@ -889,8 +911,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         response = OutgoingEvent(social_details=incoming_event.social_details)
         context = incoming_event.context
-        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_2)
-        context.with_static_state(self.CONTEXT_SENSITIVE_QUESTION, intent)
+        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_3)
+        # context.with_static_state(self.CONTEXT_SENSITIVE_QUESTION, intent) do we need it?
         # TODO add 3/3: number on translation texts on PO files
         message = self._translator.get_translation_instance(user_locale).with_text("anonymous_question").translate()
         button_1_text = self._translator.get_translation_instance(user_locale).with_text("anonymous").translate()
@@ -914,7 +936,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         response = OutgoingEvent(social_details=incoming_event.social_details)
         context = incoming_event.context
-        # TODO check if there's some changes needed
+        # TODO check contexts
         if not context.has_static_state(self.CONTEXT_ASKED_QUESTION) \
                 or not context.has_static_state(self.CONTEXT_QUESTION_DOMAIN) \
                 or not context.has_static_state(self.CONTEXT_DOMAIN_INTEREST) \
