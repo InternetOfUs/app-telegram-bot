@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-05-31 17:09+0200\n"
+"PO-Revision-Date: 2022-06-01 12:21+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -593,3 +593,22 @@ msgstr "Unfortunately, no answers are allowed to show."
 
 msgid "best_answer_not_published"
 msgstr "Unfortunately, the best answer is not allowed to show."
+
+msgid "basic_needs_button"
+msgstr ":house: :stew: Basic needs"
+
+msgid "subjective_question_text"
+msgstr "2/3: With this question…"
+
+msgid "similar_subjective_button"
+msgstr ""
+":right_facing_fist: I would go with people I’d expect to get along with"
+
+msgid "different_subjective_button"
+msgstr ":person_fencing: I would like to broaden my perspective"
+
+msgid "expert_subjective_button"
+msgstr ":face_with_monocle: I need people who know this"
+
+msgid "random_choice_button"
+msgstr ":game_die: Ready to play"
