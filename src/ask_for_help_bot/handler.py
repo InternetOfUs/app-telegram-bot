@@ -1270,7 +1270,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             message = self._translator.get_translation_instance(user_locale).with_text("answered_message").translate()
             context.with_static_state(self.CONTEXT_ANONYMOUS_ANSWER, False)
 
-
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_PUBLISHING_ANSWER_TO_CHANNEL)
         if self.channel_id:
             response.with_message(TextualResponse(message))
