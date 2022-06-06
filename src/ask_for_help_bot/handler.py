@@ -532,6 +532,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             .translate()
         return TextualResponse(message_string)
 
+    # TODO merge develop into 153 branch and resolve conflicts
     def _handle_question_expiration(self, message: QuestionExpirationMessage, service_api: ServiceApiInterface, user_object: WeNetUserProfile) -> List[TelegramRapidAnswerResponse]:
         locale = user_object.locale
         transaction_ids = []
@@ -805,9 +806,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             context = incoming_event.context
             context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_1)
             context.with_static_state(self.CONTEXT_ASKED_QUESTION, question)
-            # TODO translate text on domain_question on PO files
             message = self._translator.get_translation_instance(user_locale).with_text("domain_question").translate()
-            # TODO translate text for studying_career_button on PO files
             button_1_text = self._translator.get_translation_instance(user_locale).with_text("studying_career_button").translate()
             button_2_text = self._translator.get_translation_instance(user_locale).with_text("physical_activity_button").translate()
             button_3_text = self._translator.get_translation_instance(user_locale).with_text("life_ponders_button").translate() # Contemplation
@@ -867,7 +866,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         context = incoming_event.context
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_3)
         context.with_static_state(self.CONTEXT_SUBJECTIVITY, intent)
-        # TODO translate add 3: number text on PO files
         message = self._translator.get_translation_instance(user_locale).with_text("anonymous_question").translate()
         button_1_text = self._translator.get_translation_instance(user_locale).with_text("anonymous").translate()
         button_2_text = self._translator.get_translation_instance(user_locale).with_text("not_anonymous").translate()
@@ -925,7 +923,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         try:
             service_api.create_task(question_task)
             logger.debug(f"User [{wenet_id}] asked a question. Task created successfully")
-            # TODO translate question_final on PO files
             message = self._translator.get_translation_instance(user_locale) \
                 .with_text("question_final") \
                 .with_substitution("expiration_duration", str(int(self.expiration_duration/3600))) \
