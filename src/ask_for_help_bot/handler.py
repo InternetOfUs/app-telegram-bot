@@ -57,7 +57,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     CONTEXT_ASKED_QUESTION = "asked_question"
     CONTEXT_QUESTION_DOMAIN = "question_domain"
     CONTEXT_SUBJECTIVITY = "question_subjectivity"
-    CONTEXT_SENSITIVE_QUESTION = "sensitive_question"
     CONTEXT_ANONYMOUS_QUESTION = "anonymous_question"
     CONTEXT_ANONYMOUS_ANSWER = "anonymous_answer"
     CONTEXT_ANSWER_TO_QUESTION = "answer_to_question"
@@ -85,6 +84,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     INTENT_SUBJECT_SIMILAR = "subject_similar"
     INTENT_SUBJECT_DIFFERENT = "subject_different"
     INTENT_SUBJECT_EXPERT = "subject_expert"
+    INTENT_SUBJECT_RANDOM = "subject_random"
     INTENT_ANSWER_ANONYMOUSLY = "answer_anonymously"
     INTENT_ANSWER_NOT_ANONYMOUSLY = "answer_not_anonymously"
     INTENT_ANSWER_QUESTION = "answer_question"
@@ -177,7 +177,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                     static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_1)
                 )
             )
-        subjective_intents = [self.INTENT_SUBJECT_EXPERT, self.INTENT_SUBJECT_DIFFERENT, self.INTENT_SUBJECT_SIMILAR]
+        subjective_intents = [self.INTENT_SUBJECT_EXPERT, self.INTENT_SUBJECT_DIFFERENT, self.INTENT_SUBJECT_SIMILAR, self.INTENT_SUBJECT_RANDOM]
         for subjective_intent in subjective_intents:
             self.intent_manager.with_fulfiller(
                 IntentFulfillerV3(subjective_intent, self.action_question_3).with_rule(
@@ -320,7 +320,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     def _clear_context(self, context: ConversationContext) -> ConversationContext:
         context_to_remove = [
             self.CONTEXT_CURRENT_STATE, self.CONTEXT_ASKED_QUESTION, self.CONTEXT_QUESTION_DOMAIN,
-            self.CONTEXT_SENSITIVE_QUESTION, self.CONTEXT_ANONYMOUS_QUESTION, self.CONTEXT_ANSWER_TO_QUESTION,
+            self.CONTEXT_ANONYMOUS_QUESTION, self.CONTEXT_ANSWER_TO_QUESTION,
             self.CONTEXT_QUESTION_TO_ANSWER, self.CONTEXT_TASK_ID, self.CONTEXT_TRANSACTION_ID,
             self.CONTEXT_CHOSEN_ANSWER_REASON, self.CONTEXT_QUESTIONER_NAME, self.CONTEXT_QUESTION,
             self.CONTEXT_BEST_ANSWER, self.CONTEXT_ANSWERER_NAME, self.CONTEXT_SUBJECTIVITY
@@ -544,14 +544,14 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 if transaction.id == i and transaction.label == self.LABEL_ANSWER_TRANSACTION:
                     message_answers.append(self.parse_text_with_markdown(self._prepare_string_to_telegram(transaction.attributes["answer"])))
                     answerer_user = service_api.get_user_profile(transaction.actioneer_id)
-                    message_users.append(answerer_user.name.first if answerer_user.name.first and not message.attributes.get("anonymous", False) else self._translator.get_translation_instance(locale).with_text("anonymous_user").translate())
+                    message_users.append(answerer_user.name.first if answerer_user.name.first and not transaction.attributes.get("anonymous", False) else self._translator.get_translation_instance(locale).with_text("anonymous_user").translate())
                     transaction_ids.append(transaction.id)
                     break
 
         domain = task.attributes["domain"]
         sensitive = task.attributes.get("sensitive", False)
 
-        message_attributes = ""
+        # TODO edit the text response when showing task expiration
         if sensitive:
             message_attributes = self._translator.get_translation_instance(locale) \
                 .with_text("asked_sensitive_message") \
@@ -823,7 +823,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             response_with_buttons.with_textual_option(button_5_text, self.INTENT_MUSIC)
             response_with_buttons.with_textual_option(button_6_text, self.INTENT_ARTS_AND_CRAFTS)
             response_with_buttons.with_textual_option(button_7_text, self.INTENT_SENSITIVE_QUESTION)
-            # TODO ask how to separate domain from sensitive question
             response.with_message(response_with_buttons)
             response.with_context(context)
         else:
@@ -832,7 +831,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         return response
 
     def action_question_2(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
-        # TODO check intent_sensitive and provide A or B answer text before moving to step2
         """
         Subjective matters
         """
@@ -841,8 +839,12 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         context = incoming_event.context
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_2)
         context.with_static_state(self.CONTEXT_QUESTION_DOMAIN, intent)
+        if intent == self.INTENT_SENSITIVE_QUESTION:
+            message = self._translator.get_translation_instance(user_locale).with_text("sensitive_question_domain").translate()
+        else:
+            message = self._translator.get_translation_instance(user_locale).with_text("not_sensitive_question_domain").translate()
+        response.with_message(TextualResponse(message))
         message = self._translator.get_translation_instance(user_locale).with_text("subjective_question_text").translate()
-        # TODO :fist_right: and :right_facing_fist: both are not working on PO files, check
         button_1_text = self._translator.get_translation_instance(user_locale).with_text("similar_subjective_button").translate()
         button_2_text = self._translator.get_translation_instance(user_locale).with_text("different_subjective_button").translate()
         button_3_text = self._translator.get_translation_instance(user_locale).with_text("expert_subjective_button").translate()
@@ -851,8 +853,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         response_with_buttons.with_textual_option(button_1_text, self.INTENT_SUBJECT_SIMILAR)
         response_with_buttons.with_textual_option(button_2_text, self.INTENT_SUBJECT_DIFFERENT)
         response_with_buttons.with_textual_option(button_3_text, self.INTENT_SUBJECT_EXPERT)
-        random_intent = random.choice([self.INTENT_SUBJECT_SIMILAR, self.INTENT_SUBJECT_DIFFERENT, self.INTENT_SUBJECT_EXPERT])
-        response_with_buttons.with_textual_option(button_4_text, random_intent)
+        response_with_buttons.with_textual_option(button_4_text, self.INTENT_SUBJECT_RANDOM)
         response.with_message(response_with_buttons)
         response.with_context(context)
         return response
@@ -866,7 +867,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         context = incoming_event.context
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_QUESTION_3)
         context.with_static_state(self.CONTEXT_SUBJECTIVITY, intent)
-        # TODO translation add 3/3: number text on translation PO files
+        # TODO translate add 3: number text on PO files
         message = self._translator.get_translation_instance(user_locale).with_text("anonymous_question").translate()
         button_1_text = self._translator.get_translation_instance(user_locale).with_text("anonymous").translate()
         button_2_text = self._translator.get_translation_instance(user_locale).with_text("not_anonymous").translate()
@@ -897,19 +898,12 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         question = context.get_static_state(self.CONTEXT_ASKED_QUESTION)
         domain = context.get_static_state(self.CONTEXT_QUESTION_DOMAIN)
         subjectivity = context.get_static_state(self.CONTEXT_SUBJECTIVITY)
-        # TODO ask how to handle sensitive question
-        # sensitive = context.get_static_state(self.CONTEXT_SENSITIVE_QUESTION)
         anonymous = context.get_static_state(self.CONTEXT_ANONYMOUS_QUESTION, self.INTENT_NOT_ANONYMOUS_QUESTION)
         expiration_date = datetime.now() + timedelta(seconds=self.expiration_duration)
-        # TODO update app logic, ask
         attributes = {
             "domain": domain,
-            "domainInterest": subjectivity,
-            "beliefsAndValues": subjectivity,
-            "sensitive": True, # if sensitive == self.INTENT_SENSITIVE_QUESTION else False,
             "anonymous": True if anonymous == self.INTENT_ANONYMOUS_QUESTION else False,
-            "socialCloseness": subjectivity,
-            "positionOfAnswerer": intent,
+            "subjectivity": subjectivity,
             "maxUsers": self.max_users,
             "maxAnswers": self.max_answers,
             "expirationDate": int(expiration_date.timestamp())
@@ -944,7 +938,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         finally:
             context.delete_static_state(self.CONTEXT_ASKED_QUESTION)
             context.delete_static_state(self.CONTEXT_QUESTION_DOMAIN)
-            context.delete_static_state(self.CONTEXT_SENSITIVE_QUESTION)
             context.delete_static_state(self.CONTEXT_SUBJECTIVITY)
             context.delete_static_state(self.CONTEXT_ANONYMOUS_QUESTION)
             context.delete_static_state(self.CONTEXT_CURRENT_STATE)
