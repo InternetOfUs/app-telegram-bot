@@ -608,7 +608,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 if transaction.id == i and transaction.label == self.LABEL_ANSWER_TRANSACTION:
                     message_answers.append(self.parse_text_with_markdown(self._prepare_string_to_telegram(transaction.attributes["answer"])))
                     answerer_user = service_api.get_user_profile(transaction.actioneer_id)
-                    message_users.append(answerer_user.name.first if answerer_user.name.first and not message.attributes.get("anonymous", False) else self._translator.get_translation_instance(locale).with_text("anonymous_user").translate())
+                    message_users.append(answerer_user.name.first if answerer_user.name.first and not transaction.attributes.get("anonymous", False) else self._translator.get_translation_instance(locale).with_text("anonymous_user").translate())
                     transaction_ids.append(transaction.id)
                     break
 
@@ -1272,6 +1272,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_PUBLISHING_ANSWER_TO_CHANNEL)
         if self.channel_id:
+            response.with_message(TextualResponse(message))
             message_text = self._translator.get_translation_instance(user_locale).with_text("ok_to_publish_message").translate()
             button_1_text = self._translator.get_translation_instance(user_locale).with_text("button_yes_anonymously_publish_text").translate()
             button_2_text = self._translator.get_translation_instance(user_locale).with_text("button_yes_name_publish_text").translate()
@@ -1295,6 +1296,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 transaction = TaskTransaction(None, question_id, self.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), actioneer_id, {"answer": answer, "anonymous": anonymous, "publish": False, "publishAnonymously": False}, [])
                 service_api.create_task_transaction(transaction)
                 logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
+                response.with_message(TextualResponse(message))
             except CreationError as e:
                 response.with_message(TextualResponse(self._translator.get_translation_instance(user_locale).with_text("error_task_creation").translate()))
                 logger.error(
@@ -1307,7 +1309,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 context.delete_static_state(self.CONTEXT_ANONYMOUS_ANSWER)
                 context.delete_static_state(self.CONTEXT_CURRENT_STATE)
 
-        response.with_message(TextualResponse(message))
         response.with_context(context)
         return response
 
