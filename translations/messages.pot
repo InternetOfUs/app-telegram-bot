@@ -491,3 +491,16 @@ msgstr ""
 
 msgid "not_sensitive_question_domain"
 msgstr ""
+
+msgid "similar_subjective_text"
+msgstr ""
+
+msgid "different_subjective_text"
+msgstr ""
+
+msgid "expert_subjective_text"
+msgstr ""
+
+msgid "random_subjective_text"
+msgstr ""
+

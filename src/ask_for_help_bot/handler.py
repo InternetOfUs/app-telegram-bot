@@ -549,29 +549,25 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                     transaction_ids.append(transaction.id)
                     break
 
-        domain = task.attributes["domain"]
-        sensitive = task.attributes.get("sensitive", False)
+        # TODO do we need to show domain in the new flow?
+        # domain = task.attributes["domain"]
+        subjectivity = task.attributes.get("subjectivity", False)
 
-        # TODO edit the text response when showing task expiration
-        if sensitive:
-            message_attributes = self._translator.get_translation_instance(locale) \
-                .with_text("asked_sensitive_message") \
-                .with_substitution("question", question_text) \
-                .with_substitution("domain", self._translator.get_translation_instance(locale).with_text(domain).translate()) \
-                .translate()
-        else:
-            message_attributes = self._translator.get_translation_instance(locale) \
-                .with_text("asked_message") \
-                .with_substitution("question", question_text) \
-                .with_substitution("domain", self._translator.get_translation_instance(locale).with_text(domain).translate()) \
-                .translate()
+        message_attributes = self._translator.get_translation_instance(locale) \
+            .with_text("asked_message_without_attributes") \
+            .with_substitution("user", question_text) \
+            .with_substitution("question", question_text) \
+            .translate()
 
-        if message_attributes == "":
-            message_attributes = self._translator.get_translation_instance(locale)\
-                .with_text("asked_message_without_attributes") \
-                .with_substitution("user", question_text) \
-                .with_substitution("question", question_text)\
-                .translate()
+        if subjectivity:
+            if subjectivity == self.INTENT_SUBJECT_SIMILAR:
+                message_attributes += f"\n{self._translator.get_translation_instance(locale).with_text('similar_subjective_text').translate()}"
+            if subjectivity == self.INTENT_SUBJECT_DIFFERENT:
+                message_attributes += f"\n{self._translator.get_translation_instance(locale).with_text('different_subjective_text').translate()}"
+            if subjectivity == self.INTENT_SUBJECT_EXPERT:
+                message_attributes += f"\n{self._translator.get_translation_instance(locale).with_text('expert_subjective_text').translate()}"
+            if subjectivity == self.INTENT_SUBJECT_RANDOM:
+                message_attributes += f"\n{self._translator.get_translation_instance(locale).with_text('random_subjective_text').translate()}"
 
         message_upper_part = f"{message_attributes} \n\n"
         answer = []

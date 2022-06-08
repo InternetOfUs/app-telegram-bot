@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-06-06 16:38+0200\n"
+"PO-Revision-Date: 2022-06-08 16:26+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -619,3 +619,19 @@ msgid "not_sensitive_question_domain"
 msgstr ""
 "Good choice! There are people with an interest in and knowledge about this "
 "topic."
+
+msgid "similar_subjective_text"
+msgstr "You sought answers from the people you’d expect to get along with."
+
+msgid "different_subjective_text"
+msgstr ""
+"You sought answers from the people you’d like to broaden your perspective."
+
+msgid "expert_subjective_text"
+msgstr "You sought answers from the people who know this."
+
+msgid "random_subjective_text"
+msgstr "You sought answers from random people."
+
+#~ msgid "question_subjectivity_text"
+#~ msgstr "Aa"
