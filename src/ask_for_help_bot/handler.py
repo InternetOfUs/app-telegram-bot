@@ -432,6 +432,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         # in case the user was doing something else the received message is stored
         return self._get_notification_event_based_on_what_user_is_doing(context, user_account.social_details, [response])
 
+    # TODO ask if this can be removed
     def _handle_nearby_question(self, message: QuestionToAnswerMessage, user_object: WeNetUserProfile, questioning_user: WeNetUserProfile) -> TelegramRapidAnswerResponse:
         # Translate the message that someone near has a question and insert the details of the question, treat differently sensitive questions
         message_string = self._translator.get_translation_instance(user_object.locale)
@@ -549,8 +550,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                     transaction_ids.append(transaction.id)
                     break
 
-        # TODO do we need to show domain in the new flow?
-        # domain = task.attributes["domain"]
         subjectivity = task.attributes.get("subjectivity", False)
 
         message_attributes = self._translator.get_translation_instance(locale) \
