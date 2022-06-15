@@ -533,7 +533,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             .translate()
         return TextualResponse(message_string)
 
-    # TODO merge develop into 153 branch and resolve conflicts
     def _handle_question_expiration(self, message: QuestionExpirationMessage, service_api: ServiceApiInterface, user_object: WeNetUserProfile) -> List[TelegramRapidAnswerResponse]:
         locale = user_object.locale
         transaction_ids = []
