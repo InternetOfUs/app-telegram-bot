@@ -504,3 +504,5 @@ msgstr ""
 msgid "random_subjective_text"
 msgstr ""
 
+msgid "leisure_activities_button"
+msgstr ""

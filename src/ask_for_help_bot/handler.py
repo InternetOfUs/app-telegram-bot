@@ -76,7 +76,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     INTENT_MUSIC = "music"
     INTENT_ARTS_AND_CRAFTS = "arts_and_crafts"
     INTENT_LIFE_PONDERS = "life_ponders"
-    INTENTS_BASIC_NEEDS = "basic_needs"
+    INTENT_BASIC_NEEDS = "basic_needs"
+    INTENT_LEISURE_ACTIVITIES = "leisure_activities"
     INTENT_SENSITIVE_QUESTION = "sensitive"
     INTENT_ANONYMOUS_QUESTION = "anonymous"
     INTENT_NOT_ANONYMOUS_QUESTION = "not_anonymous"
@@ -168,7 +169,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             )
         )
         domain_intents = [self.INTENT_STUDYING_CAREER, self.INTENT_PHYSICAL_ACTIVITY, self.INTENT_MUSIC, self.INTENT_ARTS_AND_CRAFTS,
-                          self.INTENT_LIFE_PONDERS, self.INTENTS_BASIC_NEEDS, self.INTENT_SENSITIVE_QUESTION]
+                          self.INTENT_LIFE_PONDERS, self.INTENT_BASIC_NEEDS, self.INTENT_SENSITIVE_QUESTION, self.INTENT_LEISURE_ACTIVITIES]
         for domain_intent in domain_intents:
             self.intent_manager.with_fulfiller(
                 IntentFulfillerV3(domain_intent, self.action_question_2).with_rule(
@@ -756,6 +757,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         return response
 
     def action_question_1(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
+        # TODO add 'leisure_activities' domain in the flow
         """
         Save the why this type of desired answerer, and ask the domain of the question
         """
@@ -773,15 +775,17 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             button_4_text = self._translator.get_translation_instance(user_locale).with_text("basic_needs_button").translate()
             button_5_text = self._translator.get_translation_instance(user_locale).with_text("music_button").translate()
             button_6_text = self._translator.get_translation_instance(user_locale).with_text("arts_and_crafts_button").translate()
-            button_7_text = self._translator.get_translation_instance(user_locale).with_text("sensitive").translate()
-            response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 2, 2, 1])
+            button_7_text = self._translator.get_translation_instance(user_locale).with_text("leisure_activities_button").translate()
+            button_8_text = self._translator.get_translation_instance(user_locale).with_text("sensitive").translate()
+            response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 2, 2, 2])
             response_with_buttons.with_textual_option(button_1_text, self.INTENT_STUDYING_CAREER)
             response_with_buttons.with_textual_option(button_2_text, self.INTENT_PHYSICAL_ACTIVITY)
             response_with_buttons.with_textual_option(button_3_text, self.INTENT_LIFE_PONDERS)
-            response_with_buttons.with_textual_option(button_4_text, self.INTENTS_BASIC_NEEDS)
+            response_with_buttons.with_textual_option(button_4_text, self.INTENT_BASIC_NEEDS)
             response_with_buttons.with_textual_option(button_5_text, self.INTENT_MUSIC)
             response_with_buttons.with_textual_option(button_6_text, self.INTENT_ARTS_AND_CRAFTS)
-            response_with_buttons.with_textual_option(button_7_text, self.INTENT_SENSITIVE_QUESTION)
+            response_with_buttons.with_textual_option(button_7_text, self.INTENT_LEISURE_ACTIVITIES)
+            response_with_buttons.with_textual_option(button_8_text, self.INTENT_SENSITIVE_QUESTION)
             response.with_message(response_with_buttons)
             response.with_context(context)
         else:

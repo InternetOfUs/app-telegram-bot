@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-06-08 16:26+0200\n"
+"PO-Revision-Date: 2022-06-15 10:57+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: en\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 2.4.2\n"
+"X-Generator: Poedit 3.1\n"
 
 #: src/ask_for_help/handler.py:32
 msgid "info_text"
@@ -632,6 +632,9 @@ msgstr "You sought answers from the people who know this."
 
 msgid "random_subjective_text"
 msgstr "You sought answers from random people."
+
+msgid "leisure_activities_button"
+msgstr "Leisure activities"
 
 #~ msgid "question_subjectivity_text"
 #~ msgstr "Aa"

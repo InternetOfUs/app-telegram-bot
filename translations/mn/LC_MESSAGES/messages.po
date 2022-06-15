@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-06-08 17:01+0200\n"
+"PO-Revision-Date: 2022-06-15 11:04+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: mn\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 2.4.2\n"
+"X-Generator: Poedit 3.1\n"
 
 #: src/ask_for_help/handler.py:32
 msgid "info_text"
@@ -634,3 +634,6 @@ msgstr "Та энэ талаар мэддэг хүмүүсээс хариулт 
 
 msgid "random_subjective_text"
 msgstr "Та санамсаргүй хүмүүсээс хариулт хайсан."
+
+msgid "leisure_activities_button"
+msgstr "Чөлөөт цагийн үйл ажиллагаа"
