@@ -3,10 +3,15 @@
 ## Version 3.*
 
 ### 3.0.0
+
+:rocket: New features
+
 - Added support for task expiration callbacks
 - Added support for liking preferred answer
 - Added support for showing received answers in batches
 - Added support for publishing answers in a preferred way (e.g., Anonymously) or not publishing them
+
+:house: Internal
 - Updated project template to version `4.12.2`
 
 ## Version 2.*

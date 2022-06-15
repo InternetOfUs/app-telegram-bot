@@ -1062,6 +1062,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_PUBLISHING_ANSWER_TO_CHANNEL)
         if self.channel_id:
+            response.with_message(TextualResponse(message))
             message_text = self._translator.get_translation_instance(user_locale).with_text("ok_to_publish_message").translate()
             button_1_text = self._translator.get_translation_instance(user_locale).with_text("button_yes_anonymously_publish_text").translate()
             button_2_text = self._translator.get_translation_instance(user_locale).with_text("button_yes_name_publish_text").translate()
@@ -1085,6 +1086,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 transaction = TaskTransaction(None, question_id, self.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), actioneer_id, {"answer": answer, "anonymous": anonymous, "publish": False, "publishAnonymously": False}, [])
                 service_api.create_task_transaction(transaction)
                 logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
+                response.with_message(TextualResponse(message))
             except CreationError as e:
                 response.with_message(TextualResponse(self._translator.get_translation_instance(user_locale).with_text("error_task_creation").translate()))
                 logger.error(
@@ -1097,7 +1099,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 context.delete_static_state(self.CONTEXT_ANONYMOUS_ANSWER)
                 context.delete_static_state(self.CONTEXT_CURRENT_STATE)
 
-        response.with_message(TextualResponse(message))
         response.with_context(context)
         return response
 
@@ -1460,10 +1461,10 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
         message_upper_part = f"{message_attributes} \n\n"
         message_notification = []
-        message_string = ""
         if len(message_answers) != 0:
             message_upper_part += f"{self._translator.get_translation_instance(self.publication_language).with_text('collected_answers').translate()} \n\n"
             message_notification.append(TextualResponse(message_upper_part))
+            message_string = ""
 
             message_best_answer = self._translator.get_translation_instance(self.publication_language)\
                 .with_text('chosen_answer_by_user')\
@@ -1493,9 +1494,10 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
             if best_answer_transaction not in transaction_ids:
                 message_string += f"\n\n {self._translator.get_translation_instance(self.publication_language).with_text('best_answer_not_published').translate()} \n\n"
+            message_notification.append(TextualResponse(message_string))
         else:
-            message_string += f"{self._translator.get_translation_instance(self.publication_language).with_text('no_collected_answers').translate()} \n\n"
-        message_notification.append(TextualResponse(message_string))
+            message_upper_part += f"{self._translator.get_translation_instance(self.publication_language).with_text('no_collected_answers').translate()} \n\n"
+            message_notification.append(TextualResponse(message_upper_part))
 
         if intent == self.INTENT_PUBLISH and isinstance(incoming_event.social_details, TelegramDetails):
             notification = NotificationEvent(social_details=TelegramDetails(None, self.channel_id, incoming_event.social_details.telegram_bot_id), messages=message_notification)
