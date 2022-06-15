@@ -288,7 +288,7 @@ class TestAskForHelpHandler(TestCase):
         self.assertIsInstance(response, OutgoingEvent)
         self.assertEqual(1, len(response.messages))
         self.assertIsInstance(response.messages[0], TelegramRapidAnswerResponse)
-        self.assertEqual(7, len(response.messages[0].options))
+        self.assertEqual(8, len(response.messages[0].options))
         self.assertTrue(handler.CONTEXT_CURRENT_STATE in response.context._static_context and response.context._static_context[handler.CONTEXT_CURRENT_STATE] == handler.STATE_QUESTION_1)
 
     def test_action_question_2(self):
