@@ -78,7 +78,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     INTENT_LIFE_PONDERS = "life_ponders"
     INTENTS_BASIC_NEEDS = "basic_needs"
     INTENT_SENSITIVE_QUESTION = "sensitive"
-    INTENT_NOT_SENSITIVE_QUESTION = "not_sensitive"
     INTENT_ANONYMOUS_QUESTION = "anonymous"
     INTENT_NOT_ANONYMOUS_QUESTION = "not_anonymous"
     INTENT_SUBJECT_SIMILAR = "subject_similar"
@@ -431,39 +430,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
         # in case the user was doing something else the received message is stored
         return self._get_notification_event_based_on_what_user_is_doing(context, user_account.social_details, [response])
-
-    # TODO ask if this can be removed
-    def _handle_nearby_question(self, message: QuestionToAnswerMessage, user_object: WeNetUserProfile, questioning_user: WeNetUserProfile) -> TelegramRapidAnswerResponse:
-        # Translate the message that someone near has a question and insert the details of the question, treat differently sensitive questions
-        message_string = self._translator.get_translation_instance(user_object.locale)
-        sensitive = message.attributes.get("sensitive", False)
-        anonymous = message.attributes.get("anonymous", False)
-        if sensitive:
-            message_string = message_string.with_text("answer_sensitive_message_nearby")
-        else:
-            message_string = message_string.with_text("answer_message_nearby")
-
-        message_string = message_string.with_substitution("question", self.parse_text_with_markdown(self._prepare_string_to_telegram(message.question))) \
-            .with_substitution("user", questioning_user.name.first if questioning_user.name.first and not anonymous else self._translator.get_translation_instance(user_object.locale).with_text("anonymous_user").translate()) \
-            .translate()
-
-        # we create ids of all buttons, to know which buttons invalidate when one of them is clicked
-        button_ids = [str(uuid.uuid4()) for _ in range(3)]
-        button_data = {
-            "task_id": message.task_id,
-            "question": self._prepare_string_to_telegram(message.question),
-            "sensitive": sensitive,
-            "username": questioning_user.name.first if questioning_user.name.first and not anonymous else self._translator.get_translation_instance(user_object.locale).with_text("anonymous_user").translate(),
-            "related_buttons": button_ids,
-        }
-        response = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=[1, 2])
-        self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_QUESTION).to_repr(), key=button_ids[0])
-        response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_question_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[0]))
-        self.cache.cache(ButtonPayload(button_data, self.INTENT_ANSWER_NOT).to_repr(), key=button_ids[1])
-        response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_not_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[1]))
-        self.cache.cache(ButtonPayload(button_data, self.INTENT_QUESTION_REPORT).to_repr(), key=button_ids[2])
-        response.with_textual_option(self._translator.get_translation_instance(user_object.locale).with_text("answer_report_button").translate(), self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[2]))
-        return response
 
     def _handle_question(self, message: QuestionToAnswerMessage, user_object: WeNetUserProfile, questioning_user: WeNetUserProfile) -> TelegramRapidAnswerResponse:
         # Translate the message that someone in the community has a question and insert the details of the question, treat differently sensitive questions
