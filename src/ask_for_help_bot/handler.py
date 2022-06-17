@@ -434,7 +434,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     def _handle_question(self, message: QuestionToAnswerMessage, user_object: WeNetUserProfile, questioning_user: WeNetUserProfile) -> TelegramRapidAnswerResponse:
         # Translate the message that someone in the community has a question and insert the details of the question, treat differently sensitive questions
         message_string = self._translator.get_translation_instance(user_object.locale)
-        sensitive = message.attributes.get("sensitive", False)
+        sensitive = message.attributes["domain"] == self.INTENT_SENSITIVE_QUESTION
         anonymous = message.attributes.get("anonymous", False)
         if sensitive:
             message_string = message_string.with_text("answer_sensitive_message_0")
