@@ -11,8 +11,9 @@ from chatbot_core.v3.model.messages import ResponseMessage as ChatbotResponseMes
 from wenet.model.logging_message.message import ResponseMessage, RequestMessage, NotificationMessage
 from wenet.model.logging_message.content import TextualContent, AttachmentContent, CarouselContent, Card, \
     LocationContent, ActionRequest
-from wenet.model.callback_message.event import WeNetAuthenticationEvent
-from wenet.model.callback_message.message import TextualMessage, Message
+from common.authentication_event import WeNetAuthenticationEvent
+from common.callback_messages import TextualMessage
+from wenet.model.callback_message.message import Message
 
 
 class LogMessageHandler:

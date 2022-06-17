@@ -33,11 +33,12 @@ from ask_for_help_bot.state_mixin import StateMixin
 from common.button_payload import ButtonPayload
 from common.wenet_event_handler import WenetEventHandler
 from uhopper.utils.alert.module import AlertModule
-from wenet.interface.exceptions import CreationError, RefreshTokenExpiredError
-from wenet.model.callback_message.event import WeNetAuthenticationEvent
-from wenet.model.callback_message.message import TextualMessage, Message, QuestionToAnswerMessage, \
+from common.authentication_event import CreationError
+from wenet.interface.exceptions import RefreshTokenExpiredError
+from common.authentication_event import WeNetAuthenticationEvent
+from wenet.model.callback_message.message import Message
+from common.callback_messages import QuestionExpirationMessage, TextualMessage, QuestionToAnswerMessage, \
     AnsweredQuestionMessage, IncentiveMessage, IncentiveBadge, AnsweredPickedMessage
-from common.callback_messages import QuestionExpirationMessage
 from wenet.model.task.task import Task, TaskGoal
 from wenet.model.task.transaction import TaskTransaction
 from wenet.model.user.profile import WeNetUserProfile
