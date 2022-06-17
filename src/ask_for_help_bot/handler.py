@@ -57,7 +57,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     CONTEXT_ASKED_QUESTION = "asked_question"
     CONTEXT_QUESTION_DOMAIN = "question_domain"
     CONTEXT_SUBJECTIVITY = "question_subjectivity"
-    CONTEXT_ANONYMOUS_QUESTION = "anonymous_question"
     CONTEXT_ANONYMOUS_ANSWER = "anonymous_answer"
     CONTEXT_ANSWER_TO_QUESTION = "answer_to_question"
     CONTEXT_QUESTION_TO_ANSWER = "question_to_answer"
@@ -319,8 +318,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
     def _clear_context(self, context: ConversationContext) -> ConversationContext:
         context_to_remove = [
-            self.CONTEXT_CURRENT_STATE, self.CONTEXT_ASKED_QUESTION, self.CONTEXT_QUESTION_DOMAIN,
-            self.CONTEXT_ANONYMOUS_QUESTION, self.CONTEXT_ANSWER_TO_QUESTION,
+            self.CONTEXT_CURRENT_STATE, self.CONTEXT_ASKED_QUESTION, self.CONTEXT_QUESTION_DOMAIN, self.CONTEXT_ANSWER_TO_QUESTION,
             self.CONTEXT_QUESTION_TO_ANSWER, self.CONTEXT_TASK_ID, self.CONTEXT_TRANSACTION_ID,
             self.CONTEXT_CHOSEN_ANSWER_REASON, self.CONTEXT_QUESTIONER_NAME, self.CONTEXT_QUESTION,
             self.CONTEXT_BEST_ANSWER, self.CONTEXT_ANSWERER_NAME, self.CONTEXT_SUBJECTIVITY
@@ -757,7 +755,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         return response
 
     def action_question_1(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
-        # TODO add 'leisure_activities' domain in the flow
         """
         Save the why this type of desired answerer, and ask the domain of the question
         """
@@ -860,11 +857,11 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         question = context.get_static_state(self.CONTEXT_ASKED_QUESTION)
         domain = context.get_static_state(self.CONTEXT_QUESTION_DOMAIN)
         subjectivity = context.get_static_state(self.CONTEXT_SUBJECTIVITY)
-        anonymous = context.get_static_state(self.CONTEXT_ANONYMOUS_QUESTION, self.INTENT_NOT_ANONYMOUS_QUESTION)
+        anonymous = True if intent == self.INTENT_ANONYMOUS_QUESTION else False
         expiration_date = datetime.now() + timedelta(seconds=self.expiration_duration)
         attributes = {
             "domain": domain,
-            "anonymous": True if anonymous == self.INTENT_ANONYMOUS_QUESTION else False,
+            "anonymous": anonymous,
             "subjectivity": subjectivity,
             "maxUsers": self.max_users,
             "maxAnswers": self.max_answers,
@@ -900,7 +897,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             context.delete_static_state(self.CONTEXT_ASKED_QUESTION)
             context.delete_static_state(self.CONTEXT_QUESTION_DOMAIN)
             context.delete_static_state(self.CONTEXT_SUBJECTIVITY)
-            context.delete_static_state(self.CONTEXT_ANONYMOUS_QUESTION)
             context.delete_static_state(self.CONTEXT_CURRENT_STATE)
             response.with_context(context)
         return response
