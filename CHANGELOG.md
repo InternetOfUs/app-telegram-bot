@@ -2,13 +2,12 @@
 
 ## Version 3.*
 
-### 3.0.1
+### 3.1.0
 
 :rocket: New features
 
 - Updated the domain of the question. Reduced the number of attributes from 12 to 8, integrated _sensitive question_ option to question domain.
-- Simplified the question asking flow/process on telegram
-- Updated translations
+- Updated the question asking flow/process on telegram according to M46 specification.
 
 ### 3.0.0
 
