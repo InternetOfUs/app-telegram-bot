@@ -285,9 +285,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
                         version=UserConversationContext.VERSION_V3)
                     )
         except (KeyError, ValueError) as e:
-            logger.error(
-                "Malformed message from WeNet, the parser raised the following exception: %s \n event: [%s]" % (
-                 e, custom_event.to_repr()))
+            logger.error("Malformed message from WeNet, the parser raised the following exception: %s \n event: [%s]" % (e, custom_event.to_repr()))
         except NotFound as e:
             logger.error(e.message)
         except Exception as e:
@@ -325,8 +323,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
         if not self.is_user_authenticated(incoming_event):  # authentication adds wenet id in the context
             return self.handle_oauth_login(incoming_event, "")
 
-        logged_incoming_message = self.message_parser_for_logs.create_request(
-                        incoming_event.incoming_message, context.get_static_state(self.CONTEXT_WENET_USER_ID))
+        logged_incoming_message = self.message_parser_for_logs.create_request(incoming_event.incoming_message, context.get_static_state(self.CONTEXT_WENET_USER_ID))
         try:
             # logging incoming event
             try:

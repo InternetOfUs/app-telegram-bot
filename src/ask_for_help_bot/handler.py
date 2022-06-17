@@ -222,7 +222,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                     intent=publishing_intent,
                     static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_PUBLISHING_ANSWER_TO_CHANNEL)
                 )
-        )
+            )
         self.intent_manager.with_fulfiller(
             IntentFulfillerV3(self.INTENT_QUESTIONS, self.action_answer).with_rule(
                 intent=self.INTENT_QUESTIONS
@@ -297,7 +297,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     def _get_user_locale_from_incoming_event(self, incoming_event: IncomingSocialEvent) -> str:
         wenet_user_id = incoming_event.context.get_static_state(self.CONTEXT_WENET_USER_ID, None)
         if not wenet_user_id:
-            logger.info(f"Impossible to get user locale from incoming event. The Wenet user ID is not in the context")
+            logger.info("Impossible to get user locale from incoming event. The Wenet user ID is not in the context")
             return "en"
         return self._get_user_locale_from_wenet_id(wenet_user_id, incoming_event.context)
 
@@ -566,7 +566,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
             button_rows = []
             button_count = len(transaction_ids) + 1
-            for i in range(int(button_count/2)):
+            for i in range(int(button_count / 2)):
                 button_count -= 2
                 button_rows.append(2)
                 if button_count == 1:
@@ -581,7 +581,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         else:
             no_reply_string = self._translator.get_translation_instance(locale) \
                 .with_text("no_answer_text") \
-                .with_substitution("expiration_duration", str(int(self.expiration_duration/3600)))\
+                .with_substitution("expiration_duration", str(int(self.expiration_duration / 3600)))\
                 .translate()
             message_upper_part += no_reply_string
             answer_lower_part = TelegramRapidAnswerResponse(TextualResponse(message_upper_part), row_displacement=[1])
@@ -771,7 +771,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             message = self._translator.get_translation_instance(user_locale).with_text("domain_question").translate()
             button_1_text = self._translator.get_translation_instance(user_locale).with_text("studying_career_button").translate()
             button_2_text = self._translator.get_translation_instance(user_locale).with_text("physical_activity_button").translate()
-            button_3_text = self._translator.get_translation_instance(user_locale).with_text("life_ponders_button").translate() # Contemplation
+            button_3_text = self._translator.get_translation_instance(user_locale).with_text("life_ponders_button").translate()  # Contemplation
             button_4_text = self._translator.get_translation_instance(user_locale).with_text("basic_needs_button").translate()
             button_5_text = self._translator.get_translation_instance(user_locale).with_text("music_button").translate()
             button_6_text = self._translator.get_translation_instance(user_locale).with_text("arts_and_crafts_button").translate()
@@ -889,7 +889,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             logger.debug(f"User [{wenet_id}] asked a question. Task created successfully")
             message = self._translator.get_translation_instance(user_locale) \
                 .with_text("question_final") \
-                .with_substitution("expiration_duration", str(int(self.expiration_duration/3600))) \
+                .with_substitution("expiration_duration", str(int(self.expiration_duration / 3600))) \
                 .translate()
             response.with_message(TextualResponse(message))
         except CreationError as e:

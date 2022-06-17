@@ -326,10 +326,10 @@ class EatTogetherHandler(WenetEventHandler):
                 response.with_textual_option(emojize(":white_check_mark: Yes, why not!?!", use_aliases=True),
                                              self.INTENT_CONFIRM_VOLUNTEER_PROPOSAL.format(candidature_id))
                 self._interface_connector.update_user_context(UserConversationContext(
-                        social_details=user_account.social_details,
-                        context=context,
-                        version=UserConversationContext.VERSION_V3
-                    ))
+                    social_details=user_account.social_details,
+                    context=context,
+                    version=UserConversationContext.VERSION_V3
+                ))
                 logger.info(f"Sent volunteer [{message.volunteer_id}] candidature to task [{task.task_id}] created by user [{message.receiver_id}]")
                 return NotificationEvent(user_account.social_details, [response], context)
             elif isinstance(message, TaskSelectionNotification):

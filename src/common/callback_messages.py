@@ -96,5 +96,3 @@ class MessageBuilder:
         else:
             message = Message.from_repr(raw_message)
         return message
-
-# TODO maybe implement another QuestionToAnswer callback? (with domains)
