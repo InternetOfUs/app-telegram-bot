@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-05-30 09:14+0200\n"
+"PO-Revision-Date: 2022-06-15 11:04+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: mn\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 3.0.1\n"
+"X-Generator: Poedit 3.1\n"
 
 #: src/ask_for_help/handler.py:32
 msgid "info_text"
@@ -64,10 +64,10 @@ msgstr ""
 "За, би таны асуултыг бусад хүмүүсээс асууна. Одоо би хэнээс илүү нарийвчлан "
 "асуухаа тодруулахын тулд танаас хэдэн асуулт асуух болно :dart:.\n"
 "\n"
-"1/6: Таны асуултын *сэдэв* юу вэ?"
+"1: Таны асуултын *сэдэв* юу вэ?"
 
 msgid "studying_career_button"
-msgstr ":book: Суралцах / Ажил"
+msgstr ":book: Суралцах"
 
 msgid "local_university_button"
 msgstr ":mortar_board: Дотоодын их сургууль"
@@ -174,7 +174,7 @@ msgid "sensitive"
 msgstr ":shushing_face: Эмзэг"
 
 msgid "anonymous_question"
-msgstr "Та энэ асуултыг нэрээ нууцлан асуухыг хүсч байна уу?"
+msgstr "3: Та энэ асуултыг нэрээ нууцлан асуухыг хүсч байна уу?"
 
 msgid "anonymous_user"
 msgstr "Нэргүй"
@@ -210,8 +210,8 @@ msgstr "Үүнийг алгасах :point_down:"
 
 msgid "question_final"
 msgstr ""
-"За, бусад хэрэглэгчдээс таны асуултыг асууя! Хариулт авбал эргээд танд "
-"мэдэгднэ ээ."
+"За, бусад хэрэглэгчдээс таны асуултыг асууя!\n"
+"Таны асуултын хугацаа {expiration_duration} цагийн дараа дуусна."
 
 msgid "question_0"
 msgstr ""
@@ -598,3 +598,42 @@ msgstr "Харамсалтай нь хариултуудыг харуулахы�
 
 msgid "best_answer_not_published"
 msgstr "Харамсалтай нь хамгийн сайн хариултыг харуулахыг зөвшөөрөөгүй байна."
+
+msgid "basic_needs_button"
+msgstr ":house: :stew: Үндсэн хэрэгцээ"
+
+msgid "subjective_question_text"
+msgstr "2: Энэ асуултыг…"
+
+msgid "similar_subjective_button"
+msgstr ":fist_right: Надтай санал нийлэх хүмүүсээс асуух"
+
+msgid "different_subjective_button"
+msgstr ""
+
+msgid "expert_subjective_button"
+msgstr ":face_with_monocle: Энэ талаар мэдлэгтэй хүмүүсээс асуух"
+
+msgid "random_choice_button"
+msgstr ":game_die: Тоглоход бэлэн байна"
+
+msgid "sensitive_question_domain"
+msgstr "Би бусад хүмүүст хариулахдаа илүү болгоомжтой байхыг мэдэгдье."
+
+msgid "not_sensitive_question_domain"
+msgstr "Сайн сонголт! Энэ сэдвээр сонирхолтой, мэдлэгтэй хүмүүс байдаг."
+
+msgid "similar_subjective_text"
+msgstr "Та санал нийлэх хүмүүсээс хариулт хайсан."
+
+msgid "different_subjective_text"
+msgstr "Та үзэл бодлоо өргөжүүлэх хүмүүсээс хариулт хайсан."
+
+msgid "expert_subjective_text"
+msgstr "Та энэ талаар мэддэг хүмүүсээс хариулт хайсан."
+
+msgid "random_subjective_text"
+msgstr "Та санамсаргүй хүмүүсээс хариулт хайсан."
+
+msgid "leisure_activities_button"
+msgstr "Чөлөөт цагийн үйл ажиллагаа"

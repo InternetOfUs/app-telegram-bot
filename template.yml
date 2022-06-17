@@ -99,6 +99,10 @@
             in_docker: false
           - name: test
             type: coverage
+          - name: test
+            allow_failure: false
+            ignore: E501,W504,E241,F405
+            type: lint
       default:
         stages:
           - name: test

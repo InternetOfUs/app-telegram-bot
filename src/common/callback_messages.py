@@ -96,4 +96,3 @@ class MessageBuilder:
         else:
             message = Message.from_repr(raw_message)
         return message
-
