@@ -12,13 +12,12 @@ from chatbot_core.v3.model.messages import TelegramRapidAnswerResponse, TextualR
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent
 from wenet.interface.client import Oauth2Client
 from wenet.interface.service_api import ServiceApiInterface
-from wenet.model.callback_message.message import QuestionToAnswerMessage, AnsweredQuestionMessage, AnsweredPickedMessage
 from wenet.model.task.task import Task, TaskGoal
 from wenet.model.task.transaction import TaskTransaction
 from wenet.model.user.profile import WeNetUserProfile
 
 from common.button_payload import ButtonPayload
-from common.callback_messages import QuestionExpirationMessage
+from common.callback_messages import QuestionExpirationMessage, QuestionToAnswerMessage, AnsweredQuestionMessage, AnsweredPickedMessage
 from test.unit.ask_for_help_bot.mock import MockAskForHelpHandler
 
 

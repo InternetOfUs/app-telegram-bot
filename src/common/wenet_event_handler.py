@@ -23,10 +23,12 @@ from common.cache import BotCache
 from common.messages_to_log import LogMessageHandler
 from uhopper.utils.alert.module import AlertModule
 from wenet.interface.client import Oauth2Client
-from wenet.interface.exceptions import NotFound, RefreshTokenExpiredError, CreationError
+from wenet.interface.exceptions import NotFound, RefreshTokenExpiredError
+from common.authentication_event import CreationError
 from wenet.interface.service_api import ServiceApiInterface
-from wenet.model.callback_message.event import WeNetAuthenticationEvent
-from wenet.model.callback_message.message import TextualMessage, Message
+from common.authentication_event import WeNetAuthenticationEvent
+from common.callback_messages import TextualMessage
+from wenet.model.callback_message.message import Message
 from wenet.storage.cache import RedisCache
 from common.callback_messages import MessageBuilder
 
@@ -287,7 +289,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
         except (KeyError, ValueError) as e:
             logger.error("Malformed message from WeNet, the parser raised the following exception: %s \n event: [%s]" % (e, custom_event.to_repr()))
         except NotFound as e:
-            logger.error(e.message)
+            logger.error(e.server_response)
         except Exception as e:
             logger.exception("Unable to handle to command", exc_info=e)
         finally:
