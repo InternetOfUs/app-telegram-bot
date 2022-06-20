@@ -289,7 +289,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
         except (KeyError, ValueError) as e:
             logger.error("Malformed message from WeNet, the parser raised the following exception: %s \n event: [%s]" % (e, custom_event.to_repr()))
         except NotFound as e:
-            logger.error(e.message)
+            logger.error(e.server_response)
         except Exception as e:
             logger.exception("Unable to handle to command", exc_info=e)
         finally:
