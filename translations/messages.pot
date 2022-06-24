@@ -468,6 +468,44 @@ msgstr ""
 msgid "best_answer_not_published"
 msgstr ""
 
+msgid "basic_needs_button"
+msgstr ""
+
+msgid "subjective_question_text"
+msgstr ""
+
+msgid "similar_subjective_button"
+msgstr ""
+
+msgid "different_subjective_button"
+msgstr ""
+
+msgid "expert_subjective_button"
+msgstr ""
+
+msgid "random_choice_button"
+msgstr ""
+
+msgid "sensitive_question_domain"
+msgstr ""
+
+msgid "not_sensitive_question_domain"
+msgstr ""
+
+msgid "similar_subjective_text"
+msgstr ""
+
+msgid "different_subjective_text"
+msgstr ""
+
+msgid "expert_subjective_text"
+msgstr ""
+
+msgid "random_subjective_text"
+msgstr ""
+
+msgid "leisure_activities_button"
+msgstr ""
 msgid "follow_up_button"
 msgstr ""
 

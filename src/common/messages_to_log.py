@@ -6,13 +6,14 @@ from typing import Union
 from chatbot_core.model.message import IncomingMessage, IncomingImage, IncomingLocation, IncomingCommand, \
     IncomingTextMessage
 from chatbot_core.v3.model.actions import PostBackButton
-from chatbot_core.v3.model.messages import ResponseMessage, TextualResponse, TelegramTextualResponse, \
+from chatbot_core.v3.model.messages import ResponseMessage as ChatbotResponseMessage, TextualResponse, TelegramTextualResponse, \
     RapidAnswerResponse, TelegramRapidAnswerResponse, UrlImageResponse, TelegramCarouselResponse
 from wenet.model.logging_message.message import ResponseMessage, RequestMessage, NotificationMessage
 from wenet.model.logging_message.content import TextualContent, AttachmentContent, CarouselContent, Card, \
     LocationContent, ActionRequest
-from wenet.model.callback_message.event import WeNetAuthenticationEvent
-from wenet.model.callback_message.message import TextualMessage, Message
+from common.authentication_event import WeNetAuthenticationEvent
+from common.callback_messages import TextualMessage
+from wenet.model.callback_message.message import Message
 
 
 class LogMessageHandler:
@@ -83,7 +84,7 @@ class LogMessageHandler:
         }
         return NotificationMessage(str(uuid.uuid4()), self.channel, user_id, self.project, content, metadata=metadata)
 
-    def create_response(self, message: ResponseMessage, user_id: str, response_to: str) -> ResponseMessage:
+    def create_response(self, message: ChatbotResponseMessage, user_id: str, response_to: str) -> ResponseMessage:
         """
         Given a ResponseMessage of the chatbot core, create a ResponseMessage for the Wenet logging
         """

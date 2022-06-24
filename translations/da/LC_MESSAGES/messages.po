@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-05-30 10:38+0200\n"
+"PO-Revision-Date: 2022-06-24 17:51+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: da\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 3.0.1\n"
+"X-Generator: Poedit 3.1\n"
 
 #: src/ask_for_help/handler.py:32
 msgid "info_text"
@@ -61,13 +61,13 @@ msgstr "Please write your question :point_down:"
 
 msgid "domain_question"
 msgstr ""
-"Good question! Please help me find the best people who can answer your "
-"question :dart:.\n"
+"Okay, I will ask others to answer your question. Now I will ask you a few "
+"questions to specify who to ask more precisely :dart:.\n"
 "\n"
-"1/6: What’s the *domain* of your question?"
+"1: What’s the *domain* of your question?"
 
 msgid "studying_career_button"
-msgstr ":book: Studying / Career"
+msgstr ":book: Study life"
 
 msgid "local_university_button"
 msgstr ":mortar_board: Local university"
@@ -175,7 +175,7 @@ msgid "sensitive"
 msgstr ":shushing_face: Sensitive"
 
 msgid "anonymous_question"
-msgstr "Would you prefer to ask it anonymously?"
+msgstr "3: Would you prefer to ask it anonymously?"
 
 msgid "anonymous_user"
 msgstr "Anonymous"
@@ -211,8 +211,8 @@ msgstr "Skip this :point_down:"
 
 msgid "question_final"
 msgstr ""
-"Alright, I will ask other users to answer your question! When I receive an "
-"answer, I will notify you."
+"Ok, on it! I will invite other users to answer your question! \n"
+"Your question will expire in {expiration_duration} hours."
 
 msgid "question_0"
 msgstr ""
@@ -594,6 +594,48 @@ msgstr "Unfortunately, no answers are allowed to show."
 msgid "best_answer_not_published"
 msgstr "Unfortunately, the best answer is not allowed to show."
 
+msgid "basic_needs_button"
+msgstr ":house: :stew: Basic needs"
+
+msgid "subjective_question_text"
+msgstr "2: With this question…"
+
+msgid "similar_subjective_button"
+msgstr ":fist_right: I would go with people I’d expect to get along with"
+
+msgid "different_subjective_button"
+msgstr ":person_fencing: I would like to broaden my perspective"
+
+msgid "expert_subjective_button"
+msgstr ":face_with_monocle: I need people who know this"
+
+msgid "random_choice_button"
+msgstr ":game_die: Ready to play"
+
+msgid "sensitive_question_domain"
+msgstr "I will let other people know to take extra care in answering."
+
+msgid "not_sensitive_question_domain"
+msgstr ""
+"Good choice! There are people with an interest in and knowledge about this "
+"topic."
+
+msgid "similar_subjective_text"
+msgstr "You sought answers from the people you’d expect to get along with."
+
+msgid "different_subjective_text"
+msgstr ""
+"You sought answers from the people you’d like to broaden your perspective."
+
+msgid "expert_subjective_text"
+msgstr "You sought answers from the people who know this."
+
+msgid "random_subjective_text"
+msgstr "You sought answers from random people."
+
+msgid "leisure_activities_button"
+msgstr "Leisure activities"
+
 msgid "follow_up_button"
 msgstr ":speaking_head: Request {answerer}’s contact for follow-up"
 
@@ -655,3 +697,6 @@ msgstr "Ok, I won’t share your contact details with {questioner_name}."
 
 msgid "block_follow_up"
 msgstr "Ok, I will automatically block future requests from this user."
+
+#~ msgid "question_subjectivity_text"
+#~ msgstr "Aa"

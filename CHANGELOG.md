@@ -2,14 +2,25 @@
 
 ## Version 3.*
 
+### 3.1.0
+
+:rocket: New features
+
+- Updated the domain of the question. Reduced the number of attributes from 12 to 8, integrated _sensitive question_ option to question domain.
+- Updated the question asking flow/process on telegram according to M46 specification.
+- Added support for follow-up between requester and responder
+
+:house: Internal
+- Updated WeNet Common to version 5.0.1
+
 ### 3.0.0
 
 :rocket: New features
+
 - Added support for task expiration callbacks
 - Added support for liking preferred answer
 - Added support for showing received answers in batches
 - Added support for publishing answers in a preferred way (e.g., Anonymously) or not publishing them
-- Added support for follow-up between requester and responder
 
 :house: Internal
 - Updated project template to version `4.12.2`
