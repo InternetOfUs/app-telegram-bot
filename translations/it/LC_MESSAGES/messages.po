@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-05-30 09:13+0200\n"
+"PO-Revision-Date: 2022-06-27 11:03+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: it\n"
@@ -15,7 +15,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 3.0.1\n"
+"X-Generator: Poedit 3.1\n"
 
 #: src/ask_for_help/handler.py:32
 msgid "info_text"
@@ -65,10 +65,10 @@ msgstr ""
 "Ok, chiederò ad altri di rispondere alla tua domanda. Adesso ti farò alcune "
 "domande per specificare a chi chiedere più precisamente :dart:.\n"
 "\n"
-"1/6: Qual è il *dominio* della tua domanda?"
+"1: Qual è il *dominio* della tua domanda?"
 
 msgid "studying_career_button"
-msgstr ":book: Studiare / Carriera"
+msgstr ":book: Studia"
 
 msgid "local_university_button"
 msgstr ":mortar_board: Università locale"
@@ -176,7 +176,7 @@ msgid "sensitive"
 msgstr ":shushing_face: Sensibile"
 
 msgid "anonymous_question"
-msgstr "Preferisci chiederlo in forma anonima?"
+msgstr "3: Preferisci chiederlo in forma anonima?"
 
 msgid "anonymous_user"
 msgstr "Anonimo"
@@ -215,8 +215,8 @@ msgstr "Salta questo :point_down:"
 
 msgid "question_final"
 msgstr ""
-"Bene, inoltrerò la tua domanda ad altri utenti. Appena avrò risposta ti faro "
-"sapere."
+"Bene, inoltrerò la tua domanda ad altri utenti!\n"
+"La tua domanda scadrà tra {expiration_duration} ore."
 
 msgid "question_0"
 msgstr ""
@@ -615,3 +615,50 @@ msgstr "Sfortunatamente, non mi è consentito mostrare risposte."
 
 msgid "best_answer_not_published"
 msgstr "Sfortunatamente, la risposta migliore non può essere mostrata."
+
+msgid "basic_needs_button"
+msgstr ":house: :stew: Bisogni primari"
+
+msgid "subjective_question_text"
+msgstr "2: Con questa domanda…"
+
+msgid "similar_subjective_button"
+msgstr ""
+":right-facing_fist: Andrei con persone con cui mi aspetto di andare d’accordo"
+
+msgid "different_subjective_button"
+msgstr ""
+
+msgid "expert_subjective_button"
+msgstr ":face_with_monocle: Ho bisogno di persone che lo sappiano"
+
+msgid "random_choice_button"
+msgstr ":game_die: Pronto a giocare"
+
+msgid "sensitive_question_domain"
+msgstr ""
+"Farò sapere ad altre persone di prestare particolare attenzione nel "
+"rispondere."
+
+msgid "not_sensitive_question_domain"
+msgstr ""
+"Bella scelta! Ci sono persone con un interesse e una conoscenza su questo "
+"argomento."
+
+msgid "similar_subjective_text"
+msgstr ""
+"Hai cercato risposte dalle persone con cui ti aspetteresti di andare "
+"d’accordo."
+
+msgid "different_subjective_text"
+msgstr ""
+"Hai cercato risposte dalle persone che vorresti ampliare la tua prospettiva."
+
+msgid "expert_subjective_text"
+msgstr "Hai cercato risposte dalle persone che lo sanno."
+
+msgid "random_subjective_text"
+msgstr "Hai cercato risposte da persone a caso."
+
+msgid "leisure_activities_button"
+msgstr "Attività ricreative"

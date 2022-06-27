@@ -4,8 +4,6 @@ import datetime
 import logging
 from typing import Optional, List, Dict, Set
 
-from chatbot_core.model.context import ConversationContext
-
 from ask_for_help_bot.pending_conversations import PendingQuestionToAnswer, PendingWenetMessage
 from chatbot_core.model.user_context import UserConversationContext
 from chatbot_core.v3.connector.social_connector import SocialConnector

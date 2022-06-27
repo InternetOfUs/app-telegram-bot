@@ -24,10 +24,11 @@ from chatbot_core.v3.model.outgoing_event import OutgoingEvent, NotificationEven
 from common.utils import Utils
 from common.wenet_event_handler import WenetEventHandler
 from uhopper.utils.alert.module import AlertModule
-from wenet.interface.exceptions import CreationError, RefreshTokenExpiredError
-from wenet.model.callback_message.event import WeNetAuthenticationEvent
-from wenet.model.callback_message.message import TextualMessage, \
-    TaskProposalNotification, TaskVolunteerNotification, TaskSelectionNotification, Message, TaskConcludedNotification
+from wenet.interface.exceptions import RefreshTokenExpiredError
+from common.authentication_event import CreationError
+from common.authentication_event import WeNetAuthenticationEvent
+from wenet.model.callback_message.message import Message
+from common.callback_messages import TextualMessage, TaskProposalNotification, TaskVolunteerNotification, TaskSelectionNotification, TaskConcludedNotification
 from wenet.model.task.task import Task, TaskGoal
 from wenet.model.task.transaction import TaskTransaction
 
@@ -326,10 +327,10 @@ class EatTogetherHandler(WenetEventHandler):
                 response.with_textual_option(emojize(":white_check_mark: Yes, why not!?!", use_aliases=True),
                                              self.INTENT_CONFIRM_VOLUNTEER_PROPOSAL.format(candidature_id))
                 self._interface_connector.update_user_context(UserConversationContext(
-                        social_details=user_account.social_details,
-                        context=context,
-                        version=UserConversationContext.VERSION_V3
-                    ))
+                    social_details=user_account.social_details,
+                    context=context,
+                    version=UserConversationContext.VERSION_V3
+                ))
                 logger.info(f"Sent volunteer [{message.volunteer_id}] candidature to task [{task.task_id}] created by user [{message.receiver_id}]")
                 return NotificationEvent(user_account.social_details, [response], context)
             elif isinstance(message, TaskSelectionNotification):
