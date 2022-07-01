@@ -6,6 +6,10 @@
 
 :rocket: New features
 - Added support for follow-up between requester and responder.
+- Added callback to a like message saying to the answerer that the requester likes the provided answer.
+
+:bug: Bug Fixes
+- Also delayed messages now are logged correctly.
 
 ### 3.1.0
 

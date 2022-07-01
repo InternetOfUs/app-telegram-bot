@@ -13,18 +13,21 @@ class PendingWenetMessage:
     - the ID
     - the response messages to be sent to the user
     - the social details of the user
+    - the message to which the bot is replying
     """
 
-    def __init__(self, pending_wenet_message_id: str, responses: List[ResponseMessage], social_details: SocialDetails) -> None:
+    def __init__(self, pending_wenet_message_id: str, responses: List[ResponseMessage], social_details: SocialDetails, response_to: Optional[str] = None) -> None:
         self.pending_wenet_message_id = pending_wenet_message_id
         self.responses = responses
         self.social_details = social_details
+        self.response_to = response_to
 
     def to_repr(self) -> dict:
         return {
             "pending_wenet_message_id": self.pending_wenet_message_id,
             "responses": [response.to_repr() for response in self.responses],
             "social_details": self.social_details.to_repr(),
+            "response_to": self.response_to
         }
 
     @staticmethod
@@ -32,14 +35,15 @@ class PendingWenetMessage:
         return PendingWenetMessage(
             raw["pending_wenet_message_id"],
             [ResponseMessage.from_repr(response) for response in raw["responses"]],
-            SocialDetails.from_repr(raw["social_details"])
+            SocialDetails.from_repr(raw["social_details"]),
+            raw.get("response_to")
         )
 
     def __eq__(self, o: object) -> bool:
         if not isinstance(o, PendingWenetMessage):
             return False
         return self.pending_wenet_message_id == o.pending_wenet_message_id and self.responses == o.responses and \
-            self.social_details == o.social_details
+            self.social_details == o.social_details and self.response_to == o.response_to
 
 
 class PendingQuestionToAnswer:
@@ -49,21 +53,24 @@ class PendingQuestionToAnswer:
     - the response containing the pending question to be sent to the user
     - the social details of the user
     - the timestamp of when the 'remind me later' button is clicked
+    - the message to which the bot is replying
     """
 
     def __init__(self, question_id: str, response: ResponseMessage, social_details: SocialDetails,
-                 sent: Optional[datetime] = None) -> None:
+                 sent: Optional[datetime] = None, response_to: Optional[str] = None) -> None:
         self.question_id = question_id
         self.response = response
         self.social_details = social_details
         self.sent = sent
+        self.response_to = response_to
 
     def to_repr(self) -> dict:
         return {
             "question_id": self.question_id,
             "response": self.response.to_repr(),
             "social_details": self.social_details.to_repr(),
-            "sent": self.sent.isoformat() if self.sent else None
+            "sent": self.sent.isoformat() if self.sent else None,
+            "response_to": self.response_to
         }
 
     @staticmethod
@@ -72,11 +79,12 @@ class PendingQuestionToAnswer:
             raw["question_id"],
             ResponseMessage.from_repr(raw["response"]),
             SocialDetails.from_repr(raw["social_details"]),
-            sent=datetime.fromisoformat(raw["sent"]) if raw.get("sent") else None
+            sent=datetime.fromisoformat(raw["sent"]) if raw.get("sent") else None,
+            response_to=raw.get("response_to")
         )
 
     def __eq__(self, o: object) -> bool:
         if not isinstance(o, PendingQuestionToAnswer):
             return False
         return self.question_id == o.question_id and self.response == o.response and \
-            self.social_details == o.social_details and self.sent == o.sent
+            self.social_details == o.social_details and self.sent == o.sent and self.response_to == o.response_to

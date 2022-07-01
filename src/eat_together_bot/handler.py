@@ -225,7 +225,7 @@ class EatTogetherHandler(WenetEventHandler):
         )
         logger.debug("READY")
 
-    def handle_wenet_textual_message(self, message: TextualMessage):  # -> NotificationEvent:
+    def handle_wenet_textual_message(self, message: TextualMessage, response_to: str):  # -> NotificationEvent:
         """
         Handle all the incoming textual messages
         """
@@ -239,7 +239,7 @@ class EatTogetherHandler(WenetEventHandler):
         response = TelegramTextualResponse("There is a message for you:\n\n*%s*\n_%s_" % (message.title, message.text))
         return NotificationEvent(user_account.social_details, [response], context)
 
-    def handle_wenet_message(self, message: Message) -> NotificationEvent:
+    def handle_wenet_message(self, message: Message, response_to: str) -> NotificationEvent:
         """
         Handle all the incoming notifications.
         TaskProposal: the bot proposes a user a task to apply

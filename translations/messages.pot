@@ -556,3 +556,12 @@ msgstr ""
 
 msgid "block_follow_up"
 msgstr ""
+
+msgid "set_telegram_username"
+msgstr ""
+
+msgid "not_share_answerer_contact"
+msgstr ""
+
+msgid "liked_answer"
+msgstr ""

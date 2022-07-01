@@ -1,6 +1,7 @@
 from __future__ import absolute_import, annotations
 
 import datetime
+import uuid
 from unittest import TestCase
 from unittest.mock import Mock
 
@@ -11,6 +12,11 @@ from chatbot_core.v3.connector.chatbot_interface import ChatbotInterfaceConnecto
 from chatbot_core.v3.connector.social_connectors.telegram_connector import TelegramSocialConnector
 from chatbot_core.v3.model.messages import TelegramTextualResponse
 from chatbot_core.v3.model.outgoing_event import NotificationEvent
+from wenet.interface.client import Oauth2Client
+from wenet.interface.service_api import ServiceApiInterface
+from wenet.model.logging_message.content import TextualContent
+from wenet.model.logging_message.message import ResponseMessage
+from wenet.storage.cache import InMemoryCache
 
 from ask_for_help_bot.pending_conversations import PendingQuestionToAnswer, PendingWenetMessage
 from ask_for_help_bot.pending_messages_job import PendingMessagesJob
@@ -27,10 +33,12 @@ class TestPendingMessagesJob(TestCase):
         )
 
         ChatbotInterfaceConnectorV3.build_from_env = Mock()
-        message_job = PendingMessagesJob("job_id", "instance_namespace", TelegramSocialConnector("bot_token"), logger_connectors=None)
+        message_job = PendingMessagesJob("job_id", "instance_namespace", TelegramSocialConnector("bot_token"), logger_connectors=None, app_id="app_id", client_secret="client_secret", oauth_cache=InMemoryCache(), wenet_authentication_management_url="", wenet_instance_url="")
+        message_job.message_parser_for_logs.create_response = Mock(return_value=ResponseMessage(str(uuid.uuid4()), "channel", "user_id", "project", TextualContent("text"), "response_to"))
         message_job.send_notification = Mock()
         message_job._interface_connector.update_user_context = Mock()
         message_job._handle_remind_me_later_messages(context)
+        ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", InMemoryCache(), token_endpoint_url=""), "").log_message = Mock()
 
         message_job.send_notification.assert_called_once()
         message_job.send_notification.assert_called_with(NotificationEvent(
@@ -52,10 +60,12 @@ class TestPendingMessagesJob(TestCase):
         )
 
         ChatbotInterfaceConnectorV3.build_from_env = Mock()
-        message_job = PendingMessagesJob("job_id", "instance_namespace", TelegramSocialConnector("bot_token"), logger_connectors=None)
+        message_job = PendingMessagesJob("job_id", "instance_namespace", TelegramSocialConnector("bot_token"), logger_connectors=None, app_id="app_id", client_secret="client_secret", oauth_cache=InMemoryCache(), wenet_authentication_management_url="", wenet_instance_url="")
+        message_job.message_parser_for_logs.create_response = Mock(return_value=ResponseMessage(str(uuid.uuid4()), "channel", "user_id", "project", TextualContent("text"), "response_to"))
         message_job.send_notification = Mock()
         message_job._interface_connector.update_user_context = Mock()
         message_job._handle_remind_me_later_messages(context)
+        ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", InMemoryCache(), token_endpoint_url=""), "").log_message = Mock()
 
         message_job.send_notification.assert_not_called()
         message_job._interface_connector.update_user_context.assert_called_once()
@@ -73,10 +83,12 @@ class TestPendingMessagesJob(TestCase):
         )
 
         ChatbotInterfaceConnectorV3.build_from_env = Mock()
-        message_job = PendingMessagesJob("job_id", "instance_namespace", TelegramSocialConnector("bot_token"), logger_connectors=None)
+        message_job = PendingMessagesJob("job_id", "instance_namespace", TelegramSocialConnector("bot_token"), logger_connectors=None, app_id="app_id", client_secret="client_secret", oauth_cache=InMemoryCache(), wenet_authentication_management_url="", wenet_instance_url="")
+        message_job.message_parser_for_logs.create_response = Mock(return_value=ResponseMessage(str(uuid.uuid4()), "channel", "user_id", "project", TextualContent("text"), "response_to"))
         message_job.send_notification = Mock(return_value=Exception("exception sending message"))
         message_job._interface_connector.update_user_context = Mock()
         message_job._handle_remind_me_later_messages(context)
+        ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", InMemoryCache(), token_endpoint_url=""), "").log_message = Mock()
 
         message_job.send_notification.assert_called_once()
         message_job.send_notification.assert_called_with(NotificationEvent(
@@ -99,10 +111,12 @@ class TestPendingMessagesJob(TestCase):
         )
 
         ChatbotInterfaceConnectorV3.build_from_env = Mock()
-        message_job = PendingMessagesJob("job_id", "instance_namespace", TelegramSocialConnector("bot_token"), logger_connectors=None)
+        message_job = PendingMessagesJob("job_id", "instance_namespace", TelegramSocialConnector("bot_token"), logger_connectors=None, app_id="app_id", client_secret="client_secret", oauth_cache=InMemoryCache(), wenet_authentication_management_url="", wenet_instance_url="")
+        message_job.message_parser_for_logs.create_response = Mock(return_value=ResponseMessage(str(uuid.uuid4()), "channel", "user_id", "project", TextualContent("text"), "response_to"))
         message_job.send_notification = Mock()
         message_job._interface_connector.update_user_context = Mock()
         message_job._handle_remind_me_later_messages(context)
+        ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", InMemoryCache(), token_endpoint_url=""), "").log_message = Mock()
 
         message_job.send_notification.assert_not_called()
         message_job._interface_connector.update_user_context.assert_not_called()
@@ -115,10 +129,12 @@ class TestPendingMessagesJob(TestCase):
         )
 
         ChatbotInterfaceConnectorV3.build_from_env = Mock()
-        message_job = PendingMessagesJob("job_id", "instance_namespace", TelegramSocialConnector("bot_token"), logger_connectors=None)
+        message_job = PendingMessagesJob("job_id", "instance_namespace", TelegramSocialConnector("bot_token"), logger_connectors=None, app_id="app_id", client_secret="client_secret", oauth_cache=InMemoryCache(), wenet_authentication_management_url="", wenet_instance_url="")
+        message_job.message_parser_for_logs.create_response = Mock(return_value=ResponseMessage(str(uuid.uuid4()), "channel", "user_id", "project", TextualContent("text"), "response_to"))
         message_job.send_notification = Mock()
         message_job._interface_connector.update_user_context = Mock()
         message_job._handle_delayed_wenet_messages(context)
+        ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", InMemoryCache(), token_endpoint_url=""), "").log_message = Mock()
 
         message_job.send_notification.assert_called_once()
         message_job.send_notification.assert_called_with(NotificationEvent(
@@ -140,10 +156,12 @@ class TestPendingMessagesJob(TestCase):
         )
 
         ChatbotInterfaceConnectorV3.build_from_env = Mock()
-        message_job = PendingMessagesJob("job_id", "instance_namespace", TelegramSocialConnector("bot_token"), logger_connectors=None)
+        message_job = PendingMessagesJob("job_id", "instance_namespace", TelegramSocialConnector("bot_token"), logger_connectors=None, app_id="app_id", client_secret="client_secret", oauth_cache=InMemoryCache(), wenet_authentication_management_url="", wenet_instance_url="")
+        message_job.message_parser_for_logs.create_response = Mock(return_value=ResponseMessage(str(uuid.uuid4()), "channel", "user_id", "project", TextualContent("text"), "response_to"))
         message_job.send_notification = Mock()
         message_job._interface_connector.update_user_context = Mock()
         message_job._handle_delayed_wenet_messages(context)
+        ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", InMemoryCache(), token_endpoint_url=""), "").log_message = Mock()
 
         message_job.send_notification.assert_not_called()
         message_job._interface_connector.update_user_context.assert_called_once()
@@ -160,10 +178,12 @@ class TestPendingMessagesJob(TestCase):
         )
 
         ChatbotInterfaceConnectorV3.build_from_env = Mock()
-        message_job = PendingMessagesJob("job_id", "instance_namespace", TelegramSocialConnector("bot_token"), logger_connectors=None)
+        message_job = PendingMessagesJob("job_id", "instance_namespace", TelegramSocialConnector("bot_token"), logger_connectors=None, app_id="app_id", client_secret="client_secret", oauth_cache=InMemoryCache(), wenet_authentication_management_url="", wenet_instance_url="")
+        message_job.message_parser_for_logs.create_response = Mock(return_value=ResponseMessage(str(uuid.uuid4()), "channel", "user_id", "project", TextualContent("text"), "response_to"))
         message_job.send_notification = Mock(return_value=Exception("exception sending message"))
         message_job._interface_connector.update_user_context = Mock()
         message_job._handle_delayed_wenet_messages(context)
+        ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", InMemoryCache(), token_endpoint_url=""), "").log_message = Mock()
 
         message_job.send_notification.assert_called_once()
         message_job.send_notification.assert_called_with(NotificationEvent(
@@ -185,10 +205,12 @@ class TestPendingMessagesJob(TestCase):
         )
 
         ChatbotInterfaceConnectorV3.build_from_env = Mock()
-        message_job = PendingMessagesJob("job_id", "instance_namespace", TelegramSocialConnector("bot_token"), logger_connectors=None)
+        message_job = PendingMessagesJob("job_id", "instance_namespace", TelegramSocialConnector("bot_token"), logger_connectors=None, app_id="app_id", client_secret="client_secret", oauth_cache=InMemoryCache(), wenet_authentication_management_url="", wenet_instance_url="")
+        message_job.message_parser_for_logs.create_response = Mock(return_value=ResponseMessage(str(uuid.uuid4()), "channel", "user_id", "project", TextualContent("text"), "response_to"))
         message_job.send_notification = Mock()
         message_job._interface_connector.update_user_context = Mock()
         message_job._handle_delayed_wenet_messages(context)
+        message_job.message_parser_for_logs.create_response = Mock(return_value=ResponseMessage(str(uuid.uuid4()), "channel", "user_id", "project", TextualContent("text"), "response_to"))
 
         message_job.send_notification.assert_not_called()
         message_job._interface_connector.update_user_context.assert_not_called()

@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 from typing import List
 from unittest import TestCase
@@ -7,11 +8,14 @@ from chatbot_core.model.context import ConversationContext
 from chatbot_core.model.details import TelegramDetails
 from chatbot_core.model.event import IncomingTelegramEvent
 from chatbot_core.model.message import IncomingTextMessage, IncomingCommand
+from chatbot_core.model.user_context import UserConversationContext
 from chatbot_core.translator.translator import TranslatorInstance
 from chatbot_core.v3.model.messages import TelegramRapidAnswerResponse, TextualResponse
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent
 from wenet.interface.client import Oauth2Client
 from wenet.interface.service_api import ServiceApiInterface
+from wenet.model.logging_message.content import TextualContent
+from wenet.model.logging_message.message import ResponseMessage
 from wenet.model.task.task import Task, TaskGoal
 from wenet.model.task.transaction import TaskTransaction
 from wenet.model.user.profile import WeNetUserProfile
@@ -712,9 +716,29 @@ class TestAskForHelpHandler(TestCase):
         translator_instance.translate = Mock(return_value="")
         handler._translator.get_translation_instance = Mock(return_value=translator_instance)
         handler._get_user_locale_from_incoming_event = Mock(return_value="en")
+        handler._interface_connector.update_user_context = Mock()
+        handler.get_user_accounts = Mock(return_value=[UserConversationContext(social_details=None, context=ConversationContext(static_context={handler.CONTEXT_WENET_USER_ID: "id"}))])
+        handler.message_parser_for_logs.create_response = Mock(return_value=ResponseMessage(str(uuid.uuid4()), "channel", "user_id", "project", TextualContent("text"), "response_to"))
+        handler.send_notification = Mock()
         service_api = ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
         service_api.create_task_transaction = Mock()
+        service_api.log_message = Mock()
         service_api.get_user_profile = Mock(return_value=WeNetUserProfile.empty("questioning_user"))
+        service_api.get_task = Mock(return_value=Task("task_id", None, None, "task_type_id", "questioning_user", "app_id", None, TaskGoal("question", ""), attributes={
+            "domain": handler.INTENT_STUDYING_CAREER,
+            "anonymous": False,
+            "maxUsers": 10,
+            "maxAnswers": 15,
+            "expirationDate": 1652705325
+        }, transactions=[TaskTransaction(
+            transaction_id="transaction_id",
+            task_id="task_id",
+            label=handler.LABEL_ANSWER_TRANSACTION,
+            creation_ts=int(datetime.now().timestamp()),
+            last_update_ts=int(datetime.now().timestamp()),
+            actioneer_id="answerer_user",
+            attributes={"answer": "answer", "anonymous": True}
+        )]))
         handler._get_service_api_interface_connector_from_context = Mock(return_value=service_api)
 
         response = handler.action_like_answer(
@@ -724,13 +748,18 @@ class TestAskForHelpHandler(TestCase):
             ButtonPayload({
                 "transaction_id": "transaction_id",
                 "task_id": "task_id",
+                "answerer_user_id": "answerer_user_id",
                 "related_buttons": ["button_ids"]
                 },
-            handler.INTENT_LIKE_ANSWER)
+                handler.INTENT_LIKE_ANSWER)
         )
         self.assertIsInstance(response, OutgoingEvent)
         self.assertEqual(1, len(response.messages))
         self.assertIsInstance(response.messages[0], TextualResponse)
+        handler._interface_connector.update_user_context.assert_called()
+        handler.send_notification.assert_called()
+        service_api.create_task_transaction.assert_called()
+        service_api.log_message.assert_called()
 
     def test_get_eligible_tasks(self):
         handler = MockAskForHelpHandler()
@@ -745,17 +774,17 @@ class TestAskForHelpHandler(TestCase):
                     "maxAnswers": 15,
                     "expirationDate": 1600000000
                 },
-            transactions=[
-                TaskTransaction(
-                    transaction_id="transaction_id-1",
-                    task_id="task_id-1",
-                    label=handler.LABEL_MORE_ANSWER_TRANSACTION,
-                    creation_ts=int(datetime.now().timestamp()),
-                    last_update_ts=int(datetime.now().timestamp()),
-                    actioneer_id="answerer_user-1",
-                    attributes={"expirationDate": 1600000000}
-                )]
-            ),
+                transactions=[
+                    TaskTransaction(
+                        transaction_id="transaction_id-1",
+                        task_id="task_id-1",
+                        label=handler.LABEL_MORE_ANSWER_TRANSACTION,
+                        creation_ts=int(datetime.now().timestamp()),
+                        last_update_ts=int(datetime.now().timestamp()),
+                        actioneer_id="answerer_user-1",
+                        attributes={"expirationDate": 1600000000}
+                    )]
+                ),
             Task("task_id-2", None, None, "task_type_id", "questioning_user-2", "app_id", None, TaskGoal("question", ""),
                  attributes={
                      "domain": handler.INTENT_STUDYING_CAREER,
