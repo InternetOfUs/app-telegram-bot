@@ -802,7 +802,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
     def action_question_1(self, incoming_event: IncomingSocialEvent, _: str) -> OutgoingEvent:
         """
-        Save the why this type of desired answerer, and ask the domain of the question
+        Save the question, and ask the domain of the question
         """
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         response = OutgoingEvent(social_details=incoming_event.social_details)
@@ -1378,8 +1378,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         response.with_context(context)
         return response
 
-    # TODO Add tests for the new methods for the follow-up
-
     def _get_telegram_user(self, context: ConversationContext) -> Optional[str]:
         if not isinstance(self._connector, TelegramSocialConnector):
             logger.error(f"Expected telegram social connector, got [{type(self._connector)}]")
@@ -1396,7 +1394,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     def action_follow_up_0(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
-
         context = incoming_event.context
         if self._get_telegram_user(context):
             context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_FOLLOW_UP_0)
@@ -1525,22 +1522,21 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
         context = incoming_event.context
         answerer_contact = self._get_telegram_user(context)
-        answerer_user_id = button_payload.payload["answerer_user_id"]
-        answerer_name = button_payload.payload["answerer_name"]
-        questioner_user_id = button_payload.payload["questioner_user_id"]
-        questioner_name = button_payload.payload["questioner_name"]
-        task_id = button_payload.payload["task_id"]
-        transaction_id = button_payload.payload["transaction_id"]
-
-        user_accounts = self.get_user_accounts(questioner_user_id)
-        if len(user_accounts) != 1:
-            logger.error(f"No context associated with WeNet user {questioner_user_id}")
-            raise ValueError(f"No context associated with WeNet user {questioner_user_id}")
-        questioner_account = user_accounts[0]
-        questioner_locale = self._get_user_locale_from_wenet_id(questioner_user_id, context=questioner_account.context)
-        questioner_contact = self._get_telegram_user(questioner_account.context)
-
         if answerer_contact:
+            answerer_user_id = button_payload.payload["answerer_user_id"]
+            answerer_name = button_payload.payload["answerer_name"]
+            questioner_user_id = button_payload.payload["questioner_user_id"]
+            questioner_name = button_payload.payload["questioner_name"]
+            task_id = button_payload.payload["task_id"]
+            transaction_id = button_payload.payload["transaction_id"]
+            user_accounts = self.get_user_accounts(questioner_user_id)
+            if len(user_accounts) != 1:
+                logger.error(f"No context associated with WeNet user {questioner_user_id}")
+                raise ValueError(f"No context associated with WeNet user {questioner_user_id}")
+            questioner_account = user_accounts[0]
+            questioner_locale = self._get_user_locale_from_wenet_id(questioner_user_id, context=questioner_account.context)
+            questioner_contact = self._get_telegram_user(questioner_account.context)
+
             if questioner_contact:
                 message = self._translator.get_translation_instance(user_locale).with_text("share_questioner_contact") \
                     .with_substitution("questioner_name", questioner_name) \
@@ -1643,8 +1639,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         message = TextualResponse(message)
 
         notification_message = self._translator.get_translation_instance(questioner_locale).with_text("not_share_answerer_contact") \
-                                   .with_substitution("answerer_name", answerer_name) \
-                                   .translate()
+            .with_substitution("answerer_name", answerer_name) \
+            .translate()
         notification_message = TextualResponse(notification_message)
 
         questioner_service_api = self._get_service_api_interface_connector_from_context(questioner_account.context)
@@ -1758,17 +1754,12 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
     def action_best_answer_0(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         context = incoming_event.context
         context.with_static_state(self.CONTEXT_TASK_ID, button_payload.payload["task_id"])
         context.with_static_state(self.CONTEXT_TRANSACTION_ID, button_payload.payload["transaction_id"])
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_0)
-        message = self._get_best_answer_reason_message(incoming_event)
-        response.with_message(message)
-        response.with_context(context)
-        return response
 
-    def _get_best_answer_reason_message(self, incoming_event: IncomingSocialEvent) -> TelegramRapidAnswerResponse:
-        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         message = self._translator.get_translation_instance(user_locale).with_text("best_answer_0").translate()
         button_1_text = self._translator.get_translation_instance(user_locale).with_text("answer_reason_funny").translate()
         button_2_text = self._translator.get_translation_instance(user_locale).with_text("answer_reason_thoughtful").translate()
@@ -1785,7 +1776,9 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         response_with_buttons.with_textual_option(button_5_text, self.INTENT_CHOSEN_ANSWER_HONEST)
         response_with_buttons.with_textual_option(button_6_text, self.INTENT_CHOSEN_ANSWER_KIND)
         response_with_buttons.with_textual_option(button_7_text, self.INTENT_CHOSEN_ANSWER_PERSONAL)
-        return response_with_buttons
+        response.with_message(response_with_buttons)
+        response.with_context(context)
+        return response
 
     def action_best_answer_publish(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
