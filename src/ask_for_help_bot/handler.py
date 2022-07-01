@@ -1578,8 +1578,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             service_api = self._get_service_api_interface_connector_from_context(context)
             try:
                 transaction = TaskTransaction(None, task_id, self.LABEL_FOLLOW_UP_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), answerer_user_id, {
-                                                  "transactionId": transaction_id
-                                              }, [])
+                    "transactionId": transaction_id
+                }, [])
                 service_api.create_task_transaction(transaction)
                 logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
             except CreationError as e:
