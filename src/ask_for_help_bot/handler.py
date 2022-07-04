@@ -1401,13 +1401,14 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             context.with_static_state(self.CONTEXT_ANSWERER_NAME, button_payload.payload["answerer_name"])
             context.with_static_state(self.CONTEXT_ANSWER_RECEIVED, button_payload.payload["answer"])
             context.with_static_state(self.CONTEXT_TASK_ID, button_payload.payload["task_id"])
+            context.with_static_state(self.CONTEXT_TRANSACTION_ID, button_payload.payload["transaction_id"])
             context.with_static_state(self.CONTEXT_QUESTIONER_USER_ID, button_payload.payload["questioner_user_id"])
             context.with_static_state(self.CONTEXT_QUESTION_ANSWERED, button_payload.payload["question"])
 
             message = self._translator.get_translation_instance(user_locale).with_text("share_details_for_follow_up").with_substitution("answerer", button_payload.payload["answerer_name"]).translate()
             button_1_text = self._translator.get_translation_instance(user_locale).with_text("share_details").translate()
             button_2_text = self._translator.get_translation_instance(user_locale).with_text("not_share_details").translate()
-            message = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2])
+            message = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1])
             message.with_textual_option(button_1_text, self.INTENT_SHARE_DETAILS)
             message.with_textual_option(button_2_text, self.INTENT_NOT_SHARE_DETAILS)
 
