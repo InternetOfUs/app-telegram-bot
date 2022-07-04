@@ -546,6 +546,7 @@ class TestAskForHelpHandler(TestCase):
                 "answerer_name": "answerer_name",
                 "answer": "answer",
                 "task_id": "task_id",
+                "transaction_id": "transaction_id",
                 "questioner_user_id": "questioner_user_id",
                 "question": "question",
                 "related_buttons": ["button_ids"]
@@ -570,9 +571,13 @@ class TestAskForHelpHandler(TestCase):
                 handler.CONTEXT_WENET_USER_ID: ""
             })),
             ButtonPayload({
-                "transaction_id": "transaction_id",
-                "task_id": "task_id",
+                "answerer_user_id": "answerer_user_id",
                 "answerer_name": "answerer_name",
+                "answer": "answer",
+                "task_id": "task_id",
+                "transaction_id": "transaction_id",
+                "questioner_user_id": "questioner_user_id",
+                "question": "question",
                 "related_buttons": ["button_ids"]
             },
                 handler.INTENT_FOLLOW_UP)
