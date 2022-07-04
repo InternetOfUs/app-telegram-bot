@@ -506,3 +506,62 @@ msgstr ""
 
 msgid "leisure_activities_button"
 msgstr ""
+msgid "follow_up_button"
+msgstr ""
+
+msgid "share_details_for_follow_up"
+msgstr ""
+
+msgid "share_details"
+msgstr ""
+
+msgid "not_share_details"
+msgstr ""
+
+msgid "sharing_details_message"
+msgstr ""
+
+msgid "not_sharing_details_message"
+msgstr ""
+
+msgid "share_details_to_questioner"
+msgstr ""
+
+msgid "not_now_share_details"
+msgstr ""
+
+msgid "block_share_details"
+msgstr ""
+
+msgid "share_questioner_contact"
+msgstr ""
+
+msgid "share_answerer_contact"
+msgstr ""
+
+msgid "no_contact_available"
+msgstr ""
+
+msgid "shared_questioner_contact"
+msgstr ""
+
+msgid "shared_answerer_contact"
+msgstr ""
+
+msgid "not_shared_contact"
+msgstr ""
+
+msgid "not_follow_up"
+msgstr ""
+
+msgid "block_follow_up"
+msgstr ""
+
+msgid "set_telegram_username"
+msgstr ""
+
+msgid "not_share_answerer_contact"
+msgstr ""
+
+msgid "liked_answer"
+msgstr ""

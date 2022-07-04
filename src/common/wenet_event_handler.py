@@ -263,10 +263,10 @@ class WenetEventHandler(EventHandler, abc.ABC):
                     logger.warning("Unable to log the incoming message to the service API")
 
                 if isinstance(message, TextualMessage):
-                    notification = self.handle_wenet_textual_message(message)
+                    notification = self.handle_wenet_textual_message(message, response_to=logged_notification.message_id)
                     self.send_notification(notification)
                 elif isinstance(message, Message):
-                    notification = self.handle_wenet_message(message)
+                    notification = self.handle_wenet_message(message, response_to=logged_notification.message_id)
                     self.send_notification(notification)
                 else:
                     raise ValueError(f"Unable to handle an event of type [{type(custom_event)}]")
@@ -297,14 +297,14 @@ class WenetEventHandler(EventHandler, abc.ABC):
             self.messages_lock.release()
 
     @abc.abstractmethod
-    def handle_wenet_textual_message(self, message: TextualMessage) -> NotificationEvent:
+    def handle_wenet_textual_message(self, message: TextualMessage, response_to: str) -> NotificationEvent:
         """
         Handle all the incoming textual messages
         """
         pass
 
     @abc.abstractmethod
-    def handle_wenet_message(self, message: Message) -> NotificationEvent:
+    def handle_wenet_message(self, message: Message, response_to: str) -> NotificationEvent:
         """
         Handle all the incoming messages (e.g. Task notifications, etc).
         """
@@ -335,6 +335,7 @@ class WenetEventHandler(EventHandler, abc.ABC):
             except CreationError:
                 logger.warning("Unable to log the incoming message to the service API")
 
+            incoming_event.incoming_message.message_id = logged_incoming_message.message_id  # change to this id in order to have this information in the various methods to allow to log messages related to responses sent to other users
             outgoing_event, fulfiller, satisfying_rule = self.intent_manager.manage(incoming_event)
             context.with_dynamic_state(self.PREVIOUS_INTENT, fulfiller.intent_id)
             outgoing_event.with_context(context)
