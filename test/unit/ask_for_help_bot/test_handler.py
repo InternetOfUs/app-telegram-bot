@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime
 from typing import List
 from unittest import TestCase
@@ -7,11 +8,14 @@ from chatbot_core.model.context import ConversationContext
 from chatbot_core.model.details import TelegramDetails
 from chatbot_core.model.event import IncomingTelegramEvent
 from chatbot_core.model.message import IncomingTextMessage, IncomingCommand
+from chatbot_core.model.user_context import UserConversationContext
 from chatbot_core.translator.translator import TranslatorInstance
 from chatbot_core.v3.model.messages import TelegramRapidAnswerResponse, TextualResponse
 from chatbot_core.v3.model.outgoing_event import OutgoingEvent
 from wenet.interface.client import Oauth2Client
 from wenet.interface.service_api import ServiceApiInterface
+from wenet.model.logging_message.content import TextualContent
+from wenet.model.logging_message.message import ResponseMessage
 from wenet.model.task.task import Task, TaskGoal
 from wenet.model.task.transaction import TaskTransaction
 from wenet.model.user.profile import WeNetUserProfile
@@ -129,22 +133,27 @@ class TestAskForHelpHandler(TestCase):
             "receiver_id",
             "answer",
             "transaction_id",
-            "user_id",
+            "questioning_user",
             {
                 "taskId": "task_id",
-                "userId": "questioning_user",
+                "userId": "answerer_user",
                 "question": "question",
                 "transactionId": "transaction_id",
                 "answer": "answer",
                 "anonymous": True
             }), user_object=WeNetUserProfile.empty("questioning_user"), answerer_user=answerer_user)
         self.assertIsInstance(response, TelegramRapidAnswerResponse)
-        self.assertEqual(2, len(response.options))
-        self.assertEqual(2, len(handler.cache._cache))
+        self.assertEqual(3, len(response.options))
+        self.assertEqual(3, len(handler.cache._cache))
         for key in handler.cache._cache:
             cached_item = handler.cache.get(key)
             self.assertEqual("transaction_id", cached_item["payload"]["transaction_id"])
             self.assertEqual("task_id", cached_item["payload"]["task_id"])
+            self.assertEqual("answerer_user", cached_item["payload"]["answerer_user_id"])
+            self.assertEqual("", cached_item["payload"]["answerer_name"])
+            self.assertEqual("answer", cached_item["payload"]["answer"])
+            self.assertEqual("question", cached_item["payload"]["question"])
+            self.assertEqual("questioning_user", cached_item["payload"]["questioner_user_id"])
 
     def test_handle_answered_question(self):
         handler = MockAskForHelpHandler()
@@ -160,22 +169,27 @@ class TestAskForHelpHandler(TestCase):
             "receiver_id",
             "answer",
             "transaction_id",
-            "user_id",
+            "questioning_user",
             {
                 "taskId": "task_id",
-                "userId": "questioning_user",
+                "userId": "answerer_user",
                 "question": "question",
                 "transactionId": "transaction_id",
                 "answer": "answer",
                 "anonymous": False
             }), user_object=WeNetUserProfile.empty("questioning_user"), answerer_user=answerer_user)
         self.assertIsInstance(response, TelegramRapidAnswerResponse)
-        self.assertEqual(2, len(response.options))
-        self.assertEqual(2, len(handler.cache._cache))
+        self.assertEqual(3, len(response.options))
+        self.assertEqual(3, len(handler.cache._cache))
         for key in handler.cache._cache:
             cached_item = handler.cache.get(key)
             self.assertEqual("transaction_id", cached_item["payload"]["transaction_id"])
             self.assertEqual("task_id", cached_item["payload"]["task_id"])
+            self.assertEqual("answerer_user", cached_item["payload"]["answerer_user_id"])
+            self.assertEqual("name", cached_item["payload"]["answerer_name"])
+            self.assertEqual("answer", cached_item["payload"]["answer"])
+            self.assertEqual("question", cached_item["payload"]["question"])
+            self.assertEqual("questioning_user", cached_item["payload"]["questioner_user_id"])
 
     def test_handle_answered_picked(self):
         handler = MockAskForHelpHandler()
@@ -516,6 +530,411 @@ class TestAskForHelpHandler(TestCase):
         self.assertEqual(1, len(response.messages))
         self.assertIsInstance(response.messages[0], TextualResponse)
 
+    def test_action_follow_up_0(self):
+        handler = MockAskForHelpHandler()
+        translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
+        translator_instance.translate = Mock(return_value="")
+        handler._translator.get_translation_instance = Mock(return_value=translator_instance)
+        handler._get_user_locale_from_incoming_event = Mock(return_value="en")
+        handler._get_telegram_user = Mock(return_value="@username")
+
+        response = handler.action_follow_up_0(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_FOLLOW_UP, ""), ConversationContext(static_context={
+                handler.CONTEXT_WENET_USER_ID: ""
+            })),
+            ButtonPayload({
+                "answerer_user_id": "answerer_user_id",
+                "answerer_name": "answerer_name",
+                "answer": "answer",
+                "task_id": "task_id",
+                "transaction_id": "transaction_id",
+                "questioner_user_id": "questioner_user_id",
+                "question": "question",
+                "related_buttons": ["button_ids"]
+            },
+                handler.INTENT_FOLLOW_UP)
+        )
+        self.assertIsInstance(response, OutgoingEvent)
+        self.assertEqual(1, len(response.messages))
+        self.assertIsInstance(response.messages[0], TelegramRapidAnswerResponse)
+        self.assertEqual(2, len(response.messages[0].options))
+        self.assertTrue(handler.CONTEXT_CURRENT_STATE in response.context._static_context and response.context._static_context[handler.CONTEXT_CURRENT_STATE] == handler.STATE_FOLLOW_UP_0)
+
+    def test_action_follow_up_0_no_username(self):
+        handler = MockAskForHelpHandler()
+        translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
+        translator_instance.translate = Mock(return_value="")
+        handler._translator.get_translation_instance = Mock(return_value=translator_instance)
+        handler._get_user_locale_from_incoming_event = Mock(return_value="en")
+        handler._get_telegram_user = Mock(return_value=None)
+
+        response = handler.action_follow_up_0(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_FOLLOW_UP, ""), ConversationContext(static_context={
+                handler.CONTEXT_WENET_USER_ID: ""
+            })),
+            ButtonPayload({
+                "answerer_user_id": "answerer_user_id",
+                "answerer_name": "answerer_name",
+                "answer": "answer",
+                "task_id": "task_id",
+                "transaction_id": "transaction_id",
+                "questioner_user_id": "questioner_user_id",
+                "question": "question",
+                "related_buttons": ["button_ids"]
+            },
+                handler.INTENT_FOLLOW_UP)
+        )
+        self.assertIsInstance(response, OutgoingEvent)
+        self.assertEqual(1, len(response.messages))
+        self.assertIsInstance(response.messages[0], TelegramRapidAnswerResponse)
+        self.assertEqual(1, len(response.messages[0].options))
+
+    def test_action_follow_up_1(self):
+        handler = MockAskForHelpHandler()
+        translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
+        translator_instance.translate = Mock(return_value="")
+        handler._translator.get_translation_instance = Mock(return_value=translator_instance)
+        handler._get_user_locale_from_incoming_event = Mock(return_value="en")
+        handler._get_user_locale_from_wenet_id = Mock(return_value="en")
+        handler._interface_connector.update_user_context = Mock()
+        handler.get_user_accounts = Mock(return_value=[UserConversationContext(social_details=None, context=ConversationContext(static_context={handler.CONTEXT_WENET_USER_ID: "id"}))])
+        handler.message_parser_for_logs.create_response = Mock(return_value=ResponseMessage(str(uuid.uuid4()), "channel", "user_id", "project", TextualContent("text"), "response_to"))
+        handler.send_notification = Mock()
+        service_api = ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
+        service_api.log_message = Mock()
+        service_api.get_user_profile = Mock(return_value=WeNetUserProfile.empty("questioning_user"))
+        service_api.get_task = Mock(return_value=Task("task_id", None, None, "task_type_id", "questioning_user", "app_id", None, TaskGoal("question", ""), attributes={
+            "domain": handler.INTENT_STUDYING_CAREER,
+            "anonymous": False,
+            "maxUsers": 10,
+            "maxAnswers": 15,
+            "expirationDate": 1652705325
+        }, transactions=[TaskTransaction(
+            transaction_id="transaction_id",
+            task_id="task_id",
+            label=handler.LABEL_ANSWER_TRANSACTION,
+            creation_ts=int(datetime.now().timestamp()),
+            last_update_ts=int(datetime.now().timestamp()),
+            actioneer_id="answerer_user",
+            attributes={"answer": "answer", "anonymous": True}
+        )]))
+        handler._get_service_api_interface_connector_from_context = Mock(return_value=service_api)
+
+        response = handler.action_follow_up_1(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_SHARE_DETAILS, ""), ConversationContext(static_context={
+                handler.CONTEXT_WENET_USER_ID: "",
+                handler.CONTEXT_ANSWERER_USER_ID: "",
+                handler.CONTEXT_ANSWERER_NAME: "",
+                handler.CONTEXT_ANSWER_RECEIVED: "",
+                handler.CONTEXT_TASK_ID: "",
+                handler.CONTEXT_TRANSACTION_ID: "",
+                handler.CONTEXT_QUESTIONER_USER_ID: "",
+                handler.CONTEXT_QUESTION_ANSWERED: "",
+            })), handler.INTENT_SHARE_DETAILS
+        )
+        self.assertIsInstance(response, OutgoingEvent)
+        self.assertEqual(1, len(response.messages))
+        self.assertIsInstance(response.messages[0], TextualResponse)
+        handler._interface_connector.update_user_context.assert_called()
+        handler.get_user_accounts.assert_called()
+        handler.send_notification.assert_called()
+        service_api.log_message.assert_called()
+
+    def test_action_follow_up_1_blocked(self):
+        handler = MockAskForHelpHandler()
+        translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
+        translator_instance.translate = Mock(return_value="")
+        handler._translator.get_translation_instance = Mock(return_value=translator_instance)
+        handler._get_user_locale_from_incoming_event = Mock(return_value="en")
+        handler._get_user_locale_from_wenet_id = Mock(return_value="en")
+        handler._interface_connector.update_user_context = Mock()
+        handler.get_user_accounts = Mock(return_value=[UserConversationContext(social_details=None, context=ConversationContext(static_context={handler.CONTEXT_WENET_USER_ID: "id", handler.CONTEXT_BLOCKED_USERS_FOR_CONTACT_REQUEST: ["1"]}))])
+        handler.message_parser_for_logs.create_response = Mock(return_value=ResponseMessage(str(uuid.uuid4()), "channel", "user_id", "project", TextualContent("text"), "response_to"))
+        handler.send_notification = Mock()
+        service_api = ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
+        service_api.log_message = Mock()
+        service_api.get_user_profile = Mock(return_value=WeNetUserProfile.empty("questioning_user"))
+        service_api.get_task = Mock(return_value=Task("task_id", None, None, "task_type_id", "questioning_user", "app_id", None, TaskGoal("question", ""), attributes={
+            "domain": handler.INTENT_STUDYING_CAREER,
+            "anonymous": False,
+            "maxUsers": 10,
+            "maxAnswers": 15,
+            "expirationDate": 1652705325
+        }, transactions=[TaskTransaction(
+            transaction_id="transaction_id",
+            task_id="task_id",
+            label=handler.LABEL_ANSWER_TRANSACTION,
+            creation_ts=int(datetime.now().timestamp()),
+            last_update_ts=int(datetime.now().timestamp()),
+            actioneer_id="answerer_user",
+            attributes={"answer": "answer", "anonymous": True}
+        )]))
+        handler._get_service_api_interface_connector_from_context = Mock(return_value=service_api)
+
+        response = handler.action_follow_up_1(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_SHARE_DETAILS, ""), ConversationContext(static_context={
+                handler.CONTEXT_WENET_USER_ID: "",
+                handler.CONTEXT_ANSWERER_USER_ID: "",
+                handler.CONTEXT_ANSWERER_NAME: "",
+                handler.CONTEXT_ANSWER_RECEIVED: "",
+                handler.CONTEXT_TASK_ID: "",
+                handler.CONTEXT_TRANSACTION_ID: "",
+                handler.CONTEXT_QUESTIONER_USER_ID: "1",
+                handler.CONTEXT_QUESTION_ANSWERED: "",
+            })), handler.INTENT_SHARE_DETAILS
+        )
+        self.assertIsInstance(response, OutgoingEvent)
+        self.assertEqual(1, len(response.messages))
+        self.assertIsInstance(response.messages[0], TextualResponse)
+        handler._interface_connector.update_user_context.assert_not_called()
+        handler.get_user_accounts.assert_called()
+        handler.send_notification.assert_not_called()
+        service_api.log_message.assert_not_called()
+
+    def test_action_follow_up_1_not_share(self):
+        handler = MockAskForHelpHandler()
+        translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
+        translator_instance.translate = Mock(return_value="")
+        handler._translator.get_translation_instance = Mock(return_value=translator_instance)
+        handler._get_user_locale_from_incoming_event = Mock(return_value="en")
+        handler._get_user_locale_from_wenet_id = Mock(return_value="en")
+        handler._interface_connector.update_user_context = Mock()
+        handler.get_user_accounts = Mock(return_value=[UserConversationContext(social_details=None, context=ConversationContext(static_context={handler.CONTEXT_WENET_USER_ID: "id"}))])
+        handler.message_parser_for_logs.create_response = Mock(return_value=ResponseMessage(str(uuid.uuid4()), "channel", "user_id", "project", TextualContent("text"), "response_to"))
+        handler.send_notification = Mock()
+        service_api = ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
+        service_api.log_message = Mock()
+        service_api.get_user_profile = Mock(return_value=WeNetUserProfile.empty("questioning_user"))
+        service_api.get_task = Mock(return_value=Task("task_id", None, None, "task_type_id", "questioning_user", "app_id", None, TaskGoal("question", ""), attributes={
+            "domain": handler.INTENT_STUDYING_CAREER,
+            "anonymous": False,
+            "maxUsers": 10,
+            "maxAnswers": 15,
+            "expirationDate": 1652705325
+        }, transactions=[TaskTransaction(
+            transaction_id="transaction_id",
+            task_id="task_id",
+            label=handler.LABEL_ANSWER_TRANSACTION,
+            creation_ts=int(datetime.now().timestamp()),
+            last_update_ts=int(datetime.now().timestamp()),
+            actioneer_id="answerer_user",
+            attributes={"answer": "answer", "anonymous": True}
+        )]))
+        handler._get_service_api_interface_connector_from_context = Mock(return_value=service_api)
+
+        response = handler.action_follow_up_1(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_NOT_SHARE_DETAILS, ""), ConversationContext(static_context={
+                handler.CONTEXT_WENET_USER_ID: "",
+                handler.CONTEXT_ANSWERER_USER_ID: "",
+                handler.CONTEXT_ANSWERER_NAME: "",
+                handler.CONTEXT_ANSWER_RECEIVED: "",
+                handler.CONTEXT_TASK_ID: "",
+                handler.CONTEXT_TRANSACTION_ID: "",
+                handler.CONTEXT_QUESTIONER_USER_ID: "",
+                handler.CONTEXT_QUESTION_ANSWERED: "",
+            })), handler.INTENT_NOT_SHARE_DETAILS
+        )
+        self.assertIsInstance(response, OutgoingEvent)
+        self.assertEqual(1, len(response.messages))
+        self.assertIsInstance(response.messages[0], TextualResponse)
+        handler._interface_connector.update_user_context.assert_not_called()
+        handler.get_user_accounts.assert_not_called()
+        handler.send_notification.assert_not_called()
+        service_api.log_message.assert_not_called()
+
+    def test_action_follow_up_2(self):
+        handler = MockAskForHelpHandler()
+        translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
+        translator_instance.translate = Mock(return_value="")
+        handler._translator.get_translation_instance = Mock(return_value=translator_instance)
+        handler._get_user_locale_from_incoming_event = Mock(return_value="en")
+        handler._get_user_locale_from_wenet_id = Mock(return_value="en")
+        handler._interface_connector.update_user_context = Mock()
+        handler._get_telegram_user = Mock(return_value="@username")
+        handler.get_user_accounts = Mock(return_value=[UserConversationContext(social_details=None, context=ConversationContext(static_context={handler.CONTEXT_WENET_USER_ID: "id"}))])
+        handler.message_parser_for_logs.create_response = Mock(return_value=ResponseMessage(str(uuid.uuid4()), "channel", "user_id", "project", TextualContent("text"), "response_to"))
+        handler.send_notification = Mock()
+        service_api = ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
+        service_api.create_task_transaction = Mock()
+        service_api.log_message = Mock()
+        service_api.get_user_profile = Mock(return_value=WeNetUserProfile.empty("questioning_user"))
+        handler._get_service_api_interface_connector_from_context = Mock(return_value=service_api)
+
+        response = handler.action_follow_up_2(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_SHARE_DETAILS_TO_QUESTIONER, ""), ConversationContext(static_context={
+                handler.CONTEXT_WENET_USER_ID: ""
+            })),
+            ButtonPayload({
+                "answerer_user_id": "answerer_user_id",
+                "answerer_name": "answerer_name",
+                "questioner_user_id": "questioner_user_id",
+                "questioner_name": "questioner_name",
+                "task_id": "task_id",
+                "transaction_id": "transaction_id",
+                "related_buttons": ["button_ids"]
+                },
+                handler.INTENT_SHARE_DETAILS_TO_QUESTIONER)
+        )
+        self.assertIsInstance(response, OutgoingEvent)
+        self.assertEqual(1, len(response.messages))
+        self.assertIsInstance(response.messages[0], TextualResponse)
+        handler._interface_connector.update_user_context.assert_called()
+        handler.get_user_accounts.assert_called()
+        handler.send_notification.assert_called()
+        service_api.create_task_transaction.assert_called()
+        service_api.log_message.assert_called()
+
+    def test_action_follow_up_2_no_username(self):
+        handler = MockAskForHelpHandler()
+        translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
+        translator_instance.translate = Mock(return_value="")
+        handler._translator.get_translation_instance = Mock(return_value=translator_instance)
+        handler._get_user_locale_from_incoming_event = Mock(return_value="en")
+        handler._get_user_locale_from_wenet_id = Mock(return_value="en")
+        handler._interface_connector.update_user_context = Mock()
+        handler._get_telegram_user = Mock(return_value=None)
+        handler.get_user_accounts = Mock(return_value=[UserConversationContext(social_details=None, context=ConversationContext(static_context={handler.CONTEXT_WENET_USER_ID: "id"}))])
+        handler.message_parser_for_logs.create_response = Mock(return_value=ResponseMessage(str(uuid.uuid4()), "channel", "user_id", "project", TextualContent("text"), "response_to"))
+        handler.send_notification = Mock()
+        service_api = ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
+        service_api.create_task_transaction = Mock()
+        service_api.log_message = Mock()
+        service_api.get_user_profile = Mock(return_value=WeNetUserProfile.empty("questioning_user"))
+        handler._get_service_api_interface_connector_from_context = Mock(return_value=service_api)
+
+        response = handler.action_follow_up_2(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_SHARE_DETAILS_TO_QUESTIONER, ""), ConversationContext(static_context={
+                handler.CONTEXT_WENET_USER_ID: ""
+            })),
+            ButtonPayload({
+                "answerer_user_id": "answerer_user_id",
+                "answerer_name": "answerer_name",
+                "questioner_user_id": "questioner_user_id",
+                "questioner_name": "questioner_name",
+                "task_id": "task_id",
+                "transaction_id": "transaction_id",
+                "related_buttons": ["button_ids"]
+                },
+                handler.INTENT_SHARE_DETAILS_TO_QUESTIONER)
+        )
+        self.assertIsInstance(response, OutgoingEvent)
+        self.assertEqual(1, len(response.messages))
+        self.assertIsInstance(response.messages[0], TelegramRapidAnswerResponse)
+        self.assertEqual(1, len(response.messages[0].options))
+        handler._interface_connector.update_user_context.assert_not_called()
+        handler.get_user_accounts.assert_not_called()
+        handler.send_notification.assert_not_called()
+        service_api.create_task_transaction.assert_not_called()
+        service_api.log_message.assert_not_called()
+
+    def test_action_not_follow_up(self):
+        handler = MockAskForHelpHandler()
+        translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
+        translator_instance.translate = Mock(return_value="")
+        handler._translator.get_translation_instance = Mock(return_value=translator_instance)
+        handler._get_user_locale_from_incoming_event = Mock(return_value="en")
+        handler._get_user_locale_from_wenet_id = Mock(return_value="en")
+        handler._interface_connector.update_user_context = Mock()
+        handler.get_user_accounts = Mock(return_value=[UserConversationContext(social_details=None, context=ConversationContext(static_context={handler.CONTEXT_WENET_USER_ID: "id"}))])
+        handler.message_parser_for_logs.create_response = Mock(return_value=ResponseMessage(str(uuid.uuid4()), "channel", "user_id", "project", TextualContent("text"), "response_to"))
+        handler.send_notification = Mock()
+        service_api = ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
+        service_api.log_message = Mock()
+        handler._get_service_api_interface_connector_from_context = Mock(return_value=service_api)
+
+        response = handler.action_not_follow_up(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_NOT_NOW_SHARE_DETAILS, ""), ConversationContext(static_context={
+                handler.CONTEXT_WENET_USER_ID: ""
+            })),
+            ButtonPayload({
+                "answerer_user_id": "answerer_user_id",
+                "answerer_name": "answerer_name",
+                "questioner_user_id": "questioner_user_id",
+                "questioner_name": "questioner_name",
+                "task_id": "task_id",
+                "transaction_id": "transaction_id",
+                "related_buttons": ["button_ids"]
+                },
+                handler.INTENT_NOT_NOW_SHARE_DETAILS)
+        )
+        self.assertIsInstance(response, OutgoingEvent)
+        self.assertEqual(1, len(response.messages))
+        self.assertIsInstance(response.messages[0], TextualResponse)
+        handler._interface_connector.update_user_context.assert_called()
+        handler.get_user_accounts.assert_called()
+        handler.send_notification.assert_called()
+        service_api.log_message.assert_called()
+
+    def test_action_block_follow_up(self):
+        handler = MockAskForHelpHandler()
+        translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
+        translator_instance.translate = Mock(return_value="")
+        handler._translator.get_translation_instance = Mock(return_value=translator_instance)
+        handler._get_user_locale_from_incoming_event = Mock(return_value="en")
+
+        response = handler.action_block_follow_up(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_BLOCK_SHARE_DETAILS, ""), ConversationContext(static_context={
+                handler.CONTEXT_WENET_USER_ID: ""
+            })),
+            ButtonPayload({
+                "answerer_user_id": "answerer_user_id",
+                "answerer_name": "answerer_name",
+                "questioner_user_id": "questioner_user_id",
+                "questioner_name": "questioner_name",
+                "task_id": "task_id",
+                "transaction_id": "transaction_id",
+                "related_buttons": ["button_ids"]
+                },
+                handler.INTENT_BLOCK_SHARE_DETAILS)
+        )
+        self.assertIsInstance(response, OutgoingEvent)
+        self.assertEqual(1, len(response.messages))
+        self.assertIsInstance(response.messages[0], TextualResponse)
+        self.assertTrue(handler.CONTEXT_BLOCKED_USERS_FOR_CONTACT_REQUEST in response.context._static_context and response.context._static_context[handler.CONTEXT_BLOCKED_USERS_FOR_CONTACT_REQUEST] == ["questioner_user_id"])
+
+    def test_action_like_answer(self):
+        handler = MockAskForHelpHandler()
+        translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
+        translator_instance.translate = Mock(return_value="")
+        handler._translator.get_translation_instance = Mock(return_value=translator_instance)
+        handler._get_user_locale_from_incoming_event = Mock(return_value="en")
+        handler._get_user_locale_from_wenet_id = Mock(return_value="en")
+        handler._interface_connector.update_user_context = Mock()
+        handler.get_user_accounts = Mock(return_value=[UserConversationContext(social_details=None, context=ConversationContext(static_context={handler.CONTEXT_WENET_USER_ID: "id"}))])
+        handler.message_parser_for_logs.create_response = Mock(return_value=ResponseMessage(str(uuid.uuid4()), "channel", "user_id", "project", TextualContent("text"), "response_to"))
+        handler.send_notification = Mock()
+        service_api = ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
+        service_api.create_task_transaction = Mock()
+        service_api.log_message = Mock()
+        service_api.get_user_profile = Mock(return_value=WeNetUserProfile.empty("questioning_user"))
+        service_api.get_task = Mock(return_value=Task("task_id", None, None, "task_type_id", "questioning_user", "app_id", None, TaskGoal("question", ""), attributes={
+            "domain": handler.INTENT_STUDYING_CAREER,
+            "anonymous": False,
+            "maxUsers": 10,
+            "maxAnswers": 15,
+            "expirationDate": 1652705325
+        }, transactions=[TaskTransaction(
+            transaction_id="transaction_id",
+            task_id="task_id",
+            label=handler.LABEL_ANSWER_TRANSACTION,
+            creation_ts=int(datetime.now().timestamp()),
+            last_update_ts=int(datetime.now().timestamp()),
+            actioneer_id="answerer_user",
+            attributes={"answer": "answer", "anonymous": True}
+        )]))
+        handler._get_service_api_interface_connector_from_context = Mock(return_value=service_api)
+
+        response = handler.action_like_answer(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_LIKE_ANSWER, ""), ConversationContext(static_context={
+                handler.CONTEXT_WENET_USER_ID: ""
+            })),
+            ButtonPayload({
+                "transaction_id": "transaction_id",
+                "task_id": "task_id",
+                "answerer_user_id": "answerer_user_id",
+                "related_buttons": ["button_ids"]
+                },
+                handler.INTENT_LIKE_ANSWER)
+        )
+        self.assertIsInstance(response, OutgoingEvent)
+        self.assertEqual(1, len(response.messages))
+        self.assertIsInstance(response.messages[0], TextualResponse)
+        handler._interface_connector.update_user_context.assert_called()
+        handler.get_user_accounts.assert_called()
+        handler.send_notification.assert_called()
+        service_api.create_task_transaction.assert_called()
+        service_api.log_message.assert_called()
+
     def test_action_best_answer_0(self):
         handler = MockAskForHelpHandler()
         translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
@@ -638,7 +1057,8 @@ class TestAskForHelpHandler(TestCase):
             handler.CONTEXT_TRANSACTION_ID: "transaction_id",
             handler.CONTEXT_QUESTIONER_NAME: "questioner_name",
             handler.CONTEXT_QUESTION: "question",
-            handler.CONTEXT_BEST_ANSWER: "answer"
+            handler.CONTEXT_BEST_ANSWER: "answer",
+            handler.CONTEXT_ANSWERER_NAME: "answerer_name"
         })), handler.INTENT_NOT_PUBLISH)
         self.assertIsInstance(response, OutgoingEvent)
         self.assertEqual(1, len(response.messages))
@@ -695,32 +1115,6 @@ class TestAskForHelpHandler(TestCase):
         self.assertEqual(2, len(response.messages))
         self.assertIsInstance(response.messages[0], TextualResponse)
 
-    def test_action_like_answer(self):
-        handler = MockAskForHelpHandler()
-        translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
-        translator_instance.translate = Mock(return_value="")
-        handler._translator.get_translation_instance = Mock(return_value=translator_instance)
-        handler._get_user_locale_from_incoming_event = Mock(return_value="en")
-        service_api = ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
-        service_api.create_task_transaction = Mock()
-        service_api.get_user_profile = Mock(return_value=WeNetUserProfile.empty("questioning_user"))
-        handler._get_service_api_interface_connector_from_context = Mock(return_value=service_api)
-
-        response = handler.action_like_answer(
-            IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_LIKE_ANSWER, ""), ConversationContext(static_context={
-                handler.CONTEXT_WENET_USER_ID: ""
-            })),
-            ButtonPayload({
-                "transaction_id": "transaction_id",
-                "task_id": "task_id",
-                "related_buttons": ["button_ids"]
-                },
-            handler.INTENT_LIKE_ANSWER)
-        )
-        self.assertIsInstance(response, OutgoingEvent)
-        self.assertEqual(1, len(response.messages))
-        self.assertIsInstance(response.messages[0], TextualResponse)
-
     def test_get_eligible_tasks(self):
         handler = MockAskForHelpHandler()
         service_api = ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
@@ -734,17 +1128,17 @@ class TestAskForHelpHandler(TestCase):
                     "maxAnswers": 15,
                     "expirationDate": 1600000000
                 },
-            transactions=[
-                TaskTransaction(
-                    transaction_id="transaction_id-1",
-                    task_id="task_id-1",
-                    label=handler.LABEL_MORE_ANSWER_TRANSACTION,
-                    creation_ts=int(datetime.now().timestamp()),
-                    last_update_ts=int(datetime.now().timestamp()),
-                    actioneer_id="answerer_user-1",
-                    attributes={"expirationDate": 1600000000}
-                )]
-            ),
+                transactions=[
+                    TaskTransaction(
+                        transaction_id="transaction_id-1",
+                        task_id="task_id-1",
+                        label=handler.LABEL_MORE_ANSWER_TRANSACTION,
+                        creation_ts=int(datetime.now().timestamp()),
+                        last_update_ts=int(datetime.now().timestamp()),
+                        actioneer_id="answerer_user-1",
+                        attributes={"expirationDate": 1600000000}
+                    )]
+                ),
             Task("task_id-2", None, None, "task_type_id", "questioning_user-2", "app_id", None, TaskGoal("question", ""),
                  attributes={
                      "domain": handler.INTENT_STUDYING_CAREER,

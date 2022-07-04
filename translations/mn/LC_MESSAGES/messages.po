@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-06-27 11:03+0200\n"
+"PO-Revision-Date: 2022-07-04 11:14+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: mn\n"
@@ -405,7 +405,7 @@ msgid "best_answer_final_message"
 msgstr "Таны хувь нэмэрт баярлалаа! Хэзээ ч хамаагүй шинэ асуулт асуугаарай!"
 
 msgid "expired_button_message"
-msgstr "Уучлаарай, энэ асуулт аль хэдийнэ яваад дуусжээ."
+msgstr "Та сонголтуудын аль нэгийг сонгосон байна."
 
 msgid "best_answers_button"
 msgstr ":white_check_mark: Би энэ хариултыг хүлээн зөвшөөрч байна!"
@@ -637,3 +637,87 @@ msgstr "Та санамсаргүй хүмүүсээс хариулт хайса
 
 msgid "leisure_activities_button"
 msgstr "Чөлөөт цагийн үйл ажиллагаа"
+
+msgid "follow_up_button"
+msgstr ":speaking_head: {answerer}-н холбоо барих хаягийг дагахыг хүсэх"
+
+msgid "share_details_for_follow_up"
+msgstr ""
+"{answerer} ч бас таны холбоо барих мэдээллийг хүлээн авах болно гэдгийг "
+"анхаарна уу!"
+
+msgid "share_details"
+msgstr ":white_check_mark: Миний холбоо барих мэдээллийг хуваалцаарай!"
+
+msgid "not_share_details"
+msgstr ":x: Үгүй ээ"
+
+msgid "sharing_details_message"
+msgstr ""
+"За, би {answerer}-аас асууя. Би бас таны холбоо барих мэдээллийг хуваалцах "
+"болно."
+
+msgid "not_sharing_details_message"
+msgstr "За, би {answerer}-аас асуухгүй."
+
+msgid "share_details_to_questioner"
+msgstr ""
+"{questioner} асуусан: “_{question}_”\n"
+"\n"
+"Та хариулсан: *{answer}*\n"
+"\n"
+"{questioner} дагах зорилгоор таны холбоо барих мэдээллийг хүссэн."
+
+msgid "not_now_share_details"
+msgstr ":x: Одоо биш"
+
+msgid "block_share_details"
+msgstr ":exclamation: Энэ хэрэглэгчийн хүсэлтийг блокло"
+
+msgid "share_questioner_contact"
+msgstr "Мундаг! {questioner_name}-н холбоо барих хаяг нь {questioner_contact}"
+
+msgid "share_answerer_contact"
+msgstr ""
+"{answerer_name} холбоо барих мэдээллийг хуваалцахыг зөвшөөрсөн: "
+"{answerer_contact}"
+
+msgid "no_contact_available"
+msgstr ""
+"Уучлаарай, гэхдээ {name}-д Telegram дээр хэрэглэгчийн нэр тохируулаагүй тул "
+"би {name}-н холбоо барих мэдээллийг авч чадсангүй."
+
+msgid "shared_questioner_contact"
+msgstr "Би мөн таны холбоо барих мэдээллийг {answerer_name}-тэй хуваалцсан."
+
+msgid "shared_answerer_contact"
+msgstr ""
+"Би таны холбоо барих мэдээллийн талаар {questioner_name}-д мэдэгдэх болно."
+
+msgid "not_shared_contact"
+msgstr ""
+"Танд Telegram дээр хэрэглэгчийн нэр байхгүй тул би таны холбоо барих "
+"мэдээллийг авч чадсангүй."
+
+msgid "not_follow_up"
+msgstr ""
+"За, би таны холбоо барих мэдээллийг {questioner_name}-тэй хуваалцахгүй."
+
+msgid "block_follow_up"
+msgstr "За, би энэ хэрэглэгчийн ирээдүйн хүсэлтийг автоматаар блоклох болно."
+
+msgid "set_telegram_username"
+msgstr ""
+"Та Telegram дээр хэрэглэгчийн нэр тохируулаагүй тул би таны мэдээллийг "
+"хуваалцах боломжгүй. Үүнийг тохируулахын тулд энд үзүүлсэн зааврыг дагана "
+"уу :point_right: https://telegram.org/faq?setln=en#q-what-are-usernames-how-"
+"do-i-get-one\n"
+"Telegram дээр хэрэглэгчийн нэрээ тохируулсны дараа та дараах товчийг дарж "
+"үргэлжлүүлж болно :point_down:"
+
+msgid "not_share_answerer_contact"
+msgstr ""
+"{answerer_name} энэ удаад холбоо барих мэдээллийг хуваалцахыг хүсээгүй."
+
+msgid "liked_answer"
+msgstr "{questioner_name} таны хариултанд таалагдсан!"

@@ -6,10 +6,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-06-27 11:04+0200\n"
+"PO-Revision-Date: 2022-07-04 11:14+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
-"Language: en\n"
+"Language: da\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
@@ -403,7 +403,7 @@ msgid "best_answer_final_message"
 msgstr "Thanks for the input! Feel free to ask a new question anytime!"
 
 msgid "expired_button_message"
-msgstr "I’m sorry, that question is already resolved."
+msgstr "You already selected one of the options."
 
 msgid "best_answers_button"
 msgstr ":white_check_mark: I accept this answer!"
@@ -519,7 +519,7 @@ msgstr "No"
 
 msgid "publish_question"
 msgstr ""
-":question: {questioner} asked question: {question}\n"
+":question: {questioner} asked question: “{question}”\n"
 "\n"
 "The answer that was chosen as the best is:\n"
 "{best_answer} - {answerer}"
@@ -637,5 +637,78 @@ msgstr "You sought answers from random people."
 msgid "leisure_activities_button"
 msgstr "Leisure activities"
 
-#~ msgid "question_subjectivity_text"
-#~ msgstr "Aa"
+msgid "follow_up_button"
+msgstr ":speaking_head: Request {answerer}’s contact for follow-up"
+
+msgid "share_details_for_follow_up"
+msgstr ""
+"Please be mindful, that {answerer} will also receive your contact details!"
+
+msgid "share_details"
+msgstr ":white_check_mark: Share my contact details!"
+
+msgid "not_share_details"
+msgstr ":x: Rather not"
+
+msgid "sharing_details_message"
+msgstr "Ok, I will ask {answerer}. I will also share your contact details."
+
+msgid "not_sharing_details_message"
+msgstr "Ok, I won’t ask {answerer}."
+
+msgid "share_details_to_questioner"
+msgstr ""
+"{questioner} asked: “_{question}_”\n"
+"\n"
+"You answered: *{answer}*\n"
+"\n"
+"{questioner} requested your contact details for follow-up."
+
+msgid "not_now_share_details"
+msgstr ":x: Not now"
+
+msgid "block_share_details"
+msgstr ":exclamation: Block these requests from this user"
+
+msgid "share_questioner_contact"
+msgstr "Super! {questioner_name}’s contact is {questioner_contact}"
+
+msgid "share_answerer_contact"
+msgstr ""
+"{answerer_name} agreed to share the contact details: {answerer_contact}"
+
+msgid "no_contact_available"
+msgstr ""
+"Sorry, but I was not able to obtain {name}’s contact details since {name} "
+"has no username set on Telegram."
+
+msgid "shared_questioner_contact"
+msgstr "I also shared your contact details with {answerer_name}."
+
+msgid "shared_answerer_contact"
+msgstr "I will let {questioner_name} know about your contact details."
+
+msgid "not_shared_contact"
+msgstr ""
+"I was not able to obtain your contact details since you have no username set "
+"on Telegram."
+
+msgid "not_follow_up"
+msgstr "Ok, I won’t share your contact details with {questioner_name}."
+
+msgid "block_follow_up"
+msgstr "Ok, I will automatically block future requests from this user."
+
+msgid "set_telegram_username"
+msgstr ""
+"I cannot share your details as you have not set up a username on Telegram. "
+"To set it up, follow the instructions as shown here :point_right: https://"
+"telegram.org/faq?setln=en#q-what-are-usernames-how-do-i-get-one\n"
+"After setting your username on Telegram you can continue with your follow-up "
+"by pressing the following button :point_down:"
+
+msgid "not_share_answerer_contact"
+msgstr "{answerer_name} did not want to share contact details this time."
+
+msgid "liked_answer"
+msgstr "{questioner_name} liked your answer!"

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-06-27 11:03+0200\n"
+"PO-Revision-Date: 2022-07-04 11:14+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: it\n"
@@ -414,7 +414,7 @@ msgstr ""
 "momento!"
 
 msgid "expired_button_message"
-msgstr "Mi dispiace, la domanda è già stata risolta."
+msgstr "Hai già selezionato una delle opzioni."
 
 msgid "best_answers_button"
 msgstr ":white_check_mark: Accetto questa risposta!"
@@ -662,3 +662,82 @@ msgstr "Hai cercato risposte da persone a caso."
 
 msgid "leisure_activities_button"
 msgstr "Attività ricreative"
+
+msgid "follow_up_button"
+msgstr ":speaking_head: Richiedi il contatto di {answerer} per il follow-up"
+
+msgid "share_details_for_follow_up"
+msgstr "Tieni presente che {answerer} riceverà anche i tuoi dati di contatto!"
+
+msgid "share_details"
+msgstr ":white_check_mark: Condividi i miei dettagli di contatto!"
+
+msgid "not_share_details"
+msgstr ":x: Meglio di no"
+
+msgid "sharing_details_message"
+msgstr "Ok, chiederò a {answerer}. Condividerò anche i tuoi dati di contatto."
+
+msgid "not_sharing_details_message"
+msgstr "Ok, non chiederò a {answerer}."
+
+msgid "share_details_to_questioner"
+msgstr ""
+"{questioner} ha chiesto: “_{question}_”\n"
+"\n"
+"Hai risposto: *{answer}*\n"
+"\n"
+"{questioner} ha richiesto i tuoi dati di contatto per il follow-up."
+
+msgid "not_now_share_details"
+msgstr ":x: Non ora"
+
+msgid "block_share_details"
+msgstr ":exclamation: Blocca queste richieste da questo utente"
+
+msgid "share_questioner_contact"
+msgstr "Super! Il contatto di {questioner_name} è {questioner_contact}"
+
+msgid "share_answerer_contact"
+msgstr ""
+"{answerer_name} ha accettato di condividere i dettagli di contatto: "
+"{answerer_contact}"
+
+msgid "no_contact_available"
+msgstr ""
+"Mi dispiace, ma non sono stato in grado di ottenere i dettagli di contatto "
+"di {name} poiché {name} non ha un nome utente impostato su Telegram."
+
+msgid "shared_questioner_contact"
+msgstr "Ho anche condiviso i tuoi dati di contatto con {answerer_name}."
+
+msgid "shared_answerer_contact"
+msgstr "Farò conoscere a {questioner_name} i tuoi dati di contatto."
+
+msgid "not_shared_contact"
+msgstr ""
+"Non sono stato in grado di ottenere i tuoi dati di contatto poiché non hai "
+"impostato alcun nome utente su Telegram."
+
+msgid "not_follow_up"
+msgstr "Ok, non condividerò i tuoi dati di contatto con {questioner_name}."
+
+msgid "block_follow_up"
+msgstr "Ok, bloccherò automaticamente le richieste future da questo utente."
+
+msgid "set_telegram_username"
+msgstr ""
+"Non posso condividere i tuoi dettagli perché non hai impostato un nome "
+"utente su Telegram. Per configurarlo, segui le istruzioni come mostrato qui :"
+"point_right: https://telegram.org/faq?setln=it#d-cosa-sono-gli-username-come-"
+"ne-ottengo-uno\n"
+"Dopo aver impostato il tuo nome utente su Telegram puoi continuare con il "
+"tuo follow-up premendo il seguente pulsante :point_down:"
+
+msgid "not_share_answerer_contact"
+msgstr ""
+"{answerer_name} non ha voluto condividere i dettagli di contatto questa "
+"volta."
+
+msgid "liked_answer"
+msgstr "A {questioner_name} è piaciuta la tua risposta!"

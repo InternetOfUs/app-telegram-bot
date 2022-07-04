@@ -9,6 +9,7 @@ from uhopper.utils.language.detector import LanguageDetector
 from wenet.storage.cache import InMemoryCache
 
 from ask_for_help_bot.handler import AskForHelpHandler
+from common.messages_to_log import LogMessageHandler
 
 
 class MockAskForHelpHandler(AskForHelpHandler):
@@ -47,3 +48,4 @@ class MockAskForHelpHandler(AskForHelpHandler):
         self.publication_language = "en"
         self.max_answers = 15
         self.expiration_duration = 1
+        self.message_parser_for_logs = LogMessageHandler(self.app_id, "Telegram")
