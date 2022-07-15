@@ -2,6 +2,11 @@
 
 ## Version 3.*
 
+### 3.2.1
+
+:bug: Bug Fixes
+- Cleaned correctly the context after the best answer publish message.
+
 ### 3.2.0
 
 :rocket: New features

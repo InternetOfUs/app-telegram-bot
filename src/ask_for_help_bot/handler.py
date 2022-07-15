@@ -1790,11 +1790,15 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         else:
             raise Exception(f"Missing conversation context for event {incoming_event}")
 
-        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_0)
         task_id = context.get_static_state(self.CONTEXT_TASK_ID)
         questioner_name = context.get_static_state(self.CONTEXT_QUESTIONER_NAME)
         question_text = context.get_static_state(self.CONTEXT_QUESTION)
         best_answer_transaction = context.get_static_state(self.CONTEXT_TRANSACTION_ID)
+        context.delete_static_state(self.CONTEXT_TASK_ID)
+        context.delete_static_state(self.CONTEXT_TRANSACTION_ID)
+        context.delete_static_state(self.CONTEXT_QUESTIONER_NAME)
+        context.delete_static_state(self.CONTEXT_QUESTION)
+        context.delete_static_state(self.CONTEXT_CURRENT_STATE)
 
         transaction_ids = []
         message_answers = []
