@@ -1032,7 +1032,7 @@ class TestAskForHelpHandler(TestCase):
         self.assertIsInstance(response, OutgoingEvent)
         self.assertEqual(1, len(response.messages))
         self.assertIsInstance(response.messages[0], TextualResponse)
-        self.assertTrue(handler.CONTEXT_CURRENT_STATE in response.context._static_context and response.context._static_context[handler.CONTEXT_CURRENT_STATE] == handler.STATE_BEST_ANSWER_0)
+        self.assertTrue(handler.CONTEXT_CURRENT_STATE not in response.context._static_context)
         handler.send_notification.assert_called()
 
     def test_action_best_answer_publish_intent_not_publish(self):
@@ -1063,7 +1063,7 @@ class TestAskForHelpHandler(TestCase):
         self.assertIsInstance(response, OutgoingEvent)
         self.assertEqual(1, len(response.messages))
         self.assertIsInstance(response.messages[0], TextualResponse)
-        self.assertTrue(handler.CONTEXT_CURRENT_STATE in response.context._static_context and response.context._static_context[handler.CONTEXT_CURRENT_STATE] == handler.STATE_BEST_ANSWER_0)
+        self.assertTrue(handler.CONTEXT_CURRENT_STATE not in response.context._static_context)
         handler.send_notification.assert_not_called()
 
     def test_action_best_answer_1(self):
