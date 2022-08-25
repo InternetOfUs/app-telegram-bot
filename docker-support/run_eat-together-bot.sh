@@ -37,4 +37,5 @@ echo "Running eat-together-bot..."
 #
 
 
+
 exec python -m eat_together_bot.main

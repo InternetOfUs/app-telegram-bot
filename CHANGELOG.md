@@ -2,6 +2,11 @@
 
 ## Version 3.*
 
+### 3.3.0
+
+:house: Internal
+- Updated project template to version [4.12.5](https://lab.u-hopper.com/devops/ansible/project-template/-/releases/4.12.5).
+
 ### 3.2.1
 
 :bug: Bug Fixes
