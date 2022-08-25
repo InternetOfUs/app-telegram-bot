@@ -4,6 +4,9 @@
 
 ### 3.3.0
 
+:rocket: New features
+- Completed the chatbot according to the latest proposed M46 flow.
+
 :house: Internal
 - Updated project template to version [4.12.5](https://lab.u-hopper.com/devops/ansible/project-template/-/releases/4.12.5).
 

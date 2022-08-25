@@ -67,71 +67,69 @@ msgstr ""
 "\n"
 "1: Qual è il *dominio* della tua domanda?"
 
-msgid "studying_career_button"
-msgstr ":book: Studia"
+msgid "academic_skills_button"
+msgstr ""
 
-msgid "local_university_button"
-msgstr ":mortar_board: Università locale"
-
-msgid "local_things_button"
-msgstr ":world_map: Cose locali / cittadine"
+msgid "basic_needs_button"
+msgstr ":house: :stew: Bisogni primari"
 
 msgid "physical_activity_button"
 msgstr ":runner: Attività fisica"
 
-msgid "cultural_interests_button"
-msgstr ":classical_building: Interessi culturali"
+msgid "appreciating_culture_button"
+msgstr ""
 
-msgid "food_and_cooking_button"
-msgstr ":cooking: Cibo e cucina"
+msgid "random_thoughts_button"
+msgstr ""
 
-msgid "cinema_theatre_button"
-msgstr ":popcorn: Cinema, teatro"
+msgid "producing_culture_button"
+msgstr ""
 
-msgid "music_button"
-msgstr ":notes: Musica"
+msgid "leisure_activities_button"
+msgstr ""
 
-msgid "arts_and_crafts_button"
-msgstr ":art: Arti e mestieri"
+msgid "campus_life_button"
+msgstr ""
 
-msgid "life_ponders_button"
-msgstr ":thinking_face: Contemplazione"
+msgid "sensitive_button"
+msgstr ":shushing_face: Sensibile"
 
-msgid "varia_misc_button"
-msgstr ":space_invader: Varie"
+msgid "academic_skills"
+msgstr ""
 
-msgid "studying_career"
-msgstr "Studiare / Carriera"
-
-msgid "local_university"
-msgstr "Università locale"
-
-msgid "local_things"
-msgstr "Cose locali / cittadine"
+msgid "basic_needs"
+msgstr ""
 
 msgid "physical_activity"
-msgstr "Attività fisica"
+msgstr ""
 
-msgid "cultural_interests"
-msgstr "Interessi culturali"
+msgid "appreciating_culture"
+msgstr ""
 
-msgid "food_and_cooking"
-msgstr "Cibo e cucina"
+msgid "random_thoughts"
+msgstr ""
 
-msgid "cinema_theatre"
-msgstr "Cinema, teatro"
+msgid "producing_culture"
+msgstr ""
 
-msgid "music"
-msgstr "Musica"
+msgid "leisure_activities"
+msgstr ""
 
-msgid "arts_and_crafts"
-msgstr "Arti e mestieri"
+msgid "campus_life"
+msgstr ""
 
-msgid "life_ponders"
-msgstr "Contemplazione"
+msgid "sensitive"
+msgstr ""
 
-msgid "varia_misc"
-msgstr "Varie"
+msgid "sensitive_question_domain"
+msgstr ""
+"Farò sapere ad altre persone di prestare particolare attenzione nel "
+"rispondere."
+
+msgid "not_sensitive_question_domain"
+msgstr ""
+"Bella scelta! Ci sono persone con un interesse e una conoscenza su questo "
+"argomento."
 
 msgid "domain_similarity_question"
 msgstr ""
@@ -163,17 +161,6 @@ msgstr "Diversi"
 
 msgid "answer_indifferent_belief_values"
 msgstr "Salta questo :point_down:"
-
-msgid "sensitive_question"
-msgstr ""
-"4/6: È una domanda dal *contenuto sensible*? Se lo è, farò sapere alle altre "
-"persone di prestare particolare attenzione nel rispondere."
-
-msgid "not_sensitive"
-msgstr "Non sensibile"
-
-msgid "sensitive"
-msgstr ":shushing_face: Sensibile"
 
 msgid "anonymous_question"
 msgstr "3: Preferisci chiederlo in forma anonima?"
@@ -615,53 +602,6 @@ msgstr "Sfortunatamente, non mi è consentito mostrare risposte."
 
 msgid "best_answer_not_published"
 msgstr "Sfortunatamente, la risposta migliore non può essere mostrata."
-
-msgid "basic_needs_button"
-msgstr ":house: :stew: Bisogni primari"
-
-msgid "subjective_question_text"
-msgstr "2: Con questa domanda…"
-
-msgid "similar_subjective_button"
-msgstr ""
-":right-facing_fist: Andrei con persone con cui mi aspetto di andare d’accordo"
-
-msgid "different_subjective_button"
-msgstr ""
-
-msgid "expert_subjective_button"
-msgstr ":face_with_monocle: Ho bisogno di persone che lo sappiano"
-
-msgid "random_choice_button"
-msgstr ":game_die: Pronto a giocare"
-
-msgid "sensitive_question_domain"
-msgstr ""
-"Farò sapere ad altre persone di prestare particolare attenzione nel "
-"rispondere."
-
-msgid "not_sensitive_question_domain"
-msgstr ""
-"Bella scelta! Ci sono persone con un interesse e una conoscenza su questo "
-"argomento."
-
-msgid "similar_subjective_text"
-msgstr ""
-"Hai cercato risposte dalle persone con cui ti aspetteresti di andare "
-"d’accordo."
-
-msgid "different_subjective_text"
-msgstr ""
-"Hai cercato risposte dalle persone che vorresti ampliare la tua prospettiva."
-
-msgid "expert_subjective_text"
-msgstr "Hai cercato risposte dalle persone che lo sanno."
-
-msgid "random_subjective_text"
-msgstr "Hai cercato risposte da persone a caso."
-
-msgid "leisure_activities_button"
-msgstr "Attività ricreative"
 
 msgid "follow_up_button"
 msgstr ":speaking_head: Richiedi il contatto di {answerer} per il follow-up"

@@ -46,6 +46,7 @@ if __name__ == "__main__":
     max_users = int(os.getenv("MAX_USERS", 5))
     max_answers = int(os.getenv("MAX_ANSWERS", 15))
     expiration_duration = int(os.getenv("EXPIRATION_DURATION", 86400))  # 1 day is 86400 seconds
+    nearby_expiration_duration = int(os.getenv("NEARBY_EXPIRATION_DURATION", 7200))  # 2 hours is 7200 seconds
     survey_url = os.getenv("SURVEY_URL")
     helper_url = os.getenv("PILOT_HELPER_URL")
     channel_id = os.getenv("CHANNEL_ID")
@@ -80,6 +81,7 @@ if __name__ == "__main__":
         max_users=max_users,
         max_answers=max_answers,
         expiration_duration=expiration_duration,
+        nearby_expiration_duration=nearby_expiration_duration,
         survey_url=survey_url,
         helper_url=helper_url,
         channel_id=channel_id,

@@ -43,7 +43,7 @@ class TestAskForHelpHandler(TestCase):
                 "taskId": "task_id",
                 "userId": "questioning_user",
                 "question": "question",
-                "domain": "sensitive",
+                "domain": handler.INTENT_SENSITIVE_QUESTION,
                 "anonymous": True,
             },
             "question",
@@ -73,7 +73,7 @@ class TestAskForHelpHandler(TestCase):
                 "taskId": "task_id",
                 "userId": "questioning_user",
                 "question": "question",
-                "domain": "sensitive",
+                "domain": handler.INTENT_SENSITIVE_QUESTION,
                 "anonymous": False,
             },
             "question",
@@ -104,7 +104,7 @@ class TestAskForHelpHandler(TestCase):
                 "taskId": "task_id",
                 "userId": "questioning_user",
                 "question": "question",
-                "domain": "studying_career",
+                "domain": handler.INTENT_ACADEMIC_SKILLS,
                 "anonymous": False,
             },
             "question",
@@ -220,7 +220,7 @@ class TestAskForHelpHandler(TestCase):
         handler._get_user_locale_from_incoming_event = Mock(return_value="en")
         service_api = ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
         service_api.get_task = Mock(return_value=Task("task_id", None, None, "task_type_id", "questioning_user", "app_id", None, TaskGoal("question", ""), attributes={
-            "domain": handler.INTENT_STUDYING_CAREER,
+            "domain": handler.INTENT_ACADEMIC_SKILLS,
             "sensitive": False,
             "anonymous": False,
             "maxUsers": 10,
@@ -311,22 +311,22 @@ class TestAskForHelpHandler(TestCase):
         handler._translator.get_translation_instance = Mock(return_value=translator_instance)
         handler._get_user_locale_from_incoming_event = Mock(return_value="en")
 
-        response = handler.action_question_2(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_STUDYING_CAREER, ""), ConversationContext()), handler.INTENT_STUDYING_CAREER)
+        response = handler.action_question_2(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_ACADEMIC_SKILLS, ""), ConversationContext()), handler.INTENT_ACADEMIC_SKILLS)
         self.assertIsInstance(response, OutgoingEvent)
         self.assertEqual(2, len(response.messages))
         self.assertIsInstance(response.messages[0], TextualResponse)
         self.assertIsInstance(response.messages[1], TelegramRapidAnswerResponse)
-        self.assertEqual(4, len(response.messages[1].options))
+        self.assertEqual(2, len(response.messages[1].options))
         self.assertTrue(handler.CONTEXT_CURRENT_STATE in response.context._static_context and response.context._static_context[handler.CONTEXT_CURRENT_STATE] == handler.STATE_QUESTION_2)
 
-    def test_action_question_3(self):
+    def test_action_question_3(self):  # TODO adjust tests and add missing ones
         handler = MockAskForHelpHandler()
         translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
         translator_instance.translate = Mock(return_value="")
         handler._translator.get_translation_instance = Mock(return_value=translator_instance)
         handler._get_user_locale_from_incoming_event = Mock(return_value="en")
 
-        response = handler.action_question_3(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_SUBJECT_SIMILAR, ""), ConversationContext()), handler.INTENT_SUBJECT_SIMILAR)
+        response = handler.action_question_3(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_SIMILAR_DOMAIN, ""), ConversationContext()), handler.INTENT_SIMILAR_DOMAIN)
         self.assertIsInstance(response, OutgoingEvent)
         self.assertEqual(1, len(response.messages))
         self.assertIsInstance(response.messages[0], TelegramRapidAnswerResponse)
@@ -343,12 +343,15 @@ class TestAskForHelpHandler(TestCase):
         service_api.create_task = Mock()
         handler._get_service_api_interface_connector_from_context = Mock(return_value=service_api)
 
-        response = handler.action_question_final(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", "", ""), ConversationContext(static_context={
+        response = handler.action_question_final(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_ASK_TO_ANYWHERE, ""), ConversationContext(static_context={
             handler.CONTEXT_WENET_USER_ID: "",
             handler.CONTEXT_ASKED_QUESTION: "question",
-            handler.CONTEXT_QUESTION_DOMAIN: handler.INTENT_STUDYING_CAREER,
-            handler.CONTEXT_SUBJECTIVITY: handler.INTENT_SUBJECT_SIMILAR,
-        })), handler.INTENT_NOT_ANONYMOUS_QUESTION)
+            handler.CONTEXT_QUESTION_DOMAIN: handler.INTENT_ACADEMIC_SKILLS,
+            handler.CONTEXT_ANONYMOUS_QUESTION: handler.INTENT_ANONYMOUS_QUESTION,
+            handler.CONTEXT_DOMAIN_INTEREST: handler.INTENT_SIMILAR_DOMAIN,
+            handler.CONTEXT_BELIEF_VALUES_SIMILARITY: handler.INTENT_SIMILAR_BELIEF_VALUES,
+            handler.CONTEXT_SOCIAL_CLOSENESS: handler.INTENT_SIMILAR_SOCIALLY,
+        })), handler.INTENT_ASK_TO_ANYWHERE)
         self.assertIsInstance(response, OutgoingEvent)
         self.assertEqual(1, len(response.messages))
         self.assertIsInstance(response.messages[0], TextualResponse)
@@ -405,7 +408,7 @@ class TestAskForHelpHandler(TestCase):
         handler._get_user_locale_from_incoming_event = Mock(return_value="en")
         service_api = ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
         service_api.get_task = Mock(return_value=Task("task_id", None, None, "task_type_id", "questioning_user", "app_id", None, TaskGoal("question", ""), attributes={
-            "domain": handler.INTENT_STUDYING_CAREER,
+            "domain": handler.INTENT_ACADEMIC_SKILLS,
             "anonymous": True,
             "maxUsers": 10
         }, transactions=[TaskTransaction("transaction_id", "task_id", handler.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), "answerer_user", {"answer": "answer", "anonymous": True})]))
@@ -435,7 +438,7 @@ class TestAskForHelpHandler(TestCase):
         handler._get_user_locale_from_incoming_event = Mock(return_value="en")
         service_api = ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
         service_api.get_task = Mock(return_value=Task("task_id", None, None, "task_type_id", "questioning_user", "app_id", None, TaskGoal("question", ""), attributes={
-            "domain": handler.INTENT_STUDYING_CAREER,
+            "domain": handler.INTENT_ACADEMIC_SKILLS,
             "anonymous": False,
             "maxUsers": 10
         }, transactions=[TaskTransaction("transaction_id", "task_id", handler.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), "answerer_user", {"answer": "answer", "anonymous": True})]))
@@ -602,7 +605,7 @@ class TestAskForHelpHandler(TestCase):
         service_api.log_message = Mock()
         service_api.get_user_profile = Mock(return_value=WeNetUserProfile.empty("questioning_user"))
         service_api.get_task = Mock(return_value=Task("task_id", None, None, "task_type_id", "questioning_user", "app_id", None, TaskGoal("question", ""), attributes={
-            "domain": handler.INTENT_STUDYING_CAREER,
+            "domain": handler.INTENT_ACADEMIC_SKILLS,
             "anonymous": False,
             "maxUsers": 10,
             "maxAnswers": 15,
@@ -652,7 +655,7 @@ class TestAskForHelpHandler(TestCase):
         service_api.log_message = Mock()
         service_api.get_user_profile = Mock(return_value=WeNetUserProfile.empty("questioning_user"))
         service_api.get_task = Mock(return_value=Task("task_id", None, None, "task_type_id", "questioning_user", "app_id", None, TaskGoal("question", ""), attributes={
-            "domain": handler.INTENT_STUDYING_CAREER,
+            "domain": handler.INTENT_ACADEMIC_SKILLS,
             "anonymous": False,
             "maxUsers": 10,
             "maxAnswers": 15,
@@ -702,7 +705,7 @@ class TestAskForHelpHandler(TestCase):
         service_api.log_message = Mock()
         service_api.get_user_profile = Mock(return_value=WeNetUserProfile.empty("questioning_user"))
         service_api.get_task = Mock(return_value=Task("task_id", None, None, "task_type_id", "questioning_user", "app_id", None, TaskGoal("question", ""), attributes={
-            "domain": handler.INTENT_STUDYING_CAREER,
+            "domain": handler.INTENT_ACADEMIC_SKILLS,
             "anonymous": False,
             "maxUsers": 10,
             "maxAnswers": 15,
@@ -899,7 +902,7 @@ class TestAskForHelpHandler(TestCase):
         service_api.log_message = Mock()
         service_api.get_user_profile = Mock(return_value=WeNetUserProfile.empty("questioning_user"))
         service_api.get_task = Mock(return_value=Task("task_id", None, None, "task_type_id", "questioning_user", "app_id", None, TaskGoal("question", ""), attributes={
-            "domain": handler.INTENT_STUDYING_CAREER,
+            "domain": handler.INTENT_ACADEMIC_SKILLS,
             "anonymous": False,
             "maxUsers": 10,
             "maxAnswers": 15,
@@ -943,7 +946,7 @@ class TestAskForHelpHandler(TestCase):
         handler._get_user_locale_from_incoming_event = Mock(return_value="en")
         service_api = ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
         service_api.get_task = Mock(return_value=Task("task_id", None, None, "task_type_id", "questioning_user", "app_id", None, TaskGoal("question", ""), attributes={
-            "domain": handler.INTENT_STUDYING_CAREER,
+            "domain": handler.INTENT_ACADEMIC_SKILLS,
             "anonymous": False,
             "maxUsers": 10
         }, transactions=[
@@ -971,7 +974,7 @@ class TestAskForHelpHandler(TestCase):
         handler._get_user_locale_from_incoming_event = Mock(return_value="en")
         service_api = ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
         service_api.get_task = Mock(return_value=Task("task_id", None, None, "task_type_id", "questioning_user", "app_id", None, TaskGoal("question", ""), attributes={
-            "domain": handler.INTENT_STUDYING_CAREER,
+            "domain": handler.INTENT_ACADEMIC_SKILLS,
             "anonymous": False,
             "maxUsers": 10
         }, transactions=[TaskTransaction("transaction_id", "task_id", handler.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), "answerer_user", {"answer": "answer", "anonymous": True})]))
@@ -996,7 +999,7 @@ class TestAskForHelpHandler(TestCase):
         handler._get_user_locale_from_incoming_event = Mock(return_value="en")
         service_api = ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
         service_api.get_task = Mock(return_value=Task("task_id", None, None, "task_type_id", "questioning_user", "app_id", None, TaskGoal("question", ""), attributes={
-            "domain": handler.INTENT_STUDYING_CAREER,
+            "domain": handler.INTENT_ACADEMIC_SKILLS,
             "anonymous": False,
             "maxUsers": 10,
             "maxAnswers": 15,
@@ -1043,7 +1046,7 @@ class TestAskForHelpHandler(TestCase):
         handler._get_user_locale_from_incoming_event = Mock(return_value="en")
         service_api = ServiceApiInterface(Oauth2Client("app_id", "app_secret", "id", handler.oauth_cache, token_endpoint_url=""), "")
         service_api.get_task = Mock(return_value=Task("task_id", None, None, "task_type_id", "questioning_user", "app_id", None, TaskGoal("question", ""), attributes={
-            "domain": handler.INTENT_STUDYING_CAREER,
+            "domain": handler.INTENT_ACADEMIC_SKILLS,
             "anonymous": False,
             "maxUsers": 10,
             "maxAnswers": 15,
@@ -1090,7 +1093,7 @@ class TestAskForHelpHandler(TestCase):
         service_api.create_task_transaction = Mock()
         handler._get_service_api_interface_connector_from_context = Mock(return_value=service_api)
         service_api.get_task = Mock(return_value=Task("task_id", None, None, "task_type_id", "questioning_user", "app_id", None, TaskGoal("question", ""), attributes={
-            "domain": handler.INTENT_STUDYING_CAREER,
+            "domain": handler.INTENT_ACADEMIC_SKILLS,
             "anonymous": False,
             "maxUsers": 10,
             "maxAnswers": 15,
@@ -1122,7 +1125,7 @@ class TestAskForHelpHandler(TestCase):
         service_api.get_all_tasks = Mock(return_value=[
             Task("task_id-1", None, None, "task_type_id", "questioning_user-1", "app_id", None, TaskGoal("question", ""),
                  attributes={
-                    "domain": handler.INTENT_STUDYING_CAREER,
+                    "domain": handler.INTENT_ACADEMIC_SKILLS,
                     "anonymous": False,
                     "maxUsers": 10,
                     "maxAnswers": 15,
@@ -1141,7 +1144,7 @@ class TestAskForHelpHandler(TestCase):
                 ),
             Task("task_id-2", None, None, "task_type_id", "questioning_user-2", "app_id", None, TaskGoal("question", ""),
                  attributes={
-                     "domain": handler.INTENT_STUDYING_CAREER,
+                     "domain": handler.INTENT_ACADEMIC_SKILLS,
                      "anonymous": False,
                      "maxUsers": 10,
                      "maxAnswers": 15,

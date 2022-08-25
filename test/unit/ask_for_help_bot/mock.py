@@ -48,4 +48,5 @@ class MockAskForHelpHandler(AskForHelpHandler):
         self.publication_language = "en"
         self.max_answers = 15
         self.expiration_duration = 1
+        self.nearby_expiration_duration = 1
         self.message_parser_for_logs = LogMessageHandler(self.app_id, "Telegram")

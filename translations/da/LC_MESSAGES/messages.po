@@ -66,71 +66,67 @@ msgstr ""
 "\n"
 "1: What’s the *domain* of your question?"
 
-msgid "studying_career_button"
-msgstr ":book: Study life"
+msgid "academic_skills_button"
+msgstr ""
 
-msgid "local_university_button"
-msgstr ":mortar_board: Local university"
-
-msgid "local_things_button"
-msgstr ":world_map: Local / city things"
+msgid "basic_needs_button"
+msgstr ":house: :stew: Basic needs"
 
 msgid "physical_activity_button"
 msgstr ":runner: Physical activity"
 
-msgid "cultural_interests_button"
-msgstr ":classical_building: Cultural interests"
+msgid "appreciating_culture_button"
+msgstr ""
 
-msgid "food_and_cooking_button"
-msgstr ":cooking: Food and cooking"
+msgid "random_thoughts_button"
+msgstr ""
 
-msgid "cinema_theatre_button"
-msgstr ":popcorn: Cinema, theatre"
+msgid "producing_culture_button"
+msgstr ""
 
-msgid "music_button"
-msgstr ":notes: Music"
+msgid "leisure_activities_button"
+msgstr ""
 
-msgid "arts_and_crafts_button"
-msgstr ":art: Arts & crafts"
+msgid "campus_life_button"
+msgstr ""
 
-msgid "life_ponders_button"
-msgstr ":thinking_face: Contemplation"
+msgid "sensitive_button"
+msgstr ":shushing_face: Sensitive"
 
-msgid "varia_misc_button"
-msgstr ":space_invader: Miscellaneous"
+msgid "academic_skills"
+msgstr ""
 
-msgid "studying_career"
-msgstr "Studying / Career"
-
-msgid "local_university"
-msgstr "Local university"
-
-msgid "local_things"
-msgstr "Local / city things"
+msgid "basic_needs"
+msgstr ""
 
 msgid "physical_activity"
-msgstr "Physical activity"
+msgstr ""
 
-msgid "cultural_interests"
-msgstr "Cultural interests"
+msgid "appreciating_culture"
+msgstr ""
 
-msgid "food_and_cooking"
-msgstr "Food and cooking"
+msgid "random_thoughts"
+msgstr ""
 
-msgid "cinema_theatre"
-msgstr "Cinema, theatre"
+msgid "producing_culture"
+msgstr ""
 
-msgid "music"
-msgstr "Music"
+msgid "leisure_activities"
+msgstr ""
 
-msgid "arts_and_crafts"
-msgstr "Arts & crafts"
+msgid "campus_life"
+msgstr ""
 
-msgid "life_ponders"
-msgstr "Contemplation"
+msgid "sensitive"
+msgstr ""
 
-msgid "varia_misc"
-msgstr "Miscellaneous"
+msgid "sensitive_question_domain"
+msgstr "I will let other people know to take extra care in answering."
+
+msgid "not_sensitive_question_domain"
+msgstr ""
+"Good choice! There are people with an interest in and knowledge about this "
+"topic."
 
 msgid "domain_similarity_question"
 msgstr ""
@@ -162,17 +158,6 @@ msgstr "Different"
 
 msgid "answer_indifferent_belief_values"
 msgstr "Skip this :point_down:"
-
-msgid "sensitive_question"
-msgstr ""
-"4/6: Is this a potentially *sensitive* question? If it is, I will let other "
-"people know to take extra care in answering."
-
-msgid "not_sensitive"
-msgstr "Not sensitive"
-
-msgid "sensitive"
-msgstr ":shushing_face: Sensitive"
 
 msgid "anonymous_question"
 msgstr "3: Would you prefer to ask it anonymously?"
@@ -593,49 +578,6 @@ msgstr "Unfortunately, no answers are allowed to show."
 
 msgid "best_answer_not_published"
 msgstr "Unfortunately, the best answer is not allowed to show."
-
-msgid "basic_needs_button"
-msgstr ":house: :stew: Basic needs"
-
-msgid "subjective_question_text"
-msgstr "2: With this question…"
-
-msgid "similar_subjective_button"
-msgstr ""
-":right-facing_fist: I would go with people I’d expect to get along with"
-
-msgid "different_subjective_button"
-msgstr ":person_fencing: I would like to broaden my perspective"
-
-msgid "expert_subjective_button"
-msgstr ":face_with_monocle: I need people who know this"
-
-msgid "random_choice_button"
-msgstr ":game_die: Ready to play"
-
-msgid "sensitive_question_domain"
-msgstr "I will let other people know to take extra care in answering."
-
-msgid "not_sensitive_question_domain"
-msgstr ""
-"Good choice! There are people with an interest in and knowledge about this "
-"topic."
-
-msgid "similar_subjective_text"
-msgstr "You sought answers from the people you’d expect to get along with."
-
-msgid "different_subjective_text"
-msgstr ""
-"You sought answers from the people you’d like to broaden your perspective."
-
-msgid "expert_subjective_text"
-msgstr "You sought answers from the people who know this."
-
-msgid "random_subjective_text"
-msgstr "You sought answers from random people."
-
-msgid "leisure_activities_button"
-msgstr "Leisure activities"
 
 msgid "follow_up_button"
 msgstr ":speaking_head: Request {answerer}’s contact for follow-up"

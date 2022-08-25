@@ -66,71 +66,65 @@ msgstr ""
 "\n"
 "1: Таны асуултын *сэдэв* юу вэ?"
 
-msgid "studying_career_button"
-msgstr ":book: Суралцах"
+msgid "academic_skills_button"
+msgstr ""
 
-msgid "local_university_button"
-msgstr ":mortar_board: Дотоодын их сургууль"
-
-msgid "local_things_button"
-msgstr ":world_map: Орон нутгийн / хотын зүйлс"
+msgid "basic_needs_button"
+msgstr ":house: :stew: Үндсэн хэрэгцээ"
 
 msgid "physical_activity_button"
 msgstr ":runner: Идэвхтэй хөдөлгөөн, дасгал"
 
-msgid "cultural_interests_button"
-msgstr ":classical_building: Соёлын сонирхол"
+msgid "appreciating_culture_button"
+msgstr ""
 
-msgid "food_and_cooking_button"
-msgstr ":cooking: Хоол, хоол хийх"
+msgid "random_thoughts_button"
+msgstr ""
 
-msgid "cinema_theatre_button"
-msgstr ":popcorn: Кино, театр"
+msgid "producing_culture_button"
+msgstr ""
 
-msgid "music_button"
-msgstr ":notes: Хөгжим"
+msgid "leisure_activities_button"
+msgstr ""
 
-msgid "arts_and_crafts_button"
-msgstr ":art: Урлаг, гар урлал"
+msgid "campus_life_button"
+msgstr ""
 
-msgid "life_ponders_button"
-msgstr ":thinking_face: Эргэцүүлэл"
+msgid "sensitive_button"
+msgstr ":shushing_face: Эмзэг"
 
-msgid "varia_misc_button"
-msgstr ":space_invader: Бусад янз бүрийн зүйлс"
+msgid "academic_skills"
+msgstr ""
 
-msgid "studying_career"
-msgstr "Суралцах / Ажил"
-
-msgid "local_university"
-msgstr "Дотоодын их сургууль"
-
-msgid "local_things"
-msgstr "Орон нутгийн / хотын зүйлс"
+msgid "basic_needs"
+msgstr ""
 
 msgid "physical_activity"
-msgstr "Идэвхтэй хөдөлгөөн, дасгал"
+msgstr ""
 
-msgid "cultural_interests"
-msgstr "Соёлын сонирхол"
+msgid "appreciating_culture"
+msgstr ""
 
-msgid "food_and_cooking"
-msgstr "Хоол, хоол хийх"
+msgid "random_thoughts"
+msgstr ""
 
-msgid "cinema_theatre"
-msgstr "Кино, театр"
+msgid "producing_culture"
+msgstr ""
 
-msgid "music"
-msgstr "Хөгжим"
+msgid "leisure_activities"
+msgstr ""
 
-msgid "arts_and_crafts"
-msgstr "Урлаг, гар урлал"
+msgid "campus_life"
+msgstr ""
 
-msgid "life_ponders"
-msgstr "Эргэцүүлэл"
+msgid "sensitive"
+msgstr ""
 
-msgid "varia_misc"
-msgstr "Өөр бусад янз бүрийн сэдэв"
+msgid "sensitive_question_domain"
+msgstr "Би бусад хүмүүст хариулахдаа илүү болгоомжтой байхыг мэдэгдье."
+
+msgid "not_sensitive_question_domain"
+msgstr "Сайн сонголт! Энэ сэдвээр сонирхолтой, мэдлэгтэй хүмүүс байдаг."
 
 msgid "domain_similarity_question"
 msgstr ""
@@ -161,17 +155,6 @@ msgstr "Өөр"
 
 msgid "answer_indifferent_belief_values"
 msgstr "Үүнийг алгасах :point_down:"
-
-msgid "sensitive_question"
-msgstr ""
-"4/6: Энэ *эмзэг* асуулт мөн үү? Хэрэв тийм бол би бусад хүмүүст "
-"\"хариулахдаа маш болгоомжтой байгаарай\" гэж мэдэгдэх болно."
-
-msgid "not_sensitive"
-msgstr "Эмзэг биш"
-
-msgid "sensitive"
-msgstr ":shushing_face: Эмзэг"
 
 msgid "anonymous_question"
 msgstr "3: Та энэ асуултыг нэрээ нууцлан асуухыг хүсч байна уу?"
@@ -598,45 +581,6 @@ msgstr "Харамсалтай нь хариултуудыг харуулахы�
 
 msgid "best_answer_not_published"
 msgstr "Харамсалтай нь хамгийн сайн хариултыг харуулахыг зөвшөөрөөгүй байна."
-
-msgid "basic_needs_button"
-msgstr ":house: :stew: Үндсэн хэрэгцээ"
-
-msgid "subjective_question_text"
-msgstr "2: Энэ асуултыг…"
-
-msgid "similar_subjective_button"
-msgstr ":right-facing_fist: Надтай санал нийлэх хүмүүсээс асуух"
-
-msgid "different_subjective_button"
-msgstr ""
-
-msgid "expert_subjective_button"
-msgstr ":face_with_monocle: Энэ талаар мэдлэгтэй хүмүүсээс асуух"
-
-msgid "random_choice_button"
-msgstr ":game_die: Тоглоход бэлэн байна"
-
-msgid "sensitive_question_domain"
-msgstr "Би бусад хүмүүст хариулахдаа илүү болгоомжтой байхыг мэдэгдье."
-
-msgid "not_sensitive_question_domain"
-msgstr "Сайн сонголт! Энэ сэдвээр сонирхолтой, мэдлэгтэй хүмүүс байдаг."
-
-msgid "similar_subjective_text"
-msgstr "Та санал нийлэх хүмүүсээс хариулт хайсан."
-
-msgid "different_subjective_text"
-msgstr "Та үзэл бодлоо өргөжүүлэх хүмүүсээс хариулт хайсан."
-
-msgid "expert_subjective_text"
-msgstr "Та энэ талаар мэддэг хүмүүсээс хариулт хайсан."
-
-msgid "random_subjective_text"
-msgstr "Та санамсаргүй хүмүүсээс хариулт хайсан."
-
-msgid "leisure_activities_button"
-msgstr "Чөлөөт цагийн үйл ажиллагаа"
 
 msgid "follow_up_button"
 msgstr ":speaking_head: {answerer}-н холбоо барих хаягийг дагахыг хүсэх"
