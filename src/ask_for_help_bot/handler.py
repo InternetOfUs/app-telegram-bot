@@ -80,7 +80,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     # all the recognized intents
     INTENT_ASK = "/ask"
     INTENT_FIRST_QUESTION = "first_question"
-    INTENT_ACADEMIC_SKILLS = "academic_skills"  # TODO update app logic and translations
+    INTENT_ACADEMIC_SKILLS = "academic_skills"  # TODO update norms and complete translations
     INTENT_BASIC_NEEDS = "basic_needs"
     INTENT_PHYSICAL_ACTIVITY = "physical_activity"
     INTENT_APPRECIATING_CULTURE = "appreciating_culture"
