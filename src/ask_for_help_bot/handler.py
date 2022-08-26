@@ -500,7 +500,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         # in case the user was doing something else the received message is stored
         return self._get_notification_event_based_on_what_user_is_doing(context, user_account.social_details, [response], response_to)
 
-    def _handle_question(self, message: QuestionToAnswerMessage, user_object: WeNetUserProfile, questioning_user: WeNetUserProfile) -> TelegramRapidAnswerResponse: # TODO handle in a special way proximity questions?
+    def _handle_question(self, message: QuestionToAnswerMessage, user_object: WeNetUserProfile, questioning_user: WeNetUserProfile) -> TelegramRapidAnswerResponse:  # TODO handle in a special way proximity questions?
         # Translate the message that someone in the community has a question and insert the details of the question, treat differently sensitive questions
         message_string = self._translator.get_translation_instance(user_object.locale)
         sensitive = message.attributes["domain"] == self.INTENT_SENSITIVE_QUESTION

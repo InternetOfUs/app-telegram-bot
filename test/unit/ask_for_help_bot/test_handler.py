@@ -301,7 +301,7 @@ class TestAskForHelpHandler(TestCase):
         self.assertIsInstance(response, OutgoingEvent)
         self.assertEqual(1, len(response.messages))
         self.assertIsInstance(response.messages[0], TelegramRapidAnswerResponse)
-        self.assertEqual(8, len(response.messages[0].options))
+        self.assertEqual(9, len(response.messages[0].options))
         self.assertTrue(handler.CONTEXT_CURRENT_STATE in response.context._static_context and response.context._static_context[handler.CONTEXT_CURRENT_STATE] == handler.STATE_QUESTION_1)
 
     def test_action_question_2(self):
@@ -319,19 +319,26 @@ class TestAskForHelpHandler(TestCase):
         self.assertEqual(2, len(response.messages[1].options))
         self.assertTrue(handler.CONTEXT_CURRENT_STATE in response.context._static_context and response.context._static_context[handler.CONTEXT_CURRENT_STATE] == handler.STATE_QUESTION_2)
 
-    def test_action_question_3(self):  # TODO adjust tests and add missing ones
+    def test_action_question_3(self):
         handler = MockAskForHelpHandler()
         translator_instance = TranslatorInstance("wenet-ask-for-help", None, handler._alert_module)
         translator_instance.translate = Mock(return_value="")
         handler._translator.get_translation_instance = Mock(return_value=translator_instance)
         handler._get_user_locale_from_incoming_event = Mock(return_value="en")
 
-        response = handler.action_question_3(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_SIMILAR_DOMAIN, ""), ConversationContext()), handler.INTENT_SIMILAR_DOMAIN)
+        response = handler.action_question_3(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_SIMILAR_DOMAIN, ""), ConversationContext(static_context={
+            handler.CONTEXT_WENET_USER_ID: "",
+            handler.CONTEXT_ASKED_QUESTION: "question",
+            handler.CONTEXT_QUESTION_DOMAIN: handler.INTENT_ACADEMIC_SKILLS,
+            handler.CONTEXT_ANONYMOUS_QUESTION: handler.INTENT_ANONYMOUS_QUESTION,
+        })), handler.INTENT_SIMILAR_DOMAIN)
         self.assertIsInstance(response, OutgoingEvent)
         self.assertEqual(1, len(response.messages))
         self.assertIsInstance(response.messages[0], TelegramRapidAnswerResponse)
-        self.assertEqual(2, len(response.messages[0].options))
+        self.assertEqual(3, len(response.messages[0].options))
         self.assertTrue(handler.CONTEXT_CURRENT_STATE in response.context._static_context and response.context._static_context[handler.CONTEXT_CURRENT_STATE] == handler.STATE_QUESTION_3)
+
+    # TODO add missing tests
 
     def test_action_question_final(self):
         handler = MockAskForHelpHandler()
