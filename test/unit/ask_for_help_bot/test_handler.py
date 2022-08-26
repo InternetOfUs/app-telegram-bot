@@ -275,7 +275,7 @@ class TestAskForHelpHandler(TestCase):
         self.assertIsInstance(response, List)
         self.assertEqual(1, len(response))
         self.assertIsInstance(response[0], TelegramRapidAnswerResponse)
-        self.assertEqual(1, len(handler.cache._cache))
+        self.assertEqual(2, len(handler.cache._cache))
 
     def test_action_question(self):
         handler = MockAskForHelpHandler()
@@ -496,6 +496,7 @@ class TestAskForHelpHandler(TestCase):
         response = handler.action_answer_question_anonymously(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_ANSWER_ANONYMOUSLY, ""), ConversationContext(static_context={
             handler.CONTEXT_QUESTION_TO_ANSWER: "task_id",
             handler.CONTEXT_ANSWER_TO_QUESTION: "answer",
+            handler.CONTEXT_QUESTIONER_NAME: "name",
             handler.CONTEXT_WENET_USER_ID: "user_id"
         })), handler.INTENT_ANSWER_ANONYMOUSLY)
         self.assertIsInstance(response, OutgoingEvent)
@@ -515,6 +516,7 @@ class TestAskForHelpHandler(TestCase):
 
         response = handler.action_answer_question_2(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingTextMessage("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", "answer"), ConversationContext(static_context={
             handler.CONTEXT_QUESTION_TO_ANSWER: "task_id",
+            handler.CONTEXT_QUESTIONER_NAME: "name",
             handler.CONTEXT_WENET_USER_ID: "user_id"
         })), "")
         self.assertIsInstance(response, OutgoingEvent)
