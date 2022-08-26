@@ -68,7 +68,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     CONTEXT_QUESTION_TO_ANSWER = "question_to_answer"
     CONTEXT_TASK_ID = "task_id"
     CONTEXT_TRANSACTION_ID = "transaction_id"
-    CONTEXT_CHOSEN_ANSWER_REASON = "chosen_answer_reason"
     CONTEXT_QUESTIONER_NAME = "questioner_name"
     CONTEXT_QUESTION = "question"
     CONTEXT_BEST_ANSWER = "best_answer"
@@ -112,6 +111,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     INTENT_REPORT_ABUSIVE = "abusive"
     INTENT_REPORT_SPAM = "spam"
     INTENT_ASK_MORE_ANSWERS = "ask_more_answers"
+    INTENT_CLOSE_QUESTION = "close_question"
     INTENT_ANSWER_REPORT = "answer_report"
     INTENT_QUESTIONS = "/questions"
     INTENT_ANSWER_PICKED_QUESTION = "picked_answer"
@@ -128,11 +128,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     INTENT_AGREE_PUBLISH_ANONYMOUSLY = "agree_publish_anonymously"
     INTENT_AGREE_PUBLISH_NAME = "agree_publish_name"
     INTENT_NOT_AGREE_PUBLISH = "not_agree_publish"
-    INTENT_NOT_AT_ALL_HELPFUL = "notAtAllHelpful"
-    INTENT_SLIGHTLY_HELPFUL = "slightlyHelpful"
-    INTENT_SOMEWHAT_HELPFUL = "somewhatHelpful"
-    INTENT_VERY_HELPFUL = "veryHelpful"
-    INTENT_EXTREMELY_HELPFUL = "extremelyHelpful"
     INTENT_CHOSEN_ANSWER_FUNNY = "funny"
     INTENT_CHOSEN_ANSWER_THOUGHTFUL = "thoughtful"
     INTENT_CHOSEN_ANSWER_INFORMATIVE = "informative"
@@ -140,6 +135,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     INTENT_CHOSEN_ANSWER_HONEST = "honest"
     INTENT_CHOSEN_ANSWER_KIND = "kind"
     INTENT_CHOSEN_ANSWER_PERSONAL = "personal"
+    INTENT_CHOSEN_ANSWER_RESPONDER = "responder"
     INTENT_BADGES = "/badges"
     # INTENT_PROFILE = "/profile"
     # transaction labels
@@ -148,6 +144,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     LABEL_REPORT_QUESTION_TRANSACTION = "reportQuestionTransaction"
     LABEL_REPORT_ANSWER_TRANSACTION = "reportAnswerTransaction"
     LABEL_MORE_ANSWER_TRANSACTION = "moreAnswerTransaction"
+    LABEL_CLOSE_QUESTION_TRANSACTION = "closeQuestionTransaction"
     LABEL_LIKE_ANSWER_TRANSACTION = "likeAnswerTransaction"
     LABEL_FOLLOW_UP_TRANSACTION = "followUpTransaction"
     LABEL_BEST_ANSWER_TRANSACTION = "bestAnswerTransaction"
@@ -306,23 +303,15 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_PUBLISH)
             )
         )
-        why_choose_answer_intents = [self.INTENT_CHOSEN_ANSWER_FUNNY, self.INTENT_CHOSEN_ANSWER_THOUGHTFUL, self.INTENT_CHOSEN_ANSWER_INFORMATIVE,
-                                     self.INTENT_CHOSEN_ANSWER_KIND, self.INTENT_CHOSEN_ANSWER_CREATIVE, self.INTENT_CHOSEN_ANSWER_HONEST,
-                                     self.INTENT_CHOSEN_ANSWER_PERSONAL]
+        why_choose_answer_intents = [self.INTENT_CHOSEN_ANSWER_FUNNY, self.INTENT_CHOSEN_ANSWER_THOUGHTFUL,
+                                     self.INTENT_CHOSEN_ANSWER_INFORMATIVE, self.INTENT_CHOSEN_ANSWER_KIND,
+                                     self.INTENT_CHOSEN_ANSWER_CREATIVE, self.INTENT_CHOSEN_ANSWER_HONEST,
+                                     self.INTENT_CHOSEN_ANSWER_PERSONAL, self.INTENT_CHOSEN_ANSWER_RESPONDER]
         for why_choose_answer_intent in why_choose_answer_intents:
             self.intent_manager.with_fulfiller(
                 IntentFulfillerV3(why_choose_answer_intent, self.action_best_answer_1).with_rule(
                     intent=why_choose_answer_intent,
                     static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_0)
-                )
-            )
-        answer_rating_intents = [self.INTENT_NOT_AT_ALL_HELPFUL, self.INTENT_SLIGHTLY_HELPFUL,
-                                 self.INTENT_SOMEWHAT_HELPFUL, self.INTENT_VERY_HELPFUL, self.INTENT_EXTREMELY_HELPFUL]
-        for answer_rating_intent in answer_rating_intents:
-            self.intent_manager.with_fulfiller(
-                IntentFulfillerV3(answer_rating_intent, self.action_best_answer_2).with_rule(
-                    intent=answer_rating_intent,
-                    static_context=(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_1)
                 )
             )
         self.intent_manager.with_fulfiller(
@@ -388,10 +377,10 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             self.CONTEXT_CURRENT_STATE, self.CONTEXT_ASKED_QUESTION, self.CONTEXT_QUESTION_DOMAIN,
             self.CONTEXT_ANONYMOUS_QUESTION, self.CONTEXT_DOMAIN_INTEREST, self.CONTEXT_BELIEF_VALUES_SIMILARITY,
             self.CONTEXT_SOCIAL_CLOSENESS, self.CONTEXT_ANSWER_TO_QUESTION, self.CONTEXT_QUESTION_TO_ANSWER,
-            self.CONTEXT_TASK_ID, self.CONTEXT_TRANSACTION_ID, self.CONTEXT_CHOSEN_ANSWER_REASON,
-            self.CONTEXT_QUESTIONER_NAME, self.CONTEXT_QUESTION, self.CONTEXT_BEST_ANSWER, self.CONTEXT_ANSWERER_NAME,
-            self.CONTEXT_ANSWERER_USER_ID, self.CONTEXT_ANSWER_RECEIVED, self.CONTEXT_QUESTIONER_USER_ID,
-            self.CONTEXT_QUESTION_ANSWERED, self.CONTEXT_ANONYMOUS_ANSWER
+            self.CONTEXT_TASK_ID, self.CONTEXT_TRANSACTION_ID, self.CONTEXT_QUESTIONER_NAME, self.CONTEXT_QUESTION,
+            self.CONTEXT_BEST_ANSWER, self.CONTEXT_ANSWERER_NAME, self.CONTEXT_ANSWERER_USER_ID,
+            self.CONTEXT_ANSWER_RECEIVED, self.CONTEXT_QUESTIONER_USER_ID, self.CONTEXT_QUESTION_ANSWERED,
+            self.CONTEXT_ANONYMOUS_ANSWER
         ]
         for context_key in context_to_remove:
             context.delete_static_state(context_key)
@@ -652,8 +641,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 .with_substitution("expiration_duration", str(int(self.neaby_expiration_duration / 3600)) if task.attributes.get("positionOfAnswerer") == self.INTENT_ASK_TO_NEARBY else str(int(self.expiration_duration / 3600)))\
                 .translate()
             message_upper_part += no_reply_string
-            answer_lower_part = TelegramRapidAnswerResponse(TextualResponse(message_upper_part), row_displacement=[1])
-            button_ids = [str(uuid.uuid4())]
+            answer_lower_part = TelegramRapidAnswerResponse(TextualResponse(message_upper_part), row_displacement=[2])
+            button_ids = [str(uuid.uuid4()) for _ in range(2)]
 
         button_data = {
             "task_id": message.attributes["taskId"],
@@ -662,8 +651,12 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         self.cache.cache(ButtonPayload(button_data, self.INTENT_ASK_MORE_ANSWERS).to_repr(), key=button_ids[len(transaction_ids)])
         button_ask_more_text = self._translator.get_translation_instance(locale).with_text("more_answers_button").translate()
         answer_lower_part.with_textual_option(button_ask_more_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[len(transaction_ids)]))
-        answer.append(answer_lower_part)
+        if len(message_answers) == 0:
+            self.cache.cache(ButtonPayload(button_data, self.INTENT_CLOSE_QUESTION).to_repr(), key=button_ids[len(transaction_ids) + 1])
+            button_close_question_text = self._translator.get_translation_instance(locale).with_text("close_question_button").translate()
+            answer_lower_part.with_textual_option(button_close_question_text, self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[len(transaction_ids) + 1]))
 
+        answer.append(answer_lower_part)
         return answer
 
     def _get_incentive_badge_translated_message(self, message: IncentiveBadge, user_object: WeNetUserProfile) -> TextualResponse:
@@ -774,6 +767,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
         if button_payload.intent == self.INTENT_ASK_MORE_ANSWERS:
             return self.action_more_answers(incoming_event, button_payload)
+        elif button_payload.intent == self.INTENT_CLOSE_QUESTION:
+            return self.action_close_question(incoming_event, button_payload)
         elif button_payload.intent == self.INTENT_QUESTION_REPORT or button_payload.intent == self.INTENT_ANSWER_REPORT:
             return self.action_report_message(incoming_event, button_payload)
         elif button_payload.intent == self.INTENT_REPORT_ABUSIVE or button_payload.intent == self.INTENT_REPORT_SPAM:
@@ -1076,6 +1071,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             is_first_answer = self._is_first_answer(user_id)
             show_conduct_message = is_first_answer or random.randint(1, 10) <= 2
         context.with_static_state(self.CONTEXT_QUESTION_TO_ANSWER, button_payload.payload["task_id"])
+        context.with_static_state(self.CONTEXT_QUESTIONER_NAME, button_payload.payload["username"])
         if button_payload.payload.get("sensitive", False):
             context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_ANSWERING_SENSITIVE)
             message = self._translator.get_translation_instance(user_locale).with_text("answer_sensitive_question").translate()
@@ -1170,21 +1166,25 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         context = incoming_event.context
         response = OutgoingEvent(social_details=incoming_event.social_details)
+        questioner_name = context.get_static_state(self.CONTEXT_QUESTIONER_NAME)
         if intent == self.INTENT_ANSWER_ANONYMOUSLY:
-            message = self._translator.get_translation_instance(user_locale).with_text("answered_message_anonymously").translate()
+            message = self._translator.get_translation_instance(user_locale).with_text("answered_message_anonymously")\
+                .with_substitution("questioner_name", questioner_name)\
+                .translate()
             context.with_static_state(self.CONTEXT_ANONYMOUS_ANSWER, True)
         else:
-            message = self._translator.get_translation_instance(user_locale).with_text("answered_message").translate()
+            message = self._translator.get_translation_instance(user_locale).with_text("answered_message")\
+                .with_substitution("questioner_name", questioner_name)\
+                .translate()
             context.with_static_state(self.CONTEXT_ANONYMOUS_ANSWER, False)
 
-        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_PUBLISHING_ANSWER_TO_CHANNEL)
         if self.channel_id:
-            response.with_message(TextualResponse(message))
+            context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_PUBLISHING_ANSWER_TO_CHANNEL)
             message_text = self._translator.get_translation_instance(user_locale).with_text("ok_to_publish_message").translate()
             button_1_text = self._translator.get_translation_instance(user_locale).with_text("button_yes_anonymously_publish_text").translate()
             button_2_text = self._translator.get_translation_instance(user_locale).with_text("button_yes_name_publish_text").translate()
             button_3_text = self._translator.get_translation_instance(user_locale).with_text("button_no_publish_text").translate()
-            message_response = TelegramRapidAnswerResponse(TextualResponse(message_text), row_displacement=[1, 1, 1])
+            message_response = TelegramRapidAnswerResponse(TextualResponse(message + "\n\n" + message_text), row_displacement=[1, 1, 1])
             message_response.with_textual_option(button_1_text, self.INTENT_AGREE_PUBLISH_ANONYMOUSLY)
             message_response.with_textual_option(button_2_text, self.INTENT_AGREE_PUBLISH_NAME)
             message_response.with_textual_option(button_3_text, self.INTENT_NOT_AGREE_PUBLISH)
@@ -1197,7 +1197,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
             question_id = context.get_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
             answer = context.get_static_state(self.CONTEXT_ANSWER_TO_QUESTION)
-            anonymous = context.with_static_state(self.CONTEXT_ANONYMOUS_ANSWER, True)
+            anonymous = context.get_static_state(self.CONTEXT_ANONYMOUS_ANSWER)
             actioneer_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
             try:
                 transaction = TaskTransaction(None, question_id, self.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), actioneer_id, {"answer": answer, "anonymous": anonymous, "publish": False, "publishAnonymously": False}, [])
@@ -1228,8 +1228,10 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         response = OutgoingEvent(social_details=incoming_event.social_details)
         if isinstance(incoming_event.incoming_message, IncomingTextMessage):
             answer = self._prepare_string_to_wenet(incoming_event.incoming_message.text)
-            message = self._translator.get_translation_instance(user_locale).with_text("answered_message").translate()
-            response.with_message(TextualResponse(message))
+            questioner_name = context.get_static_state(self.CONTEXT_QUESTIONER_NAME)
+            message = self._translator.get_translation_instance(user_locale).with_text("answered_message")\
+                .with_substitution("questioner_name", questioner_name)\
+                .translate()
 
             if self.channel_id:
                 context.with_static_state(self.CONTEXT_ANSWER_TO_QUESTION, answer)
@@ -1239,7 +1241,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 button_1_text = self._translator.get_translation_instance(user_locale).with_text("button_yes_anonymously_publish_text").translate()
                 button_2_text = self._translator.get_translation_instance(user_locale).with_text("button_yes_name_publish_text").translate()
                 button_3_text = self._translator.get_translation_instance(user_locale).with_text("button_no_publish_text").translate()
-                message_response = TelegramRapidAnswerResponse(TextualResponse(message_text), row_displacement=[1, 1, 1])
+                message_response = TelegramRapidAnswerResponse(TextualResponse(message + "\n\n" + message_text), row_displacement=[1, 1, 1])
                 message_response.with_textual_option(button_1_text, self.INTENT_AGREE_PUBLISH_ANONYMOUSLY)
                 message_response.with_textual_option(button_2_text, self.INTENT_AGREE_PUBLISH_NAME)
                 message_response.with_textual_option(button_3_text, self.INTENT_NOT_AGREE_PUBLISH)
@@ -1251,12 +1253,12 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                     raise Exception(f"Missing conversation context for event {incoming_event}")
 
                 question_id = context.get_static_state(self.CONTEXT_QUESTION_TO_ANSWER)
-                answer = context.get_static_state(self.CONTEXT_ANSWER_TO_QUESTION)
                 actioneer_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
                 try:
                     transaction = TaskTransaction(None, question_id, self.LABEL_ANSWER_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), actioneer_id, {"answer": answer, "anonymous": False, "publish": False, "publishAnonymously": False}, [])
                     service_api.create_task_transaction(transaction)
                     logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
+                    response.with_message(TextualResponse(message))
                 except CreationError as e:
                     response.with_message(TextualResponse(self._translator.get_translation_instance(user_locale).with_text("error_task_creation").translate()))
                     logger.error(
@@ -1473,6 +1475,33 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             service_api.create_task_transaction(transaction)
             logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
             message = self._translator.get_translation_instance(user_locale).with_text("ask_more_answers_text").translate()
+            response.with_message(TextualResponse(message))
+        except CreationError as e:
+            response.with_message(TextualResponse(self._translator.get_translation_instance(user_locale).with_text("error_task_creation").translate()))
+            logger.error(
+                "Error in the creation of the transaction to ask more responses for the task [%s]. The service API responded with code %d and message %s"
+                % (task_id, e.http_status_code, json.dumps(e.server_response))
+            )
+
+        response.with_context(context)
+        return response
+
+    def action_close_question(self, incoming_event: IncomingSocialEvent, button_payload: ButtonPayload) -> OutgoingEvent:
+        response = OutgoingEvent(social_details=incoming_event.social_details)
+        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
+        context = incoming_event.context
+        if context is not None:
+            service_api = self._get_service_api_interface_connector_from_context(incoming_event.context)
+        else:
+            raise Exception(f"Missing conversation context for event {incoming_event}")
+
+        task_id = button_payload.payload["task_id"]
+        actioneer_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
+        try:
+            transaction = TaskTransaction(None, task_id, self.LABEL_CLOSE_QUESTION_TRANSACTION, int(datetime.now().timestamp()), int(datetime.now().timestamp()), actioneer_id, {}, [])
+            service_api.create_task_transaction(transaction)
+            logger.info("Sent task transaction: %s" % str(transaction.to_repr()))
+            message = self._translator.get_translation_instance(user_locale).with_text("close_question_text").translate()
             response.with_message(TextualResponse(message))
         except CreationError as e:
             response.with_message(TextualResponse(self._translator.get_translation_instance(user_locale).with_text("error_task_creation").translate()))
@@ -1875,7 +1904,8 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         button_5_text = self._translator.get_translation_instance(user_locale).with_text("answer_reason_honest").translate()
         button_6_text = self._translator.get_translation_instance(user_locale).with_text("answer_reason_kind").translate()
         button_7_text = self._translator.get_translation_instance(user_locale).with_text("answer_reason_personal").translate()
-        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 2, 2, 1])
+        button_8_text = self._translator.get_translation_instance(user_locale).with_text("answer_reason_responder").translate()
+        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 2, 2, 2])
         response_with_buttons.with_textual_option(button_1_text, self.INTENT_CHOSEN_ANSWER_FUNNY)
         response_with_buttons.with_textual_option(button_2_text, self.INTENT_CHOSEN_ANSWER_THOUGHTFUL)
         response_with_buttons.with_textual_option(button_3_text, self.INTENT_CHOSEN_ANSWER_INFORMATIVE)
@@ -1883,6 +1913,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         response_with_buttons.with_textual_option(button_5_text, self.INTENT_CHOSEN_ANSWER_HONEST)
         response_with_buttons.with_textual_option(button_6_text, self.INTENT_CHOSEN_ANSWER_KIND)
         response_with_buttons.with_textual_option(button_7_text, self.INTENT_CHOSEN_ANSWER_PERSONAL)
+        response_with_buttons.with_textual_option(button_8_text, self.INTENT_CHOSEN_ANSWER_RESPONDER)
         response.with_message(response_with_buttons)
         response.with_context(context)
         return response
@@ -1977,28 +2008,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         return response
 
     def action_best_answer_1(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
-        user_locale = self._get_user_locale_from_incoming_event(incoming_event)
-        response = OutgoingEvent(social_details=incoming_event.social_details)
-        context = incoming_event.context
-        context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_1)
-        context.with_static_state(self.CONTEXT_CHOSEN_ANSWER_REASON, intent)
-        message = self._translator.get_translation_instance(user_locale).with_text("best_answer_helpful").translate()
-        button_1_text = self._translator.get_translation_instance(user_locale).with_text("not_at_all_helpful").translate()
-        button_2_text = self._translator.get_translation_instance(user_locale).with_text("slightly_helpful").translate()
-        button_3_text = self._translator.get_translation_instance(user_locale).with_text("somewhat_helpful").translate()
-        button_4_text = self._translator.get_translation_instance(user_locale).with_text("very_helpful").translate()
-        button_5_text = self._translator.get_translation_instance(user_locale).with_text("extremely_helpful").translate()
-        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 2, 1])
-        response_with_buttons.with_textual_option(button_1_text, self.INTENT_NOT_AT_ALL_HELPFUL)
-        response_with_buttons.with_textual_option(button_2_text, self.INTENT_SLIGHTLY_HELPFUL)
-        response_with_buttons.with_textual_option(button_3_text, self.INTENT_SOMEWHAT_HELPFUL)
-        response_with_buttons.with_textual_option(button_4_text, self.INTENT_VERY_HELPFUL)
-        response_with_buttons.with_textual_option(button_5_text, self.INTENT_EXTREMELY_HELPFUL)
-        response.with_message(response_with_buttons)
-        response.with_context(context)
-        return response
-
-    def action_best_answer_2(self, incoming_event: IncomingSocialEvent, intent: str) -> OutgoingEvent:
         response = OutgoingEvent(social_details=incoming_event.social_details)
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         context = incoming_event.context
@@ -2008,19 +2017,14 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             raise Exception(f"Missing conversation context for event {incoming_event}")
 
         if not context.has_static_state(self.CONTEXT_TASK_ID) \
-                or not context.has_static_state(self.CONTEXT_TRANSACTION_ID) \
-                or not context.has_static_state(self.CONTEXT_CHOSEN_ANSWER_REASON):
-            logger.error(f"Expected {self.CONTEXT_TASK_ID}, {self.CONTEXT_TRANSACTION_ID} "
-                         f"and {self.CONTEXT_CHOSEN_ANSWER_REASON} in the context")
-            raise Exception(f"Expected {self.CONTEXT_TASK_ID}, {self.CONTEXT_TRANSACTION_ID}, "
-                            f"and {self.CONTEXT_CHOSEN_ANSWER_REASON} in the context")
+                or not context.has_static_state(self.CONTEXT_TRANSACTION_ID):
+            logger.error(f"Expected {self.CONTEXT_TASK_ID} and {self.CONTEXT_TRANSACTION_ID} in the context")
+            raise Exception(f"Expected {self.CONTEXT_TASK_ID} and {self.CONTEXT_TRANSACTION_ID} in the context")
         task_id = context.get_static_state(self.CONTEXT_TASK_ID)
         transaction_id = context.get_static_state(self.CONTEXT_TRANSACTION_ID)
-        reason = context.get_static_state(self.CONTEXT_CHOSEN_ANSWER_REASON)
         attributes = {
             "transactionId": transaction_id,
-            "reason": reason,
-            "helpful": intent
+            "reason": intent,
         }
         actioneer_id = incoming_event.context.get_static_state(self.CONTEXT_WENET_USER_ID)
         try:
@@ -2038,7 +2042,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         finally:
             context.delete_static_state(self.CONTEXT_TASK_ID)
             context.delete_static_state(self.CONTEXT_TRANSACTION_ID)
-            context.delete_static_state(self.CONTEXT_CHOSEN_ANSWER_REASON)
             context.delete_static_state(self.CONTEXT_QUESTIONER_NAME)
             context.delete_static_state(self.CONTEXT_QUESTION)
             context.delete_static_state(self.CONTEXT_BEST_ANSWER)

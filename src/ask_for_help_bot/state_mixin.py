@@ -23,7 +23,6 @@ class StateMixin:
     STATE_FOLLOW_UP_0 = "follow_up_0"
     STATE_BEST_ANSWER_0 = "best_answer_0"
     STATE_BEST_ANSWER_PUBLISH = "best_answer_publish"
-    STATE_BEST_ANSWER_1 = "best_answer_1"
 
     def _is_doing_another_action(self, context: ConversationContext) -> bool:
         """
@@ -32,9 +31,8 @@ class StateMixin:
         statuses = [
             self.STATE_ANSWERING, self.STATE_ANSWERING_SENSITIVE, self.STATE_ANSWERING_ANONYMOUSLY,
             self.STATE_QUESTION_0, self.STATE_QUESTION_1, self.STATE_QUESTION_2, self.STATE_QUESTION_3,
-            self.STATE_QUESTION_4, self.STATE_QUESTION_5, self.STATE_QUESTION_6,
-            self.STATE_BEST_ANSWER_0, self.STATE_BEST_ANSWER_PUBLISH, self.STATE_PUBLISHING_ANSWER_TO_CHANNEL,
-            self.STATE_BEST_ANSWER_1, self.STATE_FOLLOW_UP_0
+            self.STATE_QUESTION_4, self.STATE_QUESTION_5, self.STATE_QUESTION_6, self.STATE_BEST_ANSWER_0,
+            self.STATE_BEST_ANSWER_PUBLISH, self.STATE_PUBLISHING_ANSWER_TO_CHANNEL, self.STATE_FOLLOW_UP_0
         ]
         current_status = context.get_static_state(self.CONTEXT_CURRENT_STATE, "")
         return current_status in statuses

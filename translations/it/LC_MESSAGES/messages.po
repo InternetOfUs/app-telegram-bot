@@ -295,11 +295,11 @@ msgstr ""
 "un’immagine o un sondaggio."
 
 msgid "answered_message"
-msgstr "Grazie! Ora invio la tua risposta alla persona interessata."
+msgstr "Grazie! Ora invio la tua risposta a {questioner_name}."
 
 msgid "answered_message_anonymously"
 msgstr ""
-"Grazie! Inoltrerò la tua risposta in modo anonimo alla persona interessata."
+"Grazie! Inoltrerò la tua risposta in modo anonimo a {questioner_name}."
 
 msgid "not_answer_response"
 msgstr "Ok!"
@@ -358,6 +358,12 @@ msgstr ":game_die: Chiedi a più persone"
 msgid "ask_more_answers_text"
 msgstr "Ok :ok_hand:, chiederò a più persone!"
 
+msgid "close_question_button"
+msgstr ""
+
+msgid "close_question_text"
+msgstr ""
+
 msgid "answers_no_tasks"
 msgstr "Non ci sono domande aperte al momento :astonished:, riprova più tardi!"
 
@@ -371,29 +377,6 @@ msgid "best_answer_0"
 msgstr ""
 "Per favore aiuta i miei :crystal_ball: algoritmi, perché hai scelto questa "
 "risposta?"
-
-msgid "best_answer_helpful"
-msgstr ""
-"Ripensando alle persone che volevi raggiungere con la tua domanda, quanto "
-"sono stato utile per metterti in contatto con gli altri?"
-
-msgid "not_at_all_helpful"
-msgstr "1 - Per niente utile"
-
-msgid "slightly_helpful"
-msgstr "2 - Un po’ utile"
-
-msgid "somewhat_helpful"
-msgstr "3 - Non riesco a decidere"
-
-msgid "very_helpful"
-msgstr "4 - Utile"
-
-msgid "extremely_helpful"
-msgstr "5 - Molto utile"
-
-msgid "reason_is_not_text"
-msgstr "Per favor specifica perché hai scelto questa risposta:"
 
 msgid "best_answer_final_message"
 msgstr ""
@@ -564,6 +547,9 @@ msgstr "Gentile"
 
 msgid "answer_reason_personal"
 msgstr "Personale / Soggettivo"
+
+msgid "answer_reason_responder"
+msgstr ""
 
 msgid "chosen_answer_by_user"
 msgstr "*[Scelto come miglior risposta da {user}]*"

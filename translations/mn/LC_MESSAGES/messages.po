@@ -284,11 +284,10 @@ msgstr ""
 "Таны хариулт хавсралт, зураг, санал асуулга биш, текст мессеж байх ёстой."
 
 msgid "answered_message"
-msgstr "Баярлалаа! Би таны хариултыг тухайн хүнд дамжуулах болно"
+msgstr "Баярлалаа! Би таны хариултыг {questioner_name} руу дамжуулах болно."
 
 msgid "answered_message_anonymously"
-msgstr ""
-"Баярлалаа! Би таны хариултыг нэрийг тань нууцлан тухайн хүнд дамжуулах болно"
+msgstr "Баярлалаа! Би таны хариултыг нэрээ нууцлан {questioner_name} руу дамжуулах болно."
 
 msgid "not_answer_response"
 msgstr "Зүгээрээ!"
@@ -347,6 +346,12 @@ msgstr ":game_die: Илүү олон хүнээс асуух"
 msgid "ask_more_answers_text"
 msgstr "За :ok_hand:, би таны асуултыг илүү олон хүнээс асуух болно!"
 
+msgid "close_question_button"
+msgstr ""
+
+msgid "close_question_text"
+msgstr ""
+
 msgid "answers_no_tasks"
 msgstr ""
 "Одоогоор нээлттэй асуулт байхгүй байна :astonished:, дараа дахин шалгаарай!"
@@ -360,29 +365,6 @@ msgstr "Хариулах асуултаа сонгоно уу :point_down:"
 msgid "best_answer_0"
 msgstr ""
 "Миний :crystal_ball: алгоритмд тусална уу, яагаад энэ хариултыг сонгосон бэ?"
-
-msgid "best_answer_helpful"
-msgstr ""
-"Асуултаараа холбогдохыг хүссэн хүмүүсийнхээ талаар эргэн санахад би таныг "
-"бусадтай холбоход хэр тусалсан бэ?"
-
-msgid "not_at_all_helpful"
-msgstr "1 - Огт тус болоогүй"
-
-msgid "slightly_helpful"
-msgstr "2 - Бага зэрэг тустай"
-
-msgid "somewhat_helpful"
-msgstr "3 - Шийдэж чадахгүй байна"
-
-msgid "very_helpful"
-msgstr "4 - Тустай"
-
-msgid "extremely_helpful"
-msgstr "5 - Маш тустай"
-
-msgid "reason_is_not_text"
-msgstr "Та яагаад энэ хариултыг сонгосноо тодруулна уу:"
 
 msgid "best_answer_final_message"
 msgstr "Таны хувь нэмэрт баярлалаа! Хэзээ ч хамаагүй шинэ асуулт асуугаарай!"
@@ -544,6 +526,9 @@ msgstr "Эелдэг"
 
 msgid "answer_reason_personal"
 msgstr "Хувийн / Субьектив"
+
+msgid "answer_reason_responder"
+msgstr ""
 
 msgid "chosen_answer_by_user"
 msgstr "*[{user} үүнийг хамгийн сайн хариултаар сонгосон]*"

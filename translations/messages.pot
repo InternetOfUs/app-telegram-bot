@@ -253,6 +253,12 @@ msgstr ""
 msgid "ask_more_answers_text"
 msgstr ""
 
+msgid "close_question_button"
+msgstr ""
+
+msgid "close_question_text"
+msgstr ""
+
 msgid "answers_no_tasks"
 msgstr ""
 
@@ -263,27 +269,6 @@ msgid "answers_tasks_choose"
 msgstr ""
 
 msgid "best_answer_0"
-msgstr ""
-
-msgid "best_answer_helpful"
-msgstr ""
-
-msgid "not_at_all_helpful"
-msgstr ""
-
-msgid "slightly_helpful"
-msgstr ""
-
-msgid "somewhat_helpful"
-msgstr ""
-
-msgid "very_helpful"
-msgstr ""
-
-msgid "extremely_helpful"
-msgstr ""
-
-msgid "reason_is_not_text"
 msgstr ""
 
 msgid "best_answer_final_message"
@@ -407,6 +392,9 @@ msgid "answer_reason_kind"
 msgstr ""
 
 msgid "answer_reason_personal"
+msgstr ""
+
+msgid "answer_reason_responder"
 msgstr ""
 
 msgid "chosen_answer_by_user"
