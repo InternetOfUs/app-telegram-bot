@@ -80,7 +80,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
     # all the recognized intents
     INTENT_ASK = "/ask"
     INTENT_FIRST_QUESTION = "first_question"
-    INTENT_ACADEMIC_SKILLS = "academic_skills"  # TODO update norms and complete translations
+    INTENT_ACADEMIC_SKILLS = "academic_skills"
     INTENT_BASIC_NEEDS = "basic_needs"
     INTENT_PHYSICAL_ACTIVITY = "physical_activity"
     INTENT_APPRECIATING_CULTURE = "appreciating_culture"
@@ -489,13 +489,18 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         # in case the user was doing something else the received message is stored
         return self._get_notification_event_based_on_what_user_is_doing(context, user_account.social_details, [response], response_to)
 
-    def _handle_question(self, message: QuestionToAnswerMessage, user_object: WeNetUserProfile, questioning_user: WeNetUserProfile) -> TelegramRapidAnswerResponse:  # TODO handle in a special way proximity questions?
+    def _handle_question(self, message: QuestionToAnswerMessage, user_object: WeNetUserProfile, questioning_user: WeNetUserProfile) -> TelegramRapidAnswerResponse:
         # Translate the message that someone in the community has a question and insert the details of the question, treat differently sensitive questions
         message_string = self._translator.get_translation_instance(user_object.locale)
         sensitive = message.attributes["domain"] == self.INTENT_SENSITIVE_QUESTION
         anonymous = message.attributes.get("anonymous", False)
-        if sensitive:
-            message_string = message_string.with_text("answer_sensitive_message_0")
+        position_of_answerer = message.attributes.get("positionOfAnswerer", False)
+        if position_of_answerer == self.INTENT_ASK_TO_NEARBY and sensitive:
+            message_string = message_string.with_text("answer_sensitive_message_nearby")
+        elif position_of_answerer == self.INTENT_ASK_TO_NEARBY:
+            message_string = message_string.with_text("answer_message_nearby")
+        elif sensitive:
+            message_string = message_string.with_text("answer_message_0")
         else:
             message_string = message_string.with_text("answer_message_0")
 
@@ -589,8 +594,6 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             .with_substitution("question", question_text) \
             .translate()
 
-        # TODO add selected attributes?
-
         message_upper_part = f"{message_attributes} \n\n"
         answer = []
 
@@ -632,7 +635,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             answer_lower_part = TelegramRapidAnswerResponse(TextualResponse(message_string), row_displacement=button_rows)
             button_ids = [str(uuid.uuid4()) for _ in range(len(transaction_ids) + 1)]
             for i in range(len(transaction_ids)):
-                self.cache.cache(ButtonPayload({"task_id": message.task_id, "transaction_id": transaction_ids[i], "related_buttons": button_ids}, self.INTENT_BEST_ANSWER).to_repr(), key=button_ids[i])
+                self.cache.cache(ButtonPayload({"task_id": message.task_id, "transaction_id": transaction_ids[i], "order": f"#{1 + i}", "related_buttons": button_ids}, self.INTENT_BEST_ANSWER).to_repr(), key=button_ids[i])
                 answer_lower_part.with_textual_option(f"#{1 + i}", self.INTENT_BUTTON_WITH_PAYLOAD.format(button_ids[i]))
 
         else:
@@ -1645,7 +1648,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                     logger.exception(f"An exception [{type(e)}] occurs sending the notification [{notification.to_repr()}]", exc_info=e)
 
         else:
-            message = self._translator.get_translation_instance(user_locale).with_text("not_sharing_details_message").with_substitution("answerer", answerer_name).translate()
+            message = self._translator.get_translation_instance(user_locale).with_text("not_sharing_details_message").translate()
             message = TextualResponse(message)
 
         response.with_message(message)
@@ -1896,7 +1899,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         context.with_static_state(self.CONTEXT_TRANSACTION_ID, button_payload.payload["transaction_id"])
         context.with_static_state(self.CONTEXT_CURRENT_STATE, self.STATE_BEST_ANSWER_0)
 
-        message = self._translator.get_translation_instance(user_locale).with_text("best_answer_0").translate()
+        message = self._translator.get_translation_instance(user_locale).with_text("best_answer_0").with_substitution("order", button_payload.payload["order"]).translate()
         button_1_text = self._translator.get_translation_instance(user_locale).with_text("answer_reason_funny").translate()
         button_2_text = self._translator.get_translation_instance(user_locale).with_text("answer_reason_thoughtful").translate()
         button_3_text = self._translator.get_translation_instance(user_locale).with_text("answer_reason_informative").translate()
