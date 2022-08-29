@@ -967,6 +967,7 @@ class TestAskForHelpHandler(TestCase):
 
         response = handler.action_best_answer_0(IncomingTelegramEvent("", TelegramDetails(1, 1, ""), IncomingCommand("message_id", int(datetime.now().timestamp()), "user_id", "chat_id", handler.INTENT_BEST_ANSWER, ""), ConversationContext(static_context={})), ButtonPayload({
             "transaction_id": "transaction_id",
+            "order": "#1",
             "task_id": "task_id",
             "related_buttons": ["button_ids"]
         }, handler.INTENT_BEST_ANSWER))
