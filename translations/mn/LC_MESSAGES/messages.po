@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2019-08-22 14:46+0200\n"
-"PO-Revision-Date: 2022-07-04 11:14+0200\n"
+"PO-Revision-Date: 2022-08-30 10:41+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: mn\n"
@@ -15,9 +15,8 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "Generated-By: pygettext.py 1.5\n"
-"X-Generator: Poedit 3.1\n"
+"X-Generator: Poedit 3.1.1\n"
 
-#: src/ask_for_help/handler.py:32
 msgid "info_text"
 msgstr ""
 "Та /ask гэж бичээд асуулт асууж болно. Харин /questions гэж бичээд хариулах "
@@ -26,118 +25,107 @@ msgstr ""
 "цуцлах бол /cancel гэж бичээрэй. Програмын алдааг support@internetofus.eu и-"
 "мэйлээр мэдэгдээрэй!"
 
-#: src/ask_for_help/handler.py:58
 msgid "start_text_1"
 msgstr ""
 "Холбогдсонд баярлалаа! :wave: Энэ бол WeNet чатбот. Би оюутнуудын асуултыг "
 "түгээж, үе тэнгийнхнээсээ хариулт авахад нь тусалдаг."
 
-#: src/ask_for_help/handler.py:59
 msgid "start_text_2"
 msgstr ""
 "Би өөр өөрөөр сэтгэдэг хүмүүсийг холбохоор бүтээгдсэн - Эсрэг туйлууд бие "
 "биеээ татдаг гэдгийг та мэднэ дээ, гэхдээ заримдаа тантай ойролцоо сэтгэдэг "
 "хүмүүс таныг сонсож байх нь илүү тухтай байх үе ч байна."
 
-#: src/ask_for_help/handler.py:63
 msgid "start_button"
 msgstr "Асуулт асууна уу! :thinking_face:"
 
-#: src/ask_for_help/handler.py:46
 msgid "error_text"
 msgstr ""
 "Намайг уучлаарай, би ойлгосонгүй :pensive: эсвэл та идэвхгүй товчлуур дээр "
 "дарсан байх. Би танд яаж туслах боломжтойг /info гэж бичээд мэдэж аваарай!"
 
-#: src/ask_for_help/handler.py:52
 msgid "cancel_text"
 msgstr "Асуудалгүй, одоогийн үйлдлийг амжилттай цуцаллаа!"
 
 msgid "question_1"
-msgstr "Хамт олноос юу асуух вэ? :point_down:"
+msgstr "Та олон нийтээс юу асуумаар байна?"
 
 msgid "question_is_not_text"
 msgstr "Асуултаа бичнэ үү :point_down:"
 
 msgid "domain_question"
 msgstr ""
-"За, би таны асуултыг бусад хүмүүсээс асууна. Одоо би хэнээс илүү нарийвчлан "
-"асуухаа тодруулахын тулд танаас хэдэн асуулт асуух болно :dart:.\n"
+"Би таны асуултыг хариулж чадах хүмүүст хүргэх болно. Хэнээс асуухаа илүү "
+"тодорхой болгохын тулд хэдэн асуулт асууя.\n"
 "\n"
-"1: Таны асуултын *сэдэв* юу вэ?"
+"1/6: Таны асуултын *домэйн* юу вэ?"
 
-msgid "studying_career_button"
-msgstr ":book: Суралцах"
+msgid "academic_skills_button"
+msgstr ":book: Эрдмийн ур чадвар"
 
-msgid "local_university_button"
-msgstr ":mortar_board: Дотоодын их сургууль"
-
-msgid "local_things_button"
-msgstr ":world_map: Орон нутгийн / хотын зүйлс"
+msgid "basic_needs_button"
+msgstr ":house: :stew: :woman_health_worker: Үндсэн хэрэгцээ"
 
 msgid "physical_activity_button"
-msgstr ":runner: Идэвхтэй хөдөлгөөн, дасгал"
+msgstr ":runner: Биеийн тамирын дасгал / спорт"
 
-msgid "cultural_interests_button"
-msgstr ":classical_building: Соёлын сонирхол"
+msgid "appreciating_culture_button"
+msgstr ":classical_building: :musical_score: :film_projector: Соёлыг эрхэмлэх"
 
-msgid "food_and_cooking_button"
-msgstr ":cooking: Хоол, хоол хийх"
+msgid "random_thoughts_button"
+msgstr ":game_die: Санамсаргүй бодлууд"
 
-msgid "cinema_theatre_button"
-msgstr ":popcorn: Кино, театр"
+msgid "producing_culture_button"
+msgstr ":art: :writing_hand: :performing_arts: Соёл үйлдвэрлэдэг"
 
-msgid "music_button"
-msgstr ":notes: Хөгжим"
+msgid "leisure_activities_button"
+msgstr ":mountain: :airplane: Чөлөөт цаг/хотын талаар хийх зүйлс"
 
-msgid "arts_and_crafts_button"
-msgstr ":art: Урлаг, гар урлал"
+msgid "campus_life_button"
+msgstr ":woman_student: Кампусын амьдрал"
 
-msgid "life_ponders_button"
-msgstr ":thinking_face: Эргэцүүлэл"
+msgid "sensitive_button"
+msgstr ":shushing_face: Эмзэг асуудал"
 
-msgid "varia_misc_button"
-msgstr ":space_invader: Бусад янз бүрийн зүйлс"
+msgid "academic_skills"
+msgstr "академик ур чадвар"
 
-msgid "studying_career"
-msgstr "Суралцах / Ажил"
-
-msgid "local_university"
-msgstr "Дотоодын их сургууль"
-
-msgid "local_things"
-msgstr "Орон нутгийн / хотын зүйлс"
+msgid "basic_needs"
+msgstr "үндсэн хэрэгцээ"
 
 msgid "physical_activity"
-msgstr "Идэвхтэй хөдөлгөөн, дасгал"
+msgstr "биеийн тамирын дасгал / спорт"
 
-msgid "cultural_interests"
-msgstr "Соёлын сонирхол"
+msgid "appreciating_culture"
+msgstr "соёлыг эрхэмлэдэг"
 
-msgid "food_and_cooking"
-msgstr "Хоол, хоол хийх"
+msgid "random_thoughts"
+msgstr "санамсаргүй бодол"
 
-msgid "cinema_theatre"
-msgstr "Кино, театр"
+msgid "producing_culture"
+msgstr "соёлыг үйлдвэрлэдэг"
 
-msgid "music"
-msgstr "Хөгжим"
+msgid "leisure_activities"
+msgstr "чөлөөт цаг/хотын талаар хийх зүйл"
 
-msgid "arts_and_crafts"
-msgstr "Урлаг, гар урлал"
+msgid "campus_life"
+msgstr "кампусын амьдрал"
 
-msgid "life_ponders"
-msgstr "Эргэцүүлэл"
+msgid "sensitive"
+msgstr "эмзэг асуудлууд"
 
-msgid "varia_misc"
-msgstr "Өөр бусад янз бүрийн сэдэв"
+msgid "sensitive_question_domain"
+msgstr "Би бусад хүмүүст хариулахдаа илүү болгоомжтой байхыг мэдэгдье."
+
+msgid "not_sensitive_question_domain"
+msgstr "Сайн сонголт! Энэ сэдвийг сонирхож, мэддэг хүмүүс байдаг."
 
 msgid "domain_similarity_question"
 msgstr ""
-"За, одоо бид таны асуултад ямар төрлийн хүмүүс хариулахыг зааж өгч болно.\n"
+"Та одоо таны асуултанд хариулах хүмүүсийн төрлийг тодорхойлж болно.\n"
 "\n"
-"2/6: Таны асуултад хариулах хүмүүс *({domain})* сэдвээр тантай ижил эсвэл "
-"өөр *сонирхолтой* байх уу?"
+"3/6: Эдгээр хүмүүс тантай ижил төстэй эсвэл өөр *сонирхолтой ({domain})* "
+"байх ёстой юу?"
 
 msgid "answer_similar_domain"
 msgstr "Ижил төстэй"
@@ -146,12 +134,12 @@ msgid "answer_different_domain"
 msgstr "Өөр"
 
 msgid "answer_indifferent_domain"
-msgstr "Үүнийг алгасах :point_down:"
+msgstr "Үүнийг алгасах"
 
 msgid "belief_values_question"
 msgstr ""
-"3/6: Эдгээр хүмүүс тантай ижил төстэй эсвэл өөр *итгэл үнэмшил, үнэт "
-"зүйлтэй* байх ёстой юу?"
+"4/6: Эдгээр хүмүүс тантай төстэй *итгэл үнэмшил, үнэт зүйл* тэй байх ёстой "
+"юу эсвэл өөр байх ёстой юу?"
 
 msgid "answer_similar_belief_values"
 msgstr "Ижил төстэй"
@@ -160,53 +148,43 @@ msgid "answer_different_belief_values"
 msgstr "Өөр"
 
 msgid "answer_indifferent_belief_values"
-msgstr "Үүнийг алгасах :point_down:"
-
-msgid "sensitive_question"
-msgstr ""
-"4/6: Энэ *эмзэг* асуулт мөн үү? Хэрэв тийм бол би бусад хүмүүст "
-"\"хариулахдаа маш болгоомжтой байгаарай\" гэж мэдэгдэх болно."
-
-msgid "not_sensitive"
-msgstr "Эмзэг биш"
-
-msgid "sensitive"
-msgstr ":shushing_face: Эмзэг"
+msgstr "Үүнийг алгасах"
 
 msgid "anonymous_question"
-msgstr "3: Та энэ асуултыг нэрээ нууцлан асуухыг хүсч байна уу?"
+msgstr "2/6: Та асуултаа *нэргүй* асуумаар байна уу?"
 
 msgid "anonymous_user"
 msgstr "Нэргүй"
 
 msgid "anonymous"
-msgstr "Нэргүйгээр"
+msgstr "Нэрээ нууцалж асуугаарай"
 
 msgid "not_anonymous"
-msgstr "Ердийнөөр"
+msgstr "Миний нэрээр асуугаарай"
 
 msgid "social_closeness_question"
 msgstr ""
-"5/6: Энэ хүмүүс *нийгмийн хувьд* чамаас ойр байх ёстой юу эсвэл хол байх "
-"ёстой юу? Ойр гэдэг нь мэддэг эсвэл чатботоор өмнө нь харилцаж байсан хүмүүс."
+"5/6: *Нийгмийн хувьд* эдгээр хүмүүс чамтай ойр байх уу, эсвэл хол байх уу?\n"
+"Чатботоор дамжуулан таньдаг эсвэл өмнө нь харилцаж байсан хүмүүс тантай илүү "
+"ойр байдаг."
 
 msgid "answer_socially_close"
 msgstr "Надад илүү ойр"
 
 msgid "answer_socially_indifferent"
-msgstr "Үүнийг алгасах :point_down:"
+msgstr "Үүнийг алгасах"
 
 msgid "answer_socially_distant"
 msgstr "Надаас хол"
 
 msgid "specify_answerer_location"
-msgstr "6/6: Энэ хүмүүс яг одоо (эсвэл саяхан) таны ойролцоо байх хэрэгтэй юу?"
+msgstr "6/6: Хүмүүс тантай *биеийн хувьд* ойр байх ёстой юу эсвэл саяхан уу?"
 
 msgid "location_answer_1"
-msgstr "Ойрхон"
+msgstr "Бие махбодийн хувьд ойрхон"
 
 msgid "location_answer_2"
-msgstr "Үүнийг алгасах :point_down:"
+msgstr "Энэ нь хамаагүй"
 
 msgid "question_final"
 msgstr ""
@@ -301,11 +279,12 @@ msgstr ""
 "Таны хариулт хавсралт, зураг, санал асуулга биш, текст мессеж байх ёстой."
 
 msgid "answered_message"
-msgstr "Баярлалаа! Би таны хариултыг тухайн хүнд дамжуулах болно"
+msgstr "Баярлалаа! Би таны хариултыг {questioner_name} руу дамжуулах болно."
 
 msgid "answered_message_anonymously"
 msgstr ""
-"Баярлалаа! Би таны хариултыг нэрийг тань нууцлан тухайн хүнд дамжуулах болно"
+"Баярлалаа! Би таны хариултыг нэрээ нууцлан {questioner_name} руу дамжуулах "
+"болно."
 
 msgid "not_answer_response"
 msgstr "Зүгээрээ!"
@@ -359,10 +338,16 @@ msgid "social_closeness_asked_message"
 msgstr "- нийгмийн хувьд: {similarity}"
 
 msgid "more_answers_button"
-msgstr ":game_die: Илүү олон хүнээс асуух"
+msgstr ":raised_hands: Илүү олон хүнээс асуух"
 
 msgid "ask_more_answers_text"
 msgstr "За :ok_hand:, би таны асуултыг илүү олон хүнээс асуух болно!"
+
+msgid "close_question_button"
+msgstr ":x: Асуултаа хаа"
+
+msgid "close_question_text"
+msgstr "За, би таны асуултыг хаая."
 
 msgid "answers_no_tasks"
 msgstr ""
@@ -375,31 +360,7 @@ msgid "answers_tasks_choose"
 msgstr "Хариулах асуултаа сонгоно уу :point_down:"
 
 msgid "best_answer_0"
-msgstr ""
-"Миний :crystal_ball: алгоритмд тусална уу, яагаад энэ хариултыг сонгосон бэ?"
-
-msgid "best_answer_helpful"
-msgstr ""
-"Асуултаараа холбогдохыг хүссэн хүмүүсийнхээ талаар эргэн санахад би таныг "
-"бусадтай холбоход хэр тусалсан бэ?"
-
-msgid "not_at_all_helpful"
-msgstr "1 - Огт тус болоогүй"
-
-msgid "slightly_helpful"
-msgstr "2 - Бага зэрэг тустай"
-
-msgid "somewhat_helpful"
-msgstr "3 - Шийдэж чадахгүй байна"
-
-msgid "very_helpful"
-msgstr "4 - Тустай"
-
-msgid "extremely_helpful"
-msgstr "5 - Маш тустай"
-
-msgid "reason_is_not_text"
-msgstr "Та яагаад энэ хариултыг сонгосноо тодруулна уу:"
+msgstr "Та яагаад {order} хариултыг сонгосон бэ?"
 
 msgid "best_answer_final_message"
 msgstr "Таны хувь нэмэрт баярлалаа! Хэзээ ч хамаагүй шинэ асуулт асуугаарай!"
@@ -431,7 +392,7 @@ msgid "anonymous_answer_1"
 msgstr "Нэргүй илгээнэ үү"
 
 msgid "anonymous_answer_2"
-msgstr "Ердийн байдлаар илгээнэ үү"
+msgstr "Миний нэрээр явуулаарай"
 
 msgid "picked_best_answer"
 msgstr ""
@@ -514,7 +475,11 @@ msgstr ""
 
 msgid "publish_question_to_channel"
 msgstr ""
-"Би энэ асуулт болон хүлээн авсан хариултыг олон нийтэд нийтэлж болох уу?"
+"Таны асуулт болон хүлээн авсан хариулт бусад хүмүүст ч үнэ цэнэтэй байж "
+"болно.\n"
+"\n"
+"Би энэ асуулт болон олон нийтийн хүлээн авсан хариултыг олон нийтэд нийтэлж "
+"болох уу?"
 
 msgid "publish"
 msgstr "Тиймээ"
@@ -533,7 +498,7 @@ msgid "collected_answers"
 msgstr "Дараах хариултууд цугларсан байна:"
 
 msgid "from_multiple_response"
-msgstr "Аль хариулт танд илүү таалагдсан бэ? Өөр хүмүүсээс дахиад асууж болно."
+msgstr "Аль хариулт хамгийн тустай байсан бэ? Би бас олон хүнээс асууж болно."
 
 msgid "asked_message_without_attributes"
 msgstr "Таны асуусан “*{question}*” асуултанд"
@@ -562,6 +527,9 @@ msgstr "Эелдэг"
 msgid "answer_reason_personal"
 msgstr "Хувийн / Субьектив"
 
+msgid "answer_reason_responder"
+msgstr "Хариулагчаас болж"
+
 msgid "chosen_answer_by_user"
 msgstr "*[{user} үүнийг хамгийн сайн хариултаар сонгосон]*"
 
@@ -579,7 +547,7 @@ msgstr ""
 "Та юу хиймээр байна?"
 
 msgid "ok_to_publish_message"
-msgstr "Таны хариултыг дараа олон нийтэд нийтэлвэл зүгээр үү?"
+msgstr "Та олон нийтэд хариултаа харуулахад зүгээр үү?"
 
 msgid "button_yes_anonymously_publish_text"
 msgstr "Тийм ээ, гэхдээ нэргүй"
@@ -594,49 +562,10 @@ msgid "thank_you_message"
 msgstr "Баярлалаа!"
 
 msgid "no_collected_answers"
-msgstr "Харамсалтай нь хариултуудыг харуулахыг зөвшөөрөөгүй байна."
+msgstr "Харамсалтай нь би ямар ч хариулт харуулах эрхгүй."
 
 msgid "best_answer_not_published"
-msgstr "Харамсалтай нь хамгийн сайн хариултыг харуулахыг зөвшөөрөөгүй байна."
-
-msgid "basic_needs_button"
-msgstr ":house: :stew: Үндсэн хэрэгцээ"
-
-msgid "subjective_question_text"
-msgstr "2: Энэ асуултыг…"
-
-msgid "similar_subjective_button"
-msgstr ":right-facing_fist: Надтай санал нийлэх хүмүүсээс асуух"
-
-msgid "different_subjective_button"
-msgstr ""
-
-msgid "expert_subjective_button"
-msgstr ":face_with_monocle: Энэ талаар мэдлэгтэй хүмүүсээс асуух"
-
-msgid "random_choice_button"
-msgstr ":game_die: Тоглоход бэлэн байна"
-
-msgid "sensitive_question_domain"
-msgstr "Би бусад хүмүүст хариулахдаа илүү болгоомжтой байхыг мэдэгдье."
-
-msgid "not_sensitive_question_domain"
-msgstr "Сайн сонголт! Энэ сэдвээр сонирхолтой, мэдлэгтэй хүмүүс байдаг."
-
-msgid "similar_subjective_text"
-msgstr "Та санал нийлэх хүмүүсээс хариулт хайсан."
-
-msgid "different_subjective_text"
-msgstr "Та үзэл бодлоо өргөжүүлэх хүмүүсээс хариулт хайсан."
-
-msgid "expert_subjective_text"
-msgstr "Та энэ талаар мэддэг хүмүүсээс хариулт хайсан."
-
-msgid "random_subjective_text"
-msgstr "Та санамсаргүй хүмүүсээс хариулт хайсан."
-
-msgid "leisure_activities_button"
-msgstr "Чөлөөт цагийн үйл ажиллагаа"
+msgstr "Харамсалтай нь би хамгийн сайн хариултыг харуулах эрхгүй."
 
 msgid "follow_up_button"
 msgstr ":speaking_head: {answerer}-н холбоо барих хаягийг дагахыг хүсэх"
@@ -658,7 +587,7 @@ msgstr ""
 "болно."
 
 msgid "not_sharing_details_message"
-msgstr "За, би {answerer}-аас асуухгүй."
+msgstr "За, дараагийн удаа."
 
 msgid "share_details_to_questioner"
 msgstr ""

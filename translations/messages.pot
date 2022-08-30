@@ -1,7 +1,3 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR ORGANIZATION
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
-#
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
@@ -14,28 +10,21 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: pygettext.py 1.5\n"
 
-
-#: src/ask_for_help/handler.py:32
 msgid "info_text"
 msgstr ""
 
-#: src/ask_for_help/handler.py:58
 msgid "start_text_1"
 msgstr ""
 
-#: src/ask_for_help/handler.py:59
 msgid "start_text_2"
 msgstr ""
 
-#: src/ask_for_help/handler.py:63
 msgid "start_button"
 msgstr ""
 
-#: src/ask_for_help/handler.py:46
 msgid "error_text"
 msgstr ""
 
-#: src/ask_for_help/handler.py:52
 msgid "cancel_text"
 msgstr ""
 
@@ -48,70 +37,64 @@ msgstr ""
 msgid "domain_question"
 msgstr ""
 
-msgid "studying_career_button"
+msgid "academic_skills_button"
 msgstr ""
 
-msgid "local_university_button"
-msgstr ""
-
-msgid "local_things_button"
+msgid "basic_needs_button"
 msgstr ""
 
 msgid "physical_activity_button"
 msgstr ""
 
-msgid "cultural_interests_button"
+msgid "appreciating_culture_button"
 msgstr ""
 
-msgid "food_and_cooking_button"
+msgid "random_thoughts_button"
 msgstr ""
 
-msgid "cinema_theatre_button"
+msgid "producing_culture_button"
 msgstr ""
 
-msgid "music_button"
+msgid "leisure_activities_button"
 msgstr ""
 
-msgid "arts_and_crafts_button"
+msgid "campus_life_button"
 msgstr ""
 
-msgid "life_ponders_button"
+msgid "sensitive_button"
 msgstr ""
 
-msgid "varia_misc_button"
+msgid "academic_skills"
 msgstr ""
 
-msgid "studying_career"
-msgstr ""
-
-msgid "local_university"
-msgstr ""
-
-msgid "local_things"
+msgid "basic_needs"
 msgstr ""
 
 msgid "physical_activity"
 msgstr ""
 
-msgid "cultural_interests"
+msgid "appreciating_culture"
 msgstr ""
 
-msgid "food_and_cooking"
+msgid "random_thoughts"
 msgstr ""
 
-msgid "cinema_theatre"
+msgid "producing_culture"
 msgstr ""
 
-msgid "music"
+msgid "leisure_activities"
 msgstr ""
 
-msgid "arts_and_crafts"
+msgid "campus_life"
 msgstr ""
 
-msgid "life_ponders"
+msgid "sensitive"
 msgstr ""
 
-msgid "varia_misc"
+msgid "sensitive_question_domain"
+msgstr ""
+
+msgid "not_sensitive_question_domain"
 msgstr ""
 
 msgid "domain_similarity_question"
@@ -136,15 +119,6 @@ msgid "answer_different_belief_values"
 msgstr ""
 
 msgid "answer_indifferent_belief_values"
-msgstr ""
-
-msgid "sensitive_question"
-msgstr ""
-
-msgid "not_sensitive"
-msgstr ""
-
-msgid "sensitive"
 msgstr ""
 
 msgid "anonymous_question"
@@ -279,6 +253,12 @@ msgstr ""
 msgid "ask_more_answers_text"
 msgstr ""
 
+msgid "close_question_button"
+msgstr ""
+
+msgid "close_question_text"
+msgstr ""
+
 msgid "answers_no_tasks"
 msgstr ""
 
@@ -289,27 +269,6 @@ msgid "answers_tasks_choose"
 msgstr ""
 
 msgid "best_answer_0"
-msgstr ""
-
-msgid "best_answer_helpful"
-msgstr ""
-
-msgid "not_at_all_helpful"
-msgstr ""
-
-msgid "slightly_helpful"
-msgstr ""
-
-msgid "somewhat_helpful"
-msgstr ""
-
-msgid "very_helpful"
-msgstr ""
-
-msgid "extremely_helpful"
-msgstr ""
-
-msgid "reason_is_not_text"
 msgstr ""
 
 msgid "best_answer_final_message"
@@ -435,6 +394,9 @@ msgstr ""
 msgid "answer_reason_personal"
 msgstr ""
 
+msgid "answer_reason_responder"
+msgstr ""
+
 msgid "chosen_answer_by_user"
 msgstr ""
 
@@ -468,44 +430,6 @@ msgstr ""
 msgid "best_answer_not_published"
 msgstr ""
 
-msgid "basic_needs_button"
-msgstr ""
-
-msgid "subjective_question_text"
-msgstr ""
-
-msgid "similar_subjective_button"
-msgstr ""
-
-msgid "different_subjective_button"
-msgstr ""
-
-msgid "expert_subjective_button"
-msgstr ""
-
-msgid "random_choice_button"
-msgstr ""
-
-msgid "sensitive_question_domain"
-msgstr ""
-
-msgid "not_sensitive_question_domain"
-msgstr ""
-
-msgid "similar_subjective_text"
-msgstr ""
-
-msgid "different_subjective_text"
-msgstr ""
-
-msgid "expert_subjective_text"
-msgstr ""
-
-msgid "random_subjective_text"
-msgstr ""
-
-msgid "leisure_activities_button"
-msgstr ""
 msgid "follow_up_button"
 msgstr ""
 
