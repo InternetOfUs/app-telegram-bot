@@ -2,6 +2,21 @@
 
 ## Version 3.*
 
+### 3.3.0
+
+:rocket: New features
+- Completed the chatbot according to the latest proposed M46 flow:
+  - Updated the possible domains of the question;
+  - Reverted the changes in the question flow by re-adding `domainInterest`, `beliefsAndValues`, `socialCloseness` and `positionOfAnswerer` attributes;
+  - Added a custom expiration time for nearby questions;
+  - Added button to close questions if no answers are received;
+  - Removed how helpful was the bot;
+  - Added questioner name in the message after sending the answer;
+  - Small fixes.
+
+:house: Internal
+- Updated project template to version [4.12.5](https://lab.u-hopper.com/devops/ansible/project-template/-/releases/4.12.5).
+
 ### 3.2.1
 
 :bug: Bug Fixes
