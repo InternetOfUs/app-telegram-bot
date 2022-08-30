@@ -494,7 +494,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         message_string = self._translator.get_translation_instance(user_object.locale)
         sensitive = message.attributes["domain"] == self.INTENT_SENSITIVE_QUESTION
         anonymous = message.attributes.get("anonymous", False)
-        position_of_answerer = message.attributes.get("positionOfAnswerer", False)
+        position_of_answerer = message.attributes["positionOfAnswerer"]
         if position_of_answerer == self.INTENT_ASK_TO_NEARBY and sensitive:
             message_string = message_string.with_text("answer_sensitive_message_nearby")
         elif position_of_answerer == self.INTENT_ASK_TO_NEARBY:
@@ -568,7 +568,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         # Translate the message that the answer to a question was picked as the best and insert the details of the question
         message_string = self._translator.get_translation_instance(user_object.locale) \
             .with_text("picked_best_answer") \
-            .with_substitution("question", self.parse_text_with_markdown(self._prepare_string_to_telegram(message.attributes.get("question")))) \
+            .with_substitution("question", self.parse_text_with_markdown(self._prepare_string_to_telegram(message.attributes["question"]))) \
             .translate()
         return TextualResponse(message_string)
 
@@ -579,7 +579,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         message_answers = []
         message_users = []
         task = service_api.get_task(message.task_id)
-        for i in message.attributes.get("listOfTransactionIds"):
+        for i in message.attributes["listOfTransactionIds"]:
             for transaction in task.transactions:
                 if transaction.id == i and transaction.label == self.LABEL_ANSWER_TRANSACTION:
                     message_answers.append(self.parse_text_with_markdown(self._prepare_string_to_telegram(transaction.attributes["answer"])))
@@ -641,7 +641,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         else:
             no_reply_string = self._translator.get_translation_instance(locale) \
                 .with_text("no_answer_text") \
-                .with_substitution("expiration_duration", str(int(self.neaby_expiration_duration / 3600)) if task.attributes.get("positionOfAnswerer") == self.INTENT_ASK_TO_NEARBY else str(int(self.expiration_duration / 3600)))\
+                .with_substitution("expiration_duration", str(int(self.neaby_expiration_duration / 3600)) if task.attributes["positionOfAnswerer"] == self.INTENT_ASK_TO_NEARBY else str(int(self.expiration_duration / 3600)))\
                 .translate()
             message_upper_part += no_reply_string
             answer_lower_part = TelegramRapidAnswerResponse(TextualResponse(message_upper_part), row_displacement=[2])
@@ -1362,7 +1362,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
 
         # Recreating the message that someone in the community has a question and insert the details of the question, treat differently sensitive questions
         message_string = self._translator.get_translation_instance(user_locale)
-        if button_payload.payload.get("sensitive"):
+        if button_payload.payload.get("sensitive", False):
             message_string = message_string.with_text("answer_sensitive_message_0")
         else:
             message_string = message_string.with_text("answer_message_0")
@@ -1467,7 +1467,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         task_id = button_payload.payload["task_id"]
 
         task = service_api.get_task(task_id)
-        expiration_date = datetime.fromtimestamp(task.attributes.get("expirationDate")) + timedelta(seconds=self.neaby_expiration_duration if task.attributes.get("positionOfAnswerer") == self.INTENT_ASK_TO_NEARBY else self.expiration_duration)
+        expiration_date = datetime.fromtimestamp(task.attributes["expirationDate"]) + timedelta(seconds=self.neaby_expiration_duration if task.attributes["positionOfAnswerer"] == self.INTENT_ASK_TO_NEARBY else self.expiration_duration)
         expiration = int(expiration_date.timestamp())
 
         actioneer_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
@@ -1945,10 +1945,10 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         message_users = []
         task = service_api.get_task(task_id)
         for transaction in task.transactions:
-            if transaction.label == self.LABEL_ANSWER_TRANSACTION and transaction.attributes.get("publish"):
+            if transaction.label == self.LABEL_ANSWER_TRANSACTION and transaction.attributes.get("publish", False):
                 message_answers.append(self.parse_text_with_markdown(self._prepare_string_to_telegram(transaction.attributes["answer"])))
                 answerer_user = service_api.get_user_profile(transaction.actioneer_id)
-                answerer = self._translator.get_translation_instance(self.publication_language).with_text("anonymous_user").translate() if transaction.attributes.get("publishAnonymously") or not answerer_user.name.first else answerer_user.name.first
+                answerer = self._translator.get_translation_instance(self.publication_language).with_text("anonymous_user").translate() if transaction.attributes.get("publishAnonymously", False) or not answerer_user.name.first else answerer_user.name.first
                 message_users.append(answerer)
                 transaction_ids.append(transaction.id)
         message_attributes = self._translator.get_translation_instance(self.publication_language) \
@@ -2085,10 +2085,10 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         eligible_tasks = []
         for task in service_api.get_all_tasks(app_id=self.app_id, task_type_id=self.task_type_id, has_close_ts=False):
             if task.requester_id != user_id and user_id not in set([transaction.actioneer_id for transaction in task.transactions if transaction.label == self.LABEL_ANSWER_TRANSACTION]):
-                if task.attributes.get("expirationDate") < current_date:
+                if task.attributes["expirationDate"] < current_date:
                     for transaction in task.transactions:
                         if transaction.label == self.LABEL_MORE_ANSWER_TRANSACTION:
-                            if transaction.attributes.get("expirationDate") > current_date:
+                            if transaction.attributes["expirationDate"] > current_date:
                                 eligible_tasks.append(task)
                                 break
                 else:
@@ -2121,15 +2121,15 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             for task in eligible_tasks:
                 questioning_user = service_api.get_user_profile(str(task.requester_id))
                 if questioning_user:
-                    task_text = f"#{1 + len(proposed_tasks)}: *{self.parse_text_with_markdown(self._prepare_string_to_telegram(task.goal.name))}* - {questioning_user.name.first if questioning_user.name.first and not task.attributes.get('anonymous') else self._translator.get_translation_instance(user_locale).with_text('anonymous_user').translate()}"
-                    if task.attributes.get("domain") == self.INTENT_SENSITIVE_QUESTION:
+                    task_text = f"#{1 + len(proposed_tasks)}: *{self.parse_text_with_markdown(self._prepare_string_to_telegram(task.goal.name))}* - {questioning_user.name.first if questioning_user.name.first and not task.attributes.get('anonymous', False) else self._translator.get_translation_instance(user_locale).with_text('anonymous_user').translate()}"
+                    if task.attributes["domain"] == self.INTENT_SENSITIVE_QUESTION:
                         task_text = task_text + f" - {self._translator.get_translation_instance(user_locale).with_text('sensitive').translate()}"
                     tasks_texts.append(task_text)
                     proposed_tasks.append(task)
             message_text = "\n".join([text] + tasks_texts + [self._translator.get_translation_instance(user_locale).with_text("answers_tasks_choose").translate()])
             rapid_answer = TelegramRapidAnswerResponse(TextualResponse(message_text))
             for i in range(len(proposed_tasks)):
-                button_id = self.cache.cache(ButtonPayload({"task_id": proposed_tasks[i].task_id, "sensitive": proposed_tasks[i].attributes.get("domain") == self.INTENT_SENSITIVE_QUESTION}, self.INTENT_ANSWER_PICKED_QUESTION).to_repr())
+                button_id = self.cache.cache(ButtonPayload({"task_id": proposed_tasks[i].task_id, "sensitive": proposed_tasks[i].attributes["domain"] == self.INTENT_SENSITIVE_QUESTION}, self.INTENT_ANSWER_PICKED_QUESTION).to_repr())
                 rapid_answer.with_textual_option(f"#{1 + i}", self.INTENT_BUTTON_WITH_PAYLOAD.format(button_id))
             response.with_message(rapid_answer)
         response.with_context(context)
