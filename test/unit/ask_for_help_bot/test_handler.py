@@ -491,7 +491,7 @@ class TestAskForHelpHandler(TestCase):
             "task_id": "task_id",
             "question": "question",
             "sensitive": True,
-            "username": "username",
+            "questioner_name": "questioner_name",
             "related_buttons": ["button_ids"],
         }, handler.INTENT_ANSWER_QUESTION))
         self.assertIsInstance(response, OutgoingEvent)
@@ -521,7 +521,7 @@ class TestAskForHelpHandler(TestCase):
             "task_id": "task_id",
             "question": "question",
             "sensitive": False,
-            "username": "username",
+            "questioner_name": "questioner_name",
             "related_buttons": ["button_ids"],
         }, handler.INTENT_ANSWER_QUESTION))
         self.assertIsInstance(response, OutgoingEvent)

@@ -851,7 +851,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             button_7_text = self._translator.get_translation_instance(user_locale).with_text("leisure_activities_button").translate()
             button_8_text = self._translator.get_translation_instance(user_locale).with_text("campus_life_button").translate()
             button_9_text = self._translator.get_translation_instance(user_locale).with_text("sensitive_button").translate()
-            response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 2, 2, 2, 1])
+            response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1, 1, 1, 1, 1, 1, 1, 1])
             response_with_buttons.with_textual_option(button_1_text, self.INTENT_ACADEMIC_SKILLS)
             response_with_buttons.with_textual_option(button_2_text, self.INTENT_BASIC_NEEDS)
             response_with_buttons.with_textual_option(button_3_text, self.INTENT_PHYSICAL_ACTIVITY)
@@ -1107,6 +1107,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         user_locale = self._get_user_locale_from_incoming_event(incoming_event)
         context = incoming_event.context
         context.with_static_state(self.CONTEXT_QUESTION_TO_ANSWER, button_payload.payload["task_id"])
+        context.with_static_state(self.CONTEXT_QUESTIONER_NAME, button_payload.payload["questioner_name"])
         user_id = context.get_static_state(self.CONTEXT_WENET_USER_ID)
         task = service_api.get_task(button_payload.payload["task_id"])
 
@@ -2117,19 +2118,22 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 eligible_tasks = random.sample(eligible_tasks, k=3)
             text = self._translator.get_translation_instance(user_locale).with_text("answers_tasks_intro").translate()
             proposed_tasks = []
+            questioner_names = []
             tasks_texts = []
             for task in eligible_tasks:
                 questioning_user = service_api.get_user_profile(str(task.requester_id))
                 if questioning_user:
-                    task_text = f"#{1 + len(proposed_tasks)}: *{self.parse_text_with_markdown(self._prepare_string_to_telegram(task.goal.name))}* - {questioning_user.name.first if questioning_user.name.first and not task.attributes.get('anonymous', False) else self._translator.get_translation_instance(user_locale).with_text('anonymous_user').translate()}"
+                    questioner_name = questioning_user.name.first if questioning_user.name.first and not task.attributes.get('anonymous', False) else self._translator.get_translation_instance(user_locale).with_text('anonymous_user').translate()
+                    task_text = f"#{1 + len(proposed_tasks)}: *{self.parse_text_with_markdown(self._prepare_string_to_telegram(task.goal.name))}* - {questioner_name}"
                     if task.attributes["domain"] == self.INTENT_SENSITIVE_QUESTION:
                         task_text = task_text + f" - {self._translator.get_translation_instance(user_locale).with_text('sensitive').translate()}"
                     tasks_texts.append(task_text)
+                    questioner_names.append(questioner_name)
                     proposed_tasks.append(task)
             message_text = "\n".join([text] + tasks_texts + [self._translator.get_translation_instance(user_locale).with_text("answers_tasks_choose").translate()])
             rapid_answer = TelegramRapidAnswerResponse(TextualResponse(message_text))
             for i in range(len(proposed_tasks)):
-                button_id = self.cache.cache(ButtonPayload({"task_id": proposed_tasks[i].task_id, "sensitive": proposed_tasks[i].attributes["domain"] == self.INTENT_SENSITIVE_QUESTION}, self.INTENT_ANSWER_PICKED_QUESTION).to_repr())
+                button_id = self.cache.cache(ButtonPayload({"task_id": proposed_tasks[i].task_id, "sensitive": proposed_tasks[i].attributes["domain"] == self.INTENT_SENSITIVE_QUESTION, "questioner_name": questioner_names[i]}, self.INTENT_ANSWER_PICKED_QUESTION).to_repr())
                 rapid_answer.with_textual_option(f"#{1 + i}", self.INTENT_BUTTON_WITH_PAYLOAD.format(button_id))
             response.with_message(rapid_answer)
         response.with_context(context)
