@@ -644,7 +644,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 .with_substitution("expiration_duration", str(int(self.neaby_expiration_duration / 3600)) if task.attributes["positionOfAnswerer"] == self.INTENT_ASK_TO_NEARBY else str(int(self.expiration_duration / 3600)))\
                 .translate()
             message_upper_part += no_reply_string
-            answer_lower_part = TelegramRapidAnswerResponse(TextualResponse(message_upper_part), row_displacement=[2])
+            answer_lower_part = TelegramRapidAnswerResponse(TextualResponse(message_upper_part), row_displacement=[1, 1])
             button_ids = [str(uuid.uuid4()) for _ in range(2)]
 
         button_data = {
@@ -1153,7 +1153,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             message = self._translator.get_translation_instance(user_locale).with_text("answer_anonymously").translate()
             button_1_text = self._translator.get_translation_instance(user_locale).with_text("anonymous_answer_1").translate()
             button_2_text = self._translator.get_translation_instance(user_locale).with_text("anonymous_answer_2").translate()
-            response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2])
+            response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1])
             response_with_buttons.with_textual_option(button_1_text, self.INTENT_ANSWER_ANONYMOUSLY)
             response_with_buttons.with_textual_option(button_2_text, self.INTENT_ANSWER_NOT_ANONYMOUSLY)
             response.with_message(response_with_buttons)

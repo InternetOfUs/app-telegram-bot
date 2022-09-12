@@ -40,5 +40,5 @@ In order to propose changes to the translasion of an existing language, the foll
 2. Open the `messages.po` (we suggest using [Poedit](https://poedit.net/) or a similar application).
 3. Identify the text you would like to change the translation for and apply your changes.
 4. Compile the changes into an updated `messages.mo` file.
-5. Create a new pull request with your proposed changes. Please, make sure to deail your changes in the description.
+5. Create a new pull request with your proposed changes. Please, make sure to detail your changes in the description.
 

@@ -2,6 +2,11 @@
 
 ## Version 3.*
 
+### 3.3.1
+
+:bug: Bug Fixes
+- Fixed incomplete texts in some buttons.
+
 ### 3.3.0
 
 :rocket: New features
