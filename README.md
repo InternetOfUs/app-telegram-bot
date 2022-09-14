@@ -200,8 +200,8 @@ The endpoint uses the following environment variables:
 ## Contributing
 
 Contributions to this project are more than welcome.
-Contributions regarding to the supported languages is particular appreciated.
-Details about the contrinution guidelines can be found in [CONTRIBUTING.md](CONTRIBUTING.md).
+Contributions regarding the supported languages is particularly appreciated.
+Details about the contribution guidelines can be found in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Instances
 

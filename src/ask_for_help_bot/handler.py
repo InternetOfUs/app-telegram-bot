@@ -644,7 +644,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
                 .with_substitution("expiration_duration", str(int(self.neaby_expiration_duration / 3600)) if task.attributes["positionOfAnswerer"] == self.INTENT_ASK_TO_NEARBY else str(int(self.expiration_duration / 3600)))\
                 .translate()
             message_upper_part += no_reply_string
-            answer_lower_part = TelegramRapidAnswerResponse(TextualResponse(message_upper_part), row_displacement=[2])
+            answer_lower_part = TelegramRapidAnswerResponse(TextualResponse(message_upper_part), row_displacement=[1, 1])
             button_ids = [str(uuid.uuid4()) for _ in range(2)]
 
         button_data = {
@@ -1153,7 +1153,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             message = self._translator.get_translation_instance(user_locale).with_text("answer_anonymously").translate()
             button_1_text = self._translator.get_translation_instance(user_locale).with_text("anonymous_answer_1").translate()
             button_2_text = self._translator.get_translation_instance(user_locale).with_text("anonymous_answer_2").translate()
-            response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2])
+            response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1])
             response_with_buttons.with_textual_option(button_1_text, self.INTENT_ANSWER_ANONYMOUSLY)
             response_with_buttons.with_textual_option(button_2_text, self.INTENT_ANSWER_NOT_ANONYMOUSLY)
             response.with_message(response_with_buttons)
@@ -1407,7 +1407,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         button_why_reporting_1_text = self._translator.get_translation_instance(user_locale).with_text("button_why_reporting_1_text").translate()
         button_why_reporting_2_text = self._translator.get_translation_instance(user_locale).with_text("button_why_reporting_2_text").translate()
         button_why_reporting_3_text = self._translator.get_translation_instance(user_locale).with_text("button_why_reporting_3_text").translate()
-        message = TelegramRapidAnswerResponse(TextualResponse(message_text), row_displacement=[2, 1])
+        message = TelegramRapidAnswerResponse(TextualResponse(message_text), row_displacement=[1, 1, 1])
         button_ids = [str(uuid.uuid4()) for _ in range(2)]
         payload = button_payload.payload
         payload.update({"related_buttons": button_ids})
@@ -1909,7 +1909,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         button_6_text = self._translator.get_translation_instance(user_locale).with_text("answer_reason_kind").translate()
         button_7_text = self._translator.get_translation_instance(user_locale).with_text("answer_reason_personal").translate()
         button_8_text = self._translator.get_translation_instance(user_locale).with_text("answer_reason_responder").translate()
-        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 2, 2, 2])
+        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 2, 2, 1, 1])
         response_with_buttons.with_textual_option(button_1_text, self.INTENT_CHOSEN_ANSWER_FUNNY)
         response_with_buttons.with_textual_option(button_2_text, self.INTENT_CHOSEN_ANSWER_THOUGHTFUL)
         response_with_buttons.with_textual_option(button_3_text, self.INTENT_CHOSEN_ANSWER_INFORMATIVE)
@@ -2067,7 +2067,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
             message = self._translator.get_translation_instance(user_locale).with_text("publish_question_to_channel").translate()
             button_1_text = self._translator.get_translation_instance(user_locale).with_text("publish").translate()
             button_2_text = self._translator.get_translation_instance(user_locale).with_text("not_publish").translate()
-            message = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2])
+            message = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1])
             message.with_textual_option(button_1_text, self.INTENT_PUBLISH)
             message.with_textual_option(button_2_text, self.INTENT_NOT_PUBLISH)
             response.with_message(message)
