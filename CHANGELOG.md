@@ -2,6 +2,12 @@
 
 ## Version 3.*
 
+### 3.3.2
+
+:nail_care: Polish
+- Updated english translation for social closeness question.
+- Refactor of the button for social closeness question. 
+
 ### 3.3.1
 
 :bug: Bug Fixes

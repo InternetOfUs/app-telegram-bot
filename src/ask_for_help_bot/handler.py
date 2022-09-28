@@ -949,7 +949,7 @@ class AskForHelpHandler(WenetEventHandler, StateMixin):
         button_1_text = self._translator.get_translation_instance(user_locale).with_text("answer_socially_close").translate()
         button_2_text = self._translator.get_translation_instance(user_locale).with_text("answer_socially_distant").translate()
         button_3_text = self._translator.get_translation_instance(user_locale).with_text("answer_socially_indifferent").translate()
-        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[2, 1])
+        response_with_buttons = TelegramRapidAnswerResponse(TextualResponse(message), row_displacement=[1, 1, 1])
         response_with_buttons.with_textual_option(button_1_text, self.INTENT_SIMILAR_SOCIALLY)
         response_with_buttons.with_textual_option(button_2_text, self.INTENT_DIFFERENT_SOCIALLY)
         response_with_buttons.with_textual_option(button_3_text, self.INTENT_INDIFFERENT_SOCIALLY)
