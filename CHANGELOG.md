@@ -2,6 +2,11 @@
 
 ## Version 3.*
 
+### 3.3.3
+
+:nail_care: Polish
+- Updated mongolian translation for social closeness question.
+
 ### 3.3.2
 
 :nail_care: Polish
